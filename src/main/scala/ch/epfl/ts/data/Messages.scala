@@ -72,12 +72,3 @@ case class OHLC(marketId: Long, open: Double, high: Double, low: Double, close: 
 case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Currency, bid: Double, ask: Double)
 
 
-/**
- * Data Transfer Object representing a Tweet
- * @param timestamp
- * @param content
- * @param sentiment
- * @param imagesrc
- * @param author
- */
-case class Tweet(timestamp: Long, content: String, sentiment: Int, imagesrc: String, author: String) extends Streamable
