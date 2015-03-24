@@ -29,21 +29,21 @@ object SimpleExampleFX {
     implicit val builder = new ComponentBuilder("simpleFX")
     val marketForexId = MarketNames.FOREX_ID
 
-    //Creating actors:
-    //fetcher
+    //----- Creating actors
+    // Fetcher
     val fetcherFx: TrueFxFetcher = new TrueFxFetcher
     val fxQuoteFetcher = builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "trueFxFetcher")
-    //market
+    // Market
     val rules = new ForexMarketRules()
     val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
-    //persistor
+    // Persistor
     val dummyPersistor = new DummyPersistor()
-    //backloop
+    // Backloop
     val backloop = builder.createRef(Props(classOf[BackLoop], marketForexId, dummyPersistor), "backloop")
-    //trader
+    // Trader
     val simpleFXTrader = builder.createRef(Props(classOf[SimpleFXTrader], 132L), "simpleFXTrader")
     val traderNames = Map(132L->"simpleFXTrader")
-    //display
+    // Display
     val display = builder.createRef(Props(classOf[RevenueComputeFX],traderNames), "display")
 
     //connections:
