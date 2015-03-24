@@ -9,6 +9,8 @@ import ch.epfl.ts.data.LimitAskOrder
 import ch.epfl.ts.data.MarketAskOrder
 import scala.language.postfixOps
 import scala.concurrent.duration.DurationInt
+import ch.epfl.ts.data.Quote
+import ch.epfl.ts.data.Transaction
 
 class SimpleFXTrader(uid: Long) extends Component {
   import context._
@@ -19,6 +21,7 @@ class SimpleFXTrader(uid: Long) extends Component {
 
   override def receiver = {
     case StartSignal() => start
+    
     case SendMarketOrder =>
       if (alternate % 2 == 0) {
         send[Order](MarketBidOrder(orderId, uid, System.currentTimeMillis(), Currency.EUR, Currency.USD, 30, 0))
@@ -26,6 +29,14 @@ class SimpleFXTrader(uid: Long) extends Component {
         send[Order](MarketAskOrder(orderId, uid, System.currentTimeMillis(), Currency.EUR, Currency.USD, 30, 0))
       }
       alternate=alternate+1
+      
+    case t: Transaction =>
+      println("SimpleFXT: got %s -> %s for %f transaction info".format(t.whatC, t.withC, t.price))
+    
+    case q: Quote =>
+    
+    case _ =>
+      println("SimpleFXT: unknown signal")
   }
 
   def start = {
