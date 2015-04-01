@@ -1,0 +1,171 @@
+\section{Components}
+\label{sec:2}
+
+This section introduces each component in detail, including  what data they expect, what data they output, what parameters can be set. After reading this section, you should able to select appropriate components for a specific algorithmic trading purpose, parameterize and connect them correctly.
+
+\subsection{Define a Component}
+
+In TradingSimulation, each component is an Akka\footnote{\url{http://akka.io}} actor. This can be seen from following code snippet, in which the abstract class \emph{Component} indirectly extends the trait \emph{Actor} in Akka. All concrete components extend \emph{Component}.
+
+\begin{lstlisting}[language=Scala]
+  trait Receiver extends Actor {
+    def receive: PartialFunction[Any, Unit]
+
+    def send[T: ClassTag](t: T): Unit
+    def send[T: ClassTag](t: List[T]): Unit
+  }
+
+  abstract class Component extends Receiver {
+    def start: Unit = {}
+
+    def stop: Unit = {}
+
+    def receiver: PartialFunction[Any, Unit]
+  }
+\end{lstlisting}
+
+The framework defines three standard methods for every concrete component class:
+
+\begin{itemize}
+\item{start}: concrete components can override this method to do custom initialization.
+\item{stop}: concrete components can override this method to release resources.
+\item{receiver}: concrete components override this method to receive and handle messages.
+\end{itemize}
+
+The data transer between different components is in the form of Akka messages. Concrete component classes have to override the method \emph{receiver} in order to handle the messages they are interested in.
+
+To send a message, a concrete component class can call one of the two \emph{send} methods defined in \emph{Receiver}. The two \emph{send} methods have default implementation in \emph{Component}, a concrete component class should not override them.
+
+Following code snippet illustrates a very simple component which just prints and forwards every message it receives.
+
+\begin{lstlisting}[language=Scala]
+  class BackLoop extends Component {
+    override def receiver = {
+      case m =>
+        println(m)
+        send(m)
+    }
+  }
+\end{lstlisting}
+
+\subsubsection{Create Instances of Components}
+
+To create an instance of a component, we have to first create a \emph{component builder} as follows:
+
+\begin{lstlisting}[language=Scala]
+val builder = new ComponentBuilder("test")
+\end{lstlisting}
+
+Now suppose we have a Component \emph{Arbitrageur} defined as follows:
+
+\begin{lstlisting}[language=Scala]
+  class Arbitrageur(id: Long, delta: Double, volume: Double) extends Component
+  {
+    //...
+  }
+\end{lstlisting}
+
+Then we can create an instance of \emph{Arbitrageur} with following code snippet:
+
+\begin{lstlisting}[language=Scala]
+  val props = Props(classOf[Arbitrageur], 111L, 1, 50)
+  val arbitrageur = builder.createRef(props, "arbitrageur")
+\end{lstlisting}
+
+As you can see in the code snippet above, first we create an instance of \emph{Props}\footnote{\url{http://doc.akka.io/api/akka/2.3.1/index.html\#akka.actor.Props}}. The first argument to \emph{Props} is the class we want to instantiate, and the remaining arguments are exactly the parameters that the constructor of the class \emph{Arbitrageur} expects.
+
+\emph{builder.createRef} then takes \emph{props} and a name for the component to create an instance of the component. Note that the return value of \emph{builder.createRef} is a pointer to an instance of \emph{ComponentRef} instead of \emph{Arbitrageur}.
+
+We have learned how to created instances of components, next let's see how to connect them.
+
+\begin{info}
+Internally, \emph{builder.createRef} will call \emph{actorOf} on an instance of \emph{ActorSystem} to create an instance of the component. The whole process seems a little awkward, but that's how Akka works. If you ever have a chance to checkout Akka(\href{http://akka.io}{akka.io}), you'll find it's worth the pain.
+\end{info}
+
+\subsubsection{Connect Components}
+
+To connect an upstream component A to a downstream component B, we need to specify what types of messages B expects to receive from A. During the running A would only send messages of the specified types to B. For example, in the following code snippet, \emph{sobiTrader} will only send \emph{LimitBidOrder} messages to \emph{market}, and only send \emph{LimitAskOrder} messages to \emph{display}.
+
+\begin{lstlisting}[language=Scala]
+  sobiTrader -> (market, classOf[LimitBidOrder])
+  sobiTrader -> (display, classOf[LimitAskOrder])
+\end{lstlisting}
+
+A downstream component can register as many message types as the upstream component can provide. For example, in the following code snippet \emph{sobiTrader} would send both \emph{LimitBidOrder} and \emph{LimitAskOrder} messages to \emph{market}.
+
+\begin{lstlisting}[language=Scala]
+  sobiTrader -> (market, classOf[LimitBidOrder], classOf[LimitAskOrder])
+\end{lstlisting}
+
+If a downstream component registers a message type that the upstream component can't provide, the registration has no effect. In practice, it's important to check carefully what messages a component can receive and provide.
+
+Following list are all the types messages that are exchanged between components:
+
+\begin{itemize}
+\item Transaction
+\item LimitBidOrder
+\item LimitAskOrder
+\item MarketBidOrder
+\item MarketAskOrder
+\item DelOrder
+\item Quote
+\item OHLC
+\item MA
+\end{itemize}
+
+\subsection{Simulators}
+
+Details of various simulators
+
+\begin{itemize}
+\item MarketSimulator
+\item MarketFxSimulator
+\end{itemize}
+
+\subsection{Indicators}
+
+Details various indicators
+
+\begin{itemize}
+\item MA
+\item EMA
+\item SMA
+\item OHLC
+\end{itemize}
+
+\subsection{Traders}
+
+Details of various traders
+
+\begin{itemize}
+\item Arbitrageur
+\item DoubleCrossOverTrader
+\item DoubleEnvelopeTrader
+\item SimpleFXTrader
+\item SimplerTrader
+\item SobiTrader
+\item TransactionVmapTrader
+\end{itemize}
+
+\subsection{Fetchers}
+
+Details of various fecthers
+
+\begin{itemize}
+\item BitfinexFetcher
+\item BitStampFetcher
+\item BtceFetcher
+\item CSVFetcher
+\item TrueFXFetcher
+\end{itemize}
+
+\subsection{Utilities}
+
+Other components
+
+\begin{itemize}
+\item Printer
+\item Backloop
+\item Replay
+\item BatcherComponent
+\end{itemize}
