@@ -30,16 +30,6 @@ abstract class MaIndicator(period: Int) extends Component {
         values.clear()
       }
     }
-   /* case o: Quote => {
-      println("maIndicator: received quote: "+ o)
-      valuesQuote += o 
-      if (valuesQuote.size == period) {
-        val ma = computeMa
-        println("maI-ndicator: sending " +ma)
-        send(ma)
-        valuesQuote.clear()
-      }
-    }*/
     case _             =>
   }
   
