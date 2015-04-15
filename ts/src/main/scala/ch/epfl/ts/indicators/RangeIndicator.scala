@@ -9,7 +9,7 @@ class RI(val support : Double, val resistance : Double, val period : Int)
 case class RI2( override val support : Double, override val resistance : Double, override val period : Int ) extends RI(support,resistance,period)
 /**
  * This indicator is meant to draw support and resistance range over a given time period and with some given tolerance 
- * 
+ * Note : not always possible to retrieve an accurate range over large period if there is lot of same prices that appears !
  */
 class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
   
@@ -31,9 +31,7 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
   var count : Int = 0
   
   override def receiver = {
-   
-    
-    
+
     case o: OHLC => {
       price = o.close
       if(!initializationDone){
@@ -43,10 +41,11 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
           initializationDone = true
         }
       }
+      
       else {
         pricePeriod = pricePeriod.tail :+ price
-        resistance = kmax(timePeriod, pricePeriod).min
-        support = kmin(timePeriod, pricePeriod).max
+        resistance = retrieveKth(timePeriod, pricePeriod, max).min
+        support = retrieveKth(timePeriod, pricePeriod, min).max
         var ri = RI2(support, resistance, timePeriod)
         send(ri)
       }
@@ -56,8 +55,10 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
   }
   
   
-  // helper function that returns the k^th highest value contain into the list
-  def kmax(k : Int, list : MutableList[Double]) : List[Double] = {
+  /** helper function that returns the k^th highest or lowest (depending on the function given in parameter)
+   *  value contain into the list
+   */
+  def retrieveKth(k : Int, list : MutableList[Double], f  : MutableList[Double] =>  Double ) : List[Double] = {
     
     var result = List[Double]()
     var list2 = list
@@ -65,26 +66,21 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
     var index = 0
    
     for(i <- 1 to k) {
-      result = list2.max :: result 
-      index = list2.indexOf(list2.max)
+      
+      result = f(list2) :: result 
+      index = list2.indexOf(f(list2))
       list2 = list2.dropRight(list2.length - index) ++ list2.drop(index + 1)
     }
-    
     return result
   }
   
+  //helper function that will be passed to retrieveKth
+  def max(l : MutableList[Double]) : Double  = {
+     l.max
+  }
   
-  def kmin(k : Int, list : MutableList[Double]) : List[Double] = {
-    var result = List[Double]()
-    var list2 = list
-    var i = 0
-    var index = 0
-   
-    for(i <- 1 to k) {
-      result = list2.min :: result 
-      index = list2.indexOf(list2.min)
-      list2 = list2.dropRight(list2.length - index) ++ list2.drop(index + 1)
-    }
-    return result
+  //helper function that will be passed to retrieveKth
+  def min(l : MutableList[Double]) : Double  = {
+    l.min
   }
 }
