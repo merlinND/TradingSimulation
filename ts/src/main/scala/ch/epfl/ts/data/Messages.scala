@@ -44,11 +44,8 @@ abstract class Order() extends Streamable {
   def price: Double
 }
 /**
- * @Param :          WhatC represent which currency we are buying and WithC represent the currency
- *                   with which we are buying (WhatC =) EUR / (WithC =) USD means that we buying Euro
- *                   with Dollars the price of this currency is the value of 1 Euro expressed in dollar. 
  * 
- * Type of orders : You send a bid order if you want to buy a security at a given price.
+ *  Type of orders : You send a bid order if you want to buy a security at a given price.
  *                  You send a ask order if you want to sell a security.
  *                
  * Limit order :    Limit order are left open during a certain period of time and are match if the currency
@@ -56,23 +53,67 @@ abstract class Order() extends Streamable {
  * 
  * Market order :   Those orders are immediately executed at the current price 
  * 
+ * @param withC : represent the currency we are buying
+ * @param whatC : represent the currency with which we are buying
+ * @param volume : represent the number of currency we are buying
+ * 
  */
 abstract class LimitOrder extends Order
-
+/**
+ * @param withC : represent the currency we are buying
+ * @param whatC : represent the currency with which we are buying
+ * @param volume : represent the number of currency we are buying
+ * 
+ * @see {@link #LimitOrder}
+ * 
+ */
 case class LimitBidOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
   extends LimitOrder
 
+  
+/**
+ * @param withC : represent the currency we are buying
+ * @param whatC : represent the currency with which we are buying
+ * @param volume : represent the number of currency we are buying
+ * 
+ * @see {@link #LimitOrder}
+ * 
+ */
 case class LimitAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
   extends LimitOrder
 
 abstract class MarketOrder extends Order
 
+/**
+ * @param withC : represent the currency we are buying
+ * @param whatC : represent the currency with which we are buying
+ * @param volume : represent the number of currency we are buying
+ * 
+ * @see {@link #LimitOrder}
+ * 
+ */
 case class MarketBidOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
   extends MarketOrder
 
+  /**
+ * @param withC : represent the currency we are buying
+ * @param whatC : represent the currency with which we are buying
+ * @param volume : represent the number of currency we are buying
+ * 
+ * @see {@link #LimitOrder}
+ * 
+ */
 case class MarketAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
   extends MarketOrder
 
+/**
+ * @param withC : represent the currency we are buying
+ * @param whatC : represent the currency with which we are buying
+ * @param volume : represent the number of currency we are buying
+ * 
+ * @see {@link #LimitOrder}
+ * 
+ */
 case class DelOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
   extends Order
 
