@@ -6,11 +6,11 @@ import ch.epfl.ts.data.Currency._
 import ch.epfl.ts.data.{ MarketAskOrder, MarketBidOrder, Quote }
 import ch.epfl.ts.data.Currency
 
-/* This simple trader will use two moving average and send order when this two MA cross each other.
- * @ Param the length of the two moving average period.
+/**
+ * This simple trader will use two moving average and send order when this two MA cross each other.
+ * @param shortPeriod Length of the short Moving Average period
+ * @param longPeriod Length of the long Moving Average period
  */
-
-//symbol format  EUR/CHF , CHF/USD .. , as string => easier for user. 
 class SimpleFXTrader(val uid: Long, symbol: (Currency, Currency),
                     val shortPeriod: Int, val longPeriod: Int,
                     val volume: Double) extends Component {
@@ -48,7 +48,7 @@ class SimpleFXTrader(val uid: Long, symbol: (Currency, Currency),
         case Some(x) => currentLong = x
         case None    => println("Missing indicator with period " + longPeriod)
       }
-      
+
       // We can't take decisions before knowing at least one `previousShort`, `previousLong`
       if (hasStarted){
         decideOrder()
@@ -63,7 +63,7 @@ class SimpleFXTrader(val uid: Long, symbol: (Currency, Currency),
 
     case _ => println("SimpleTrader: received unknown")
   }
-  
+
   def decideOrder() = {
     // The two MA cross and short moving average is above long average: BUY signal
     if (previousShort < currentLong && currentShort > currentLong) {
