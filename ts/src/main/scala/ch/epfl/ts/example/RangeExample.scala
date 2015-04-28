@@ -19,6 +19,8 @@ import scala.reflect.ClassTag
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.indicators.RangeIndicator
 import ch.epfl.ts.indicators.RI2
+import ch.epfl.ts.indicators.RI
+import ch.epfl.ts.data.Currency
 
 
 
@@ -47,9 +49,10 @@ object RangeExample {
     
     // Trader: range trader. 
     val traderId : Long = 123L
-    val volume = 10.0
-    val threshold = 0;
-    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, threshold, volume), "rangeTrader")
+    val volume : Double = 10.0
+    val gapSupport : Double = 0.0
+    val gapResistance : Double = 0.0
+    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, gapSupport, gapResistance, volume, (Currency.USD, Currency.CHF)), "rangeTrader")
    
     // Indicator
     // specify period over which we build the OHLC (from quotes)
@@ -68,9 +71,8 @@ object RangeExample {
 
     // ----- Connecting actors
     fxQuoteFetcher.addDestination(forexMarket, classOf[Quote])
-    fxQuoteFetcher.addDestination(trader, classOf[Quote])
     fxQuoteFetcher.addDestination(ohlcIndicator, classOf[Quote])
-
+    
     trader.addDestination(forexMarket, classOf[MarketAskOrder])
     trader.addDestination(forexMarket, classOf[MarketBidOrder])
 
@@ -79,11 +81,10 @@ object RangeExample {
     
     rangeIndicator.addDestination(trader, classOf[RI2])
     ohlcIndicator.addDestination(rangeIndicator, classOf[OHLC])
-    ohlcIndicator.addDestination(rangeIndicator, classOf[OHLC])
-
-    backloop.addDestination(trader, classOf[Transaction])
+    ohlcIndicator.addDestination(trader, classOf[OHLC])
+    
+    backloop -> (trader, classOf[Transaction])
 
     builder.start
   }
-
 }

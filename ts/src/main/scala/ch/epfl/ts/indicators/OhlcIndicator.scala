@@ -2,8 +2,8 @@ package ch.epfl.ts.indicators
 
 import ch.epfl.ts.component.Component
 import ch.epfl.ts.data.{OHLC, Transaction, Quote}
-
 import scala.collection.mutable.MutableList
+import ch.epfl.ts.data.Currency
 
 /**
  * computes OHLC tick for a tick frame of the provided size, the OHLCs are identified with the provided marketId
@@ -17,26 +17,32 @@ class OhlcIndicator(marketId: Long, tickSizeMillis: Long) extends Component {
   var volume: Double = 0.0
   var close: Double = 0.0
   var currentTick: Long = 0
-
+  val whatC = Currency.USD
+  val withC = Currency.CHF
+ 
   override def receiver = {
+    
     case t: Transaction => {
-      if (whichTick(t.timestamp) > currentTick) {
-        // new tick, send OHLC with values stored until now, and reset accumulators (Transaction volume & prices)
-        send(computeOHLC)
-        currentTick = whichTick(t.timestamp)
+      if(t.whatC == whatC && t.withC == withC){
+        if (whichTick(t.timestamp) > currentTick) {
+          // new tick, send OHLC with values stored until now, and reset accumulators (Transaction volume & prices)
+          send(computeOHLC)
+          currentTick = whichTick(t.timestamp)
+        }
+        values += t.price
+        volume = volume + t.volume
       }
-      values += t.price
-      volume = volume + t.volume
     }
 
     case q: Quote => {
-      println("OhlcIndicator : recieved quote" + q.timestamp)
-      if (whichTick(q.timestamp) > currentTick) {
-        send(computeOHLC)
-        currentTick = whichTick(q.timestamp)
+      if(q.whatC == whatC && q.withC == withC){
+        println("OhlcIndicator : recieved quote" + q.timestamp)
+        if (whichTick(q.timestamp) > currentTick) {
+          send(computeOHLC)
+          currentTick = whichTick(q.timestamp)
+        }
+        values += q.bid //we consider the price as the bid price
       }
-      values += q.bid //we consider the price as the bid price
-
     }
     case _ => println("OhlcIndicator: received unknown")
   }
