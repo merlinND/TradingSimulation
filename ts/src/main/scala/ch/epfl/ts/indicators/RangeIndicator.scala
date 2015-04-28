@@ -42,8 +42,8 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
       
       else {
         pricePeriod = pricePeriod.tail :+ price
-        resistance = retrieveKth(timePeriod, pricePeriod, max).min
-        support = retrieveKth(timePeriod, pricePeriod, min).max
+        resistance = getResistance(pricePeriod)
+        support = getSupport(pricePeriod)
         var ri = RI2(support, resistance, timePeriod)
         send(ri)
         println("RangeIndicator : send a RI2")
@@ -54,33 +54,24 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
   }
   
   /** helper function that returns the k^th highest or lowest value contain into the list
-   *  @param k the k^th number satisfying the condition given in f
    *  @param list the list of number over which we are applying our function
    *  @param f the function min or max 
    */
-  def retrieveKth(k : Int, list : MutableList[Double], f  : MutableList[Double] =>  Double ) : List[Double] = {
+  def getSupport(list : MutableList[Double]) : Double = {
+ 
+   var sortedPrices : MutableList[Double] = list.sorted
+   sortedPrices.get(tolerance) match {
+     case Some(value) => value
+     case None => -1.0
+   }
+  } 
+  
+  def getResistance(list : MutableList[Double]) : Double = {
     
-    var result = List[Double]()
-    var list2 = list
-    var i = 0
-    var index = 0
-   
-    for(i <- 1 to k) {
-      
-      result = f(list2) :: result 
-      index = list2.indexOf(f(list2))
-      list2 = list2.dropRight(list2.length - index) ++ list2.drop(index + 1)
-    }
-    return result
-  }
-  
-  //helper function that will be passed to retrieveKth
-  def max(l : MutableList[Double]) : Double  = {
-     l.max
-  }
-  
-  //helper function that will be passed to retrieveKth
-  def min(l : MutableList[Double]) : Double  = {
-    l.min
+    var sortedPrices : MutableList[Double] = list.sorted
+    sortedPrices.get(sortedPrices.size - tolerance) match {
+     case Some(value) => value
+     case None => -1.0
+   }
   }
 }
