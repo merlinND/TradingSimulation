@@ -1,14 +1,15 @@
 package ch.epfl.ts.indicators
 
 import ch.epfl.ts.component.Component
-import ch.epfl.ts.data.{OHLC, Transaction, Quote}
-import scala.collection.mutable.MutableList
+import ch.epfl.ts.data.{ OHLC, Transaction, Quote }
 import ch.epfl.ts.data.Currency
+import ch.epfl.ts.data.Currency.Currency
+import scala.collection.mutable.MutableList
 
 /**
  * computes OHLC tick for a tick frame of the provided size, the OHLCs are identified with the provided marketId
  */
-class OhlcIndicator(marketId: Long, tickSizeMillis: Long) extends Component {
+class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis: Long) extends Component {
 
   /**
    * stores transactions' price values
@@ -17,25 +18,27 @@ class OhlcIndicator(marketId: Long, tickSizeMillis: Long) extends Component {
   var volume: Double = 0.0
   var close: Double = 0.0
   var currentTick: Long = 0
-  val whatC = Currency.USD
-  val withC = Currency.CHF
- 
+  val (whatC, withC) = symbol
+
   override def receiver = {
     
+    //We either receive the price from quote (Backtesting/realtime trading) or from transaction (for simulation)
+    
     case t: Transaction => {
-      if(t.whatC == whatC && t.withC == withC){
-        if (whichTick(t.timestamp) > currentTick) {
-          // new tick, send OHLC with values stored until now, and reset accumulators (Transaction volume & prices)
-          send(computeOHLC)
-          currentTick = whichTick(t.timestamp)
-        }
-        values += t.price
-        volume = volume + t.volume
+      if (whichTick(t.timestamp) > currentTick) {
+        // new tick, send OHLC with values stored until now, and reset accumulators (Transaction volume & prices)
+        send(computeOHLC)
+        currentTick = whichTick(t.timestamp)
       }
+      values += t.price
+      volume = volume + t.volume
     }
 
     case q: Quote => {
-      if(q.whatC == whatC && q.withC == withC){
+      if(currentTick==0){
+         currentTick =whichTick(q.timestamp)
+      }
+      if (q.whatC == whatC && q.withC == withC) {
         println("OhlcIndicator : recieved quote" + q.timestamp)
         if (whichTick(q.timestamp) > currentTick) {
           send(computeOHLC)
@@ -60,7 +63,7 @@ class OhlcIndicator(marketId: Long, tickSizeMillis: Long) extends Component {
   private def computeOHLC: OHLC = {
     // set OHLC's timestamp
     val tickTimeStamp = currentTick * tickSizeMillis
-    
+
     if (!values.isEmpty) {
       close = values.head
       val ohlc = OHLC(marketId, values.last, values.max(Ordering.Double), values.min(Ordering.Double), values.head, volume, tickTimeStamp, tickSizeMillis)
