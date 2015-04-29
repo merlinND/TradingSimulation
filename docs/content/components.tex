@@ -48,7 +48,7 @@ Following code snippet illustrates a very simple component which just prints and
   }
 \end{lstlisting}
 
-\subsubsection{Create Instances of Components}
+\subsection{Create Instances of Components}
 
 To create an instance of a component, we have to first create a \emph{component builder} as follows:
 
@@ -74,7 +74,7 @@ Then we can create an instance of \emph{Arbitrageur} with following code snippet
 
 As you can see in the code snippet above, first we create an instance of \emph{Props}\footnote{\url{http://doc.akka.io/api/akka/2.3.1/index.html\#akka.actor.Props}}. The first argument to \emph{Props} is the class we want to instantiate, and the remaining arguments are exactly the parameters that the constructor of the class \emph{Arbitrageur} expects.
 
-\emph{builder.createRef} then takes \emph{props} and a name for the component to create an instance of the component. Note that the return value of \emph{builder.createRef} is a pointer to an instance of \emph{ComponentRef} instead of \emph{Arbitrageur}.
+In the second line, \emph{builder.createRef} then takes \emph{props} and a name for the component to create an instance of the component. Note that the return value of \emph{builder.createRef} is a pointer to an instance of \emph{ComponentRef} instead of \emph{Arbitrageur}.
 
 We have learned how to created instances of components, next let's see how to connect them.
 
@@ -82,7 +82,7 @@ We have learned how to created instances of components, next let's see how to co
 Internally, \emph{builder.createRef} will call \emph{actorOf} on an instance of \emph{ActorSystem} to create an instance of the component. The whole process seems a little awkward, but that's how Akka works. If you ever have a chance to checkout Akka(\href{http://akka.io}{akka.io}), you'll find it's worth the pain.
 \end{info}
 
-\subsubsection{Connect Components}
+\subsection{Connect Components}
 
 To connect an upstream component A to a downstream component B, we need to specify what types of messages B expects to receive from A. During the running A would only send messages of the specified types to B. For example, in the following code snippet, \emph{sobiTrader} will only send \emph{LimitBidOrder} messages to \emph{market}, and only send \emph{LimitAskOrder} messages to \emph{display}.
 
@@ -98,20 +98,6 @@ A downstream component can register as many message types as the upstream compon
 \end{lstlisting}
 
 If a downstream component registers a message type that the upstream component can't provide, the registration has no effect. In practice, it's important to check carefully what messages a component can receive and provide.
-
-Following list are all the types messages that are exchanged between components:
-
-\begin{itemize}
-\item Transaction
-\item LimitBidOrder
-\item LimitAskOrder
-\item MarketBidOrder
-\item MarketAskOrder
-\item DelOrder
-\item Quote
-\item OHLC
-\item MA
-\end{itemize}
 
 \subsection{Simulators}
 
@@ -168,4 +154,5 @@ Other components
 \item Backloop
 \item Replay
 \item BatcherComponent
+\item Evaluator
 \end{itemize}
