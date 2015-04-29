@@ -1,4 +1,4 @@
-implicit val builder = new ComponentBuilder("example")
+val builder = new ComponentBuilder("example")
 
 // market params
 val marketId = 0L
