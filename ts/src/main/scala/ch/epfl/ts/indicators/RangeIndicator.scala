@@ -3,7 +3,6 @@ package ch.epfl.ts.indicators
 import ch.epfl.ts.component.Component
 import ch.epfl.ts.data.OHLC
 import scala.collection.mutable.MutableList
-import com.sun.xml.internal.bind.v2.model.annotation.Init
 
 class RI(val support : Double, val resistance : Double, val period : Int)
 case class RI2( override val support : Double, override val resistance : Double, override val period : Int ) extends RI(support,resistance,period)
