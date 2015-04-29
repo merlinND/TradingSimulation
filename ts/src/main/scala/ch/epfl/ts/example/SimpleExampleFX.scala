@@ -17,12 +17,14 @@ import ch.epfl.ts.data.{ Quote, OHLC }
 import ch.epfl.ts.data.Transaction
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
-import ch.epfl.ts.indicators.{ OhlcIndicator, MaIndicator, MA, SMA }
+import ch.epfl.ts.indicators.{ OhlcIndicator, MaIndicator, MovingAverage, SMA }
+import ch.epfl.ts.data.Currency
+import ch.epfl.ts.engine.RevenueCompute
 
 
 object SimpleExampleFX {
   def main(args: Array[String]): Unit = {
-    implicit val builder = new ComponentBuilder("simpleFX")
+    val builder = new ComponentBuilder("simpleFX")
     val marketForexId = MarketNames.FOREX_ID
 
     // ----- Creating actors
@@ -34,48 +36,35 @@ object SimpleExampleFX {
     val rules = new ForexMarketRules()
     val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
     
-    // Persistor
-    val dummyPersistor = new DummyPersistor()
-    
-    // Backloop
-    val backloop = builder.createRef(Props(classOf[BackLoop], marketForexId, dummyPersistor), "backloop")
-    
     // Trader: cross moving average
     val traderId : Long = 123L
+    val symbol = (Currency.EUR,Currency.USD)
     val volume = 10.0
-    val shortPeriod = 5
-    val longPeriod = 20
-    val trader = builder.createRef(Props(classOf[SimpleFXTrader], traderId, shortPeriod, longPeriod, volume), "simpleTrader")
+    val shortPeriod = 3
+    val longPeriod = 10
+    val periods=List(3,10)
+    val trader = builder.createRef(Props(classOf[SimpleFXTrader], traderId,symbol, shortPeriod, longPeriod, volume), "simpleTrader")
    
     // Indicator
     // specify period over which we build the OHLC (from quotes)
-    val period : Long = 5
-    val smaShort = builder.createRef(Props(classOf[SmaIndicator], shortPeriod), "smaShort")
-    val smaLong = builder.createRef(Props(classOf[SmaIndicator], longPeriod), "smaLong")
-    val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], fetcherFx.marketId, period), "ohlcIndicator")
+    val period : Long = 20000 //OHLC of 20 seconds 
+    val maCross = builder.createRef(Props(classOf[SmaIndicator], periods), "maCross")
+    val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], fetcherFx.marketId,symbol, period), "ohlcIndicator")
     
     // Display
     val traderNames = Map(traderId -> "MovingAverageFXTrader")
     val display = builder.createRef(Props(classOf[RevenueComputeFX], traderNames), "display")
 
     // ----- Connecting actors
-    fxQuoteFetcher.addDestination(forexMarket, classOf[Quote])
-    fxQuoteFetcher.addDestination(trader, classOf[Quote])
-    fxQuoteFetcher.addDestination(ohlcIndicator, classOf[Quote])
+    fxQuoteFetcher -> (Seq(forexMarket, ohlcIndicator), classOf[Quote])
 
-    trader.addDestination(forexMarket, classOf[MarketAskOrder])
-    trader.addDestination(forexMarket, classOf[MarketBidOrder])
+    trader -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
 
-    forexMarket.addDestination(backloop, classOf[Transaction])
-    forexMarket.addDestination(display, classOf[Transaction])
+    forexMarket -> (display, classOf[Transaction])
     
-    smaShort.addDestination(trader, classOf[SMA])
-    smaLong.addDestination(trader, classOf[SMA])
-    ohlcIndicator.addDestination(smaShort, classOf[OHLC])
-    ohlcIndicator.addDestination(smaLong, classOf[OHLC])
-
-    backloop.addDestination(trader, classOf[Transaction])
-
+    maCross -> (trader, classOf[SMA])
+    ohlcIndicator -> (maCross, classOf[OHLC])
+    
     builder.start
   }
 }
