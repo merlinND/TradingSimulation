@@ -25,6 +25,9 @@ class RangeTrader(id : Long, gapSupport : Double, gapResistance : Double, volume
   var oid: Long = 0;
   val uid = id;
   val (whatC, withC) = symbol
+  var recomputeRange : Boolean = true 
+  var resistance : Double = 0.0
+  var support : Double = 0.0
   
   /**
    * To make sure that we sell when we actually have something to sell
@@ -36,30 +39,38 @@ class RangeTrader(id : Long, gapSupport : Double, gapResistance : Double, volume
     
     case ohlc : OHLC => {
       currentPrice = ohlc.close
-      println("RangeTrader : received quote")
+      println("RangeTrader : received an OHLC")
     }
     
     case range : RI2 => {
       println("Range Trader : received a range")
+      println("Range trader have the following resistance and support : "+resistance +", "+support)
+      println("Range trader : received the following price" +currentPrice)
       
-      if(currentPrice < range.support * (1-gapSupport) && holdings > 0.0){
+      if(recomputeRange) {
+        support = range.support
+        resistance = range.resistance
+        recomputeRange = false
+      }
+      
+      if(currentPrice < support * (1-gapSupport) && holdings > 0.0){
         send(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
         oid += 1
         holdings = 0.0
-        
+        recomputeRange = true
         println("sell")
       }
         
-      if(currentPrice > range.resistance * (1+gapResistance) && holdings == 0.0){
+      if(currentPrice > resistance * (1+gapResistance) && holdings == 0.0){
         //time to go short
         send(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
         oid += 1
         holdings = volume
+        recomputeRange = true 
         println("buy")
       }
     }
     
     case _ => println("RangeTrader received unknown ... ")
-    
   }
 }

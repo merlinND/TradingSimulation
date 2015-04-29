@@ -21,10 +21,7 @@ import ch.epfl.ts.indicators.RangeIndicator
 import ch.epfl.ts.indicators.RI2
 import ch.epfl.ts.indicators.RI
 import ch.epfl.ts.data.Currency
-
-
-
-
+import ch.epfl.ts.indicators.RangeIndicatorPeek
 
 object RangeExample {
   
@@ -60,10 +57,10 @@ object RangeExample {
     
     //time period over which the indicator is computed
     val timePeriod : Int = 10
-    val tolerance = 1
+    val tolerance = 10
     
     val rangeIndicator = builder.createRef(Props(classOf[RangeIndicator], timePeriod, tolerance), "smaShort")
-    val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], fetcherFx.marketId, period), "ohlcIndicator")
+    val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], fetcherFx.marketId, (Currency.USD, Currency.CHF), period), "ohlcIndicator")
     
     // Display
     val traderNames = Map(traderId -> "MovingAverageFXTrader")
@@ -83,7 +80,7 @@ object RangeExample {
     ohlcIndicator.addDestination(rangeIndicator, classOf[OHLC])
     ohlcIndicator.addDestination(trader, classOf[OHLC])
     
-    backloop -> (trader, classOf[Transaction])
+    backloop.addDestination(trader, classOf[Transaction])
 
     builder.start
   }

@@ -4,6 +4,13 @@ import ch.epfl.ts.component.Component
 import ch.epfl.ts.data.OHLC
 import scala.collection.mutable.MutableList
 
+/**
+ * This indicator is meant to draw support and resistance range over a given time period and with some given tolerance 
+ * Note : not always possible to retrieve an accurate range over large period if there is lot of same prices that appears !
+ * @param tolerance represent the number of peeks that are allowed to be above resp. below the resistance resp. support line
+ * 
+ * TODO test whether we keep RangeIndicatorPeek or RangeIndicator or we can treat them as two different strategy ...  
+ */
 class RangeIndicatorPeek(val timePeriod : Int, tolerance : Int) extends Component{
   
   var price : Double = 0.0
