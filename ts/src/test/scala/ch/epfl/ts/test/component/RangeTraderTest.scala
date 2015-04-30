@@ -29,11 +29,10 @@ class RangeTraderTest extends TestKit(ActorSystem("testSystem", ConfigFactory.pa
   val traderId: Long = 123L
   val symbol = (Currency.USD, Currency.CHF)
   val volume = 1000.0
-  var gapSupport : Double = 0.0
-  var gapResistance : Double = 0.0
+  val orderWindow = 0.15
 
 
-  val trader = TestActorRef(Props(classOf[RangeTrader], traderId, gapSupport, gapResistance, volume, symbol))
+  val trader = TestActorRef(Props(classOf[RangeTrader], traderId, orderWindow, volume, symbol))
   trader ! StartSignal
 
   "A range trader " should {
@@ -46,78 +45,52 @@ class RangeTraderTest extends TestKit(ActorSystem("testSystem", ConfigFactory.pa
     }
   }
   
-  "A range trader " should {
-    "buy price exceed range" in {
+  //buy window is 4 + (6-4)*0.15 = 4.3
+    "A range trader " should {
+    "buy if prices are in the selling window " in {
       within(1 second) {
         EventFilter.debug(message = "buy", occurrences = 1) intercept {
-          trader ! OHLC(1L, 7, 7, 7, 7, 1000, 0L, 2)
+          trader ! OHLC(1L, 4.3, 4.3, 4.3, 4.3, 1000, 0L, 2)
         }
       }
     }
   }
-  
+ 
+  //range size is 2 so sell window start at 6 - (6-4)*0.15 = 5.7
   "A range trader " should {
-    "not make two consecutives buys" in {
+    "sell if price is in the sell window " in {
       within(1 second) {
-        EventFilter.debug(message = "nothing is done", occurrences = 1) intercept {
-          trader ! OHLC(1L, 10, 10, 10, 10, 1000, 0L, 2)
+        EventFilter.debug(message = "sell", occurrences = 1) intercept {
+          trader ! OHLC(1L, 5.7, 5.7, 5.7, 5.7, 1000, 0L, 2)
         }
       }
     }
   }
   
   "A range trader " should {
-    "update its range only after an order " in {
+    "not make to consecutives buys " in {
+      within(1 second) {
+        EventFilter.debug(message = "buy", occurrences = 1) intercept {
+          trader ! OHLC(1L, 4.3, 4.3, 4.3, 4.3, 1000, 0L, 2)
+        }
+        EventFilter.debug(message="nothing is done", occurrences = 1) intercept {
+          trader ! OHLC(1L, 4.3, 4.3, 4.3, 4.3, 1000, 0L, 2)
+        }
+      }
+    }
+  }
+  
+  
+  "A range trader " should {
+    "update its range only after a sell order " in {
       within(1 second) {
         EventFilter.debug(message = "range is updated", occurrences = 1) intercept {
+          //panic sell order
+          trader ! OHLC(1L, 1, 1, 1, 1, 1000, 0L, 2)
           trader ! RI2(5, 10, 100)
           trader ! RI2(0.954, 0.964, 100)
         }
       }
     }
   } 
-  
-  "A range trader " should {
-    "sell if support is breaken + he has something to sell " in {
-      within(1 second) {
-        EventFilter.debug(message = "sell", occurrences = 1) intercept {
-          trader ! OHLC(1L, 2, 2, 2, 2, 1000, 0L, 2)
-        }
-      }
-    }
-  }
-  
-  
-  /**
-   * Second part we test a range trader with gapResistance of 3% and gapSupport of 1%
-   */
-  
-  gapSupport = 0.01
-  gapResistance = 0.03
-  val traderWithGaps = TestActorRef(Props(classOf[RangeTrader], traderId, gapSupport, gapResistance, volume, symbol))
-  
-  
-  traderWithGaps ! StartSignal
-
-  "A range trader " should {
-    "make a buy only if the prices exceed resistance + the gap " in {
-      within(1 second) {
-        EventFilter.debug(message = "buy", occurrences = 1) intercept {
-          traderWithGaps ! RI2(5,10,100)
-          traderWithGaps ! OHLC(1L,11, 11, 11, 11, 1000, 0L, 2)
-          traderWithGaps ! RI2(5,10,100)
-        }
-      }
-    }
-  }
-  
-  "A range trader " should {
-    "make a sell only if the prices is below support - the gap " in {
-      within(1 second) {
-        EventFilter.debug(message = "sell", occurrences = 1) intercept {
-          traderWithGaps ! OHLC(1L,4.8, 4.8, 4.8, 4.8, 1000, 0L, 2)
-        }
-      }
-    }
-  }
 }

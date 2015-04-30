@@ -55,7 +55,7 @@ object RangeExample {
     // specify period over which we build the OHLC (from quotes)
     val period : Long = 5
     
-    //time period over which the indicator is computed
+    //time period over which the indicator is computed (in OHLC)
     val timePeriod : Int = 10
     val tolerance = 2
     

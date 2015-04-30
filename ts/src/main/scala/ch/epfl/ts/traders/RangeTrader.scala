@@ -13,12 +13,15 @@ import akka.actor.ActorLogging
 
 
 /** 
- * The strategy used by this trader is a classical mean reversion strategy. 
- * @param gapSupport the gap needed between the support line and the price to send an order
- * @param gapSupport the gap needed between the resistance line and the price to send an order
+ * The strategy used by this trader is a classical mean reversion strategy.
+ * We define to range the resistance and the support.  
+ * The resistance is considered as a ceiling and when prices are close to it we sell since we expect prices to go back to normal
+ * The support is considered as a floor ans when pricess are close to it is a ggod time to buy. But note that if prices breaks the
+ * support then we liquidate our position. We avoid the risk that prices will crash. 
+ * @param orderWindow the size of the window during which we will send order, expressed in percent of the range total size.
  * @param volume the volume that we want to buy
  */
-class RangeTrader(id : Long, gapSupport : Double, gapResistance : Double, volume : Double, val symbol : (Currency, Currency)) extends Component 
+class RangeTrader(id : Long, orderWindow : Double, volume : Double, val symbol : (Currency, Currency)) extends Component 
 with ActorLogging{
 
   var currentPrice: Double = 0.0
@@ -29,6 +32,7 @@ with ActorLogging{
   var recomputeRange : Boolean = true 
   var resistance : Double = Double.MaxValue
   var support : Double = Double.MinValue
+  var rangeSize : Double = 0.0
   
   /**
    * To make sure that we sell when we actually have something to sell
@@ -37,6 +41,10 @@ with ActorLogging{
   var holdings : Double = 0.0
   var rangeReady : Boolean = false
   
+  /**
+   * When we receive an OHLC we check if the price is in the buying range or in the selling range.
+   * If the price break the support we sell (assumption price will crashes)
+   */
   override def receiver = {
     
     case ohlc : OHLC => {
@@ -44,22 +52,43 @@ with ActorLogging{
       println("RangeTrader : received an OHLC")
       
       if(rangeReady) {
+        println(currentPrice)
+        println(support + (rangeSize * orderWindow))
+        println(holdings)
+        /**
+         * We are in the sell window
+         */
+        if(currentPrice >= resistance - (rangeSize * orderWindow) && holdings > 0.0) {
+          send(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
+          oid += 1
+          holdings = 0.0
+          recomputeRange = true 
+          log.debug("sell")
+        }
+       
+        /**
+         * We are in the buy window
+         */
         
-        if(currentPrice < support * (1-gapSupport) && holdings > 0.0){
+        else if(currentPrice <= support + (rangeSize * orderWindow) && currentPrice > support && holdings == 0.0) {
+          send(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
+          oid += 1
+          holdings = volume
+          recomputeRange = false
+          log.debug("buy")
+        }
+        
+        /**
+         * panic sell, the prices breaks the support
+         */
+        else if(currentPrice < support && holdings > 0) {
           send(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
           oid += 1
           holdings = 0.0
           recomputeRange = true
-          log.debug("sell")
+          log.debug("panic sell")
         }
-        
-        else if(currentPrice > resistance * (1+gapResistance) && holdings == 0.0) {
-          send(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
-          oid += 1
-          holdings = volume
-          recomputeRange = true 
-          log.debug("buy")
-        }
+
         else {
           log.debug("nothing is done")
         }
@@ -72,6 +101,7 @@ with ActorLogging{
       if(recomputeRange) {
         support = range.support
         resistance = range.resistance
+        rangeSize = resistance - support
         recomputeRange = false
         log.debug("range is updated")
       }

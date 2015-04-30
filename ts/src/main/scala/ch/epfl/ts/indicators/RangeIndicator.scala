@@ -9,7 +9,8 @@ case class RI2( override val support : Double, override val resistance : Double,
 /**
  * This indicator is meant to draw support and resistance range over a given time period and with some given tolerance 
  * Note : not always possible to retrieve an accurate range over large period if there is lot of same prices that appears !
- * @param tolerance represent the number of points that are allowed to be above resp. below the resistance resp. support line 
+ * @param tolerance set it to one 
+ * TODO do we really need to keep tolerance as parameter ? 
  */
 class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
   
