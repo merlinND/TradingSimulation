@@ -39,7 +39,6 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis:
          currentTick =whichTick(q.timestamp)
       }
       if (q.whatC == whatC && q.withC == withC) {
-        println("OhlcIndicator : recieved quote" + q.timestamp)
         if (whichTick(q.timestamp) > currentTick) {
           send(computeOHLC)
           currentTick = whichTick(q.timestamp)

@@ -27,7 +27,7 @@ object RangeExampleHistData {
 
     // variables for the fetcher
     val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-    val startDate = dateFormat.parse("201411")
+    val startDate = dateFormat.parse("201411") 
     val endDate   = dateFormat.parse("201411")
     val workingDir = "/Users/arnaud/Documents/data"
     val currencyPair = "USDCHF"
@@ -35,8 +35,6 @@ object RangeExampleHistData {
     // Create Components
     // build fetcher
     val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 1000.0),"HistFetcher")    
-    // build printer
-    val printer = builder.createRef(Props(classOf[Printer], "Printer"), "Printer")
 
     // Market
     val marketForexId = MarketNames.FOREX_ID
@@ -52,27 +50,27 @@ object RangeExampleHistData {
     
     // Trader: range trader. 
     val traderId : Long = 123L
-    val volume : Double = 10.0
-    val gapSupport : Double = 0.0
-    val gapResistance : Double = 0.0
-    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, gapSupport, gapResistance, volume, (Currency.USD, Currency.CHF)), "rangeTrader")
+    val volume : Double = 1000.0
+    val orderWindow : Double = 0.20
+    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, orderWindow, volume, (Currency.USD, Currency.CHF)), "rangeTrader")
    
     // Indicator
-    // specify period over which we build the OHLC (from quotes)
+    
+    // specify period over which we build the OHLC (from quotes) here 1 ohlc per minute
     val period : Long = 1000*60
     val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], marketForexId, (Currency.USD, Currency.CHF), period), "ohlcIndicator")
 
     //time period over which the indicator is computed
-    val timePeriod : Int = 10
-    val tolerance = 2
+    val timePeriod : Int = 30
+    val tolerance : Int = 5
     val rangeIndicator = builder.createRef(Props(classOf[RangeIndicator], timePeriod, tolerance), "smaShort")
     
     // Display
-    val traderNames = Map(traderId -> "MovingAverageFXTrader")
+    val traderNames = Map(traderId -> "rangeTrader")
     val display = builder.createRef(Props(classOf[RevenueComputeFX], traderNames), "display")
 
     // ----- Connecting actors
-    fetcher->(Seq(forexMarket, ohlcIndicator, printer), classOf[Quote])
+    fetcher->(Seq(forexMarket, ohlcIndicator), classOf[Quote])
     
     trader->(forexMarket, classOf[MarketAskOrder])
     trader->(forexMarket, classOf[MarketBidOrder])

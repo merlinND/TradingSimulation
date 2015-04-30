@@ -45,6 +45,17 @@ class RangeTraderTest extends TestKit(ActorSystem("testSystem", ConfigFactory.pa
     }
   }
   
+  "A range trader " should {
+    "recompute its range if he breaks the resistance " in {
+      within(1 second) {
+        EventFilter.debug(message = "resitance broken allow range recomputation", occurrences = 1) intercept {
+          trader ! OHLC(1L, 43, 43, 43, 43, 1000, 0L, 2)
+          trader ! RI2(4, 6, 100)
+        }
+      }
+    }
+  }
+  
   //buy window is 4 + (6-4)*0.15 = 4.3
     "A range trader " should {
     "buy if prices are in the selling window " in {
@@ -54,7 +65,7 @@ class RangeTraderTest extends TestKit(ActorSystem("testSystem", ConfigFactory.pa
         }
       }
     }
-  }
+  }  
  
   //range size is 2 so sell window start at 6 - (6-4)*0.15 = 5.7
   "A range trader " should {

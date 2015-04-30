@@ -47,9 +47,8 @@ object RangeExample {
     // Trader: range trader. 
     val traderId : Long = 123L
     val volume : Double = 10.0
-    val gapSupport : Double = 0.0
-    val gapResistance : Double = 0.0
-    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, gapSupport, gapResistance, volume, (Currency.USD, Currency.CHF)), "rangeTrader")
+    val orderWindow : Double = 0.15
+    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, orderWindow, volume, (Currency.USD, Currency.CHF)), "rangeTrader")
    
     // Indicator
     // specify period over which we build the OHLC (from quotes)
@@ -57,13 +56,12 @@ object RangeExample {
     
     //time period over which the indicator is computed (in OHLC)
     val timePeriod : Int = 10
-    val tolerance = 2
-    
+    val tolerance : Int = 1
     val rangeIndicator = builder.createRef(Props(classOf[RangeIndicator], timePeriod, tolerance), "smaShort")
     val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], fetcherFx.marketId, (Currency.USD, Currency.CHF), period), "ohlcIndicator")
     
     // Display
-    val traderNames = Map(traderId -> "MovingAverageFXTrader")
+    val traderNames = Map(traderId -> "rangeTrader")
     val display = builder.createRef(Props(classOf[RevenueComputeFX], traderNames), "display")
 
     // ----- Connecting actors

@@ -52,9 +52,10 @@ with ActorLogging{
       println("RangeTrader : received an OHLC")
       
       if(rangeReady) {
-        println(currentPrice)
-        println(support + (rangeSize * orderWindow))
-        println(holdings)
+        println("Range trader current price : "+currentPrice)
+        println("Range trader beggining of buying window " +support + (rangeSize * orderWindow))
+        println("Current holdings " + holdings)
+        println("Range trader resistance "+resistance )
         /**
          * We are in the sell window
          */
@@ -64,6 +65,7 @@ with ActorLogging{
           holdings = 0.0
           recomputeRange = true 
           log.debug("sell")
+          println("sell")
         }
        
         /**
@@ -76,6 +78,7 @@ with ActorLogging{
           holdings = volume
           recomputeRange = false
           log.debug("buy")
+          println("buy")
         }
         
         /**
@@ -87,10 +90,21 @@ with ActorLogging{
           holdings = 0.0
           recomputeRange = true
           log.debug("panic sell")
+          println("panic sell")
+        }
+        
+        /**
+         * We are breaking the resistance with no holdings recompute the range
+         */
+        else if(currentPrice > resistance) {
+          recomputeRange = true
+          log.debug("resitance broken allow range recomputation")
+          println("resitance broken allow range recomputation")
         }
 
         else {
           log.debug("nothing is done")
+          println("nothing is done")
         }
       }
     }
