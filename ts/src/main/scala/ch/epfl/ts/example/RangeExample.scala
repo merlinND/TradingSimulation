@@ -21,7 +21,6 @@ import ch.epfl.ts.indicators.RangeIndicator
 import ch.epfl.ts.indicators.RI2
 import ch.epfl.ts.indicators.RI
 import ch.epfl.ts.data.Currency
-import ch.epfl.ts.indicators.RangeIndicatorPeek
 
 object RangeExample {
   

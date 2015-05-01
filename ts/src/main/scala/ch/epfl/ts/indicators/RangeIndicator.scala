@@ -7,9 +7,13 @@ import scala.collection.mutable.MutableList
 class RI(val support : Double, val resistance : Double, val period : Int)
 case class RI2( override val support : Double, override val resistance : Double, override val period : Int ) extends RI(support,resistance,period)
 /**
- * This indicator is meant to draw support and resistance range over a given time period and with some given tolerance 
- * Note : not always possible to retrieve an accurate range over large period if there is lot of same prices that appears !
- * @param tolerance the number of extremum value we discard. 
+ * This indicator will define a range that contains most of the prices in the given period.
+ * A range is defined by two value a resistance that can be seen as the ceiling and a support which can be seen as a floor.
+ * 
+ * Note : tolerance should be set to 1 to have the classical range trading strategy. However if you want x
+ * to have a more aggressive strategy you can increase the tolerance. 
+ *
+ *  @param tolerance the number of extremum value we discarded set to 1 to have the "classical" range.
  */
 class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
   
@@ -21,28 +25,32 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
   
   var price : Double = 0.0 
  
-  var pricePeriod : MutableList[Double] = MutableList[Double]()
+  var pricesInPeriod : MutableList[Double] = MutableList[Double]()
   
   //boolean variable use to detect when the initialization phase is done, when we receive enough info to compute first period
   var initializationDone : Boolean = false
-  var count : Int = 0
+  
+  /**
+   * We need to make sure that we receive enough ohlc before computing the ranges.
+   */
+  var countOHLC : Int = 0
   
   override def receiver = {
 
     case o: OHLC => {
       price = o.close
       if(!initializationDone){
-        count += 1
-        pricePeriod = pricePeriod :+ price
-        if(count == timePeriod) {
+        countOHLC += 1
+        pricesInPeriod = pricesInPeriod :+ price
+        if(countOHLC == timePeriod) {
           initializationDone = true
         }
       }
       
       else {
-        pricePeriod = pricePeriod.tail :+ price
-        resistance = getResistance(pricePeriod)
-        support = getSupport(pricePeriod)
+        pricesInPeriod = pricesInPeriod.tail :+ price
+        resistance = getResistance(pricesInPeriod)
+        support = getSupport(pricesInPeriod)
         var ri = RI2(support, resistance, timePeriod)
         send(ri)
         println("RangeIndicator : send a RI2")
@@ -52,9 +60,9 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
     case _ => println("RangeIndicator : received unknown ! ")
   }
   
-  /** helper function that returns the k^th highest or lowest value contain into the list
-   *  @param list the list of number over which we are applying our function
-   *  @param f the function min or max 
+  /** 
+   *  @param list the list of prices of size timePeriod
+   *  @return the support for list of prices and the tolerance
    */
   def getSupport(list : MutableList[Double]) : Double = {
  
@@ -64,7 +72,10 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
      case None => -1.0
    }
   } 
-  
+  /**
+   * @param list the list of prices of size timePeriod
+   * @return the support for list of prices and the tolerance
+   */
   def getResistance(list : MutableList[Double]) : Double = {
     
     var sortedPrices : MutableList[Double] = list.sorted
