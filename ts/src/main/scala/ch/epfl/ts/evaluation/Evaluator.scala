@@ -51,7 +51,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, initial: Double, currency:
    */
   override def connect(ar: ActorRef, ct: Class[_], name: String) = {
     if (ct.equals(classOf[EvaluationReport]))
-      dest += (ct -> (ar :: dest.getOrElse(ct, List())))
+      super.connect(ar, ct, name)
     else
       trader.ar ! ComponentRegistration(ar, ct, name)
   }

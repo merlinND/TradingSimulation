@@ -69,5 +69,4 @@ involving current wallet state. ( example : buy order with 10% of total availabl
 
     }
   }
-
 }
