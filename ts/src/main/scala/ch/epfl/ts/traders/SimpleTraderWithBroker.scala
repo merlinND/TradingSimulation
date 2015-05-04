@@ -26,7 +26,7 @@ import ch.epfl.ts.engine.Wallet
 object SimpleTraderWithBroker extends TraderCompanion {
   type ConcreteTrader = SimpleTraderWithBroker
   override protected val concreteTraderTag = scala.reflect.classTag[SimpleTraderWithBroker]
-  
+
   override def strategyRequiredParameters = Map()
 }
 
@@ -34,9 +34,8 @@ object SimpleTraderWithBroker extends TraderCompanion {
  * Dummy broker-aware trader.
  */
 class SimpleTraderWithBroker(uid: Long, parameters: StrategyParameters)
-    extends Trader(uid, parameters)
-    with ActorLogging {
-  
+    extends Trader(uid, parameters) {
+
   // Allows the usage of ask pattern in an Actor
   import context.dispatcher
 
