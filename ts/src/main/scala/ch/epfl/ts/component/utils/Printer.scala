@@ -1,7 +1,7 @@
 package ch.epfl.ts.component.utils
 
 import ch.epfl.ts.component.Component
-import ch.epfl.ts.data.{DelOrder, LimitAskOrder, LimitBidOrder, LimitOrder, OHLC, Transaction, Tweet, Quote}
+import ch.epfl.ts.data.{ DelOrder, LimitAskOrder, LimitBidOrder, LimitOrder, OHLC, Transaction, Tweet, Quote }
 import ch.epfl.ts.evaluation.EvaluationReport
 
 /**
