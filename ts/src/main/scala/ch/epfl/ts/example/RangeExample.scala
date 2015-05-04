@@ -8,7 +8,6 @@ import ch.epfl.ts.component.fetch.TrueFxFetcher
 import ch.epfl.ts.component.persist.DummyPersistor
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.engine.MarketFXSimulator
-import ch.epfl.ts.engine.RevenueComputeFX
 import akka.actor.Props
 import ch.epfl.ts.component.utils.BackLoop
 import ch.epfl.ts.traders.RangeTrader
@@ -21,6 +20,12 @@ import ch.epfl.ts.indicators.RangeIndicator
 import ch.epfl.ts.indicators.RI2
 import ch.epfl.ts.indicators.RI
 import ch.epfl.ts.data.Currency
+import ch.epfl.ts.engine.Wallet
+import ch.epfl.ts.data.StrategyParameters
+import ch.epfl.ts.data.RealNumberParameter
+import ch.epfl.ts.data.WalletParameter
+import ch.epfl.ts.data.CurrencyPairParameter
+import ch.epfl.ts.data.CoefficientParameter
 
 object RangeExample {
   
@@ -44,25 +49,28 @@ object RangeExample {
     val backloop = builder.createRef(Props(classOf[BackLoop], marketForexId, dummyPersistor), "backloop")
     
     // Trader: range trader. 
-    val traderId : Long = 123L
-    val volume : Double = 10.0
-    val orderWindow : Double = 0.15
-    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, orderWindow, volume, (Currency.USD, Currency.CHF)), "rangeTrader")
+    val traderId: Long = 123L
+    val initialFunds: Wallet.Type = Map(Currency.USD -> 1000.0)
+    val parameters = new StrategyParameters(
+      RangeTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
+      RangeTrader.SYMBOL -> CurrencyPairParameter(Currency.USD, Currency.CHF),
+      RangeTrader.VOLUME -> RealNumberParameter(10.0),
+      RangeTrader.ORDER_WINDOW -> CoefficientParameter(0.15)
+    )
+    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, parameters), "RangeTrader")
    
     // Indicator
     // specify period over which we build the OHLC (from quotes)
     val period : Long = 5
     
-    //time period over which the indicator is computed (in OHLC)
+    // Time period over which the indicator is computed (in OHLC)
     val timePeriod : Int = 10
     val tolerance : Int = 1
     val rangeIndicator = builder.createRef(Props(classOf[RangeIndicator], timePeriod, tolerance), "smaShort")
     val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], fetcherFx.marketId, (Currency.USD, Currency.CHF), period), "ohlcIndicator")
-    
-    // Display
-    val traderNames = Map(traderId -> "rangeTrader")
-    val display = builder.createRef(Props(classOf[RevenueComputeFX], traderNames), "display")
 
+    // TODO: use evaluator if needed
+    
     // ----- Connecting actors
     fxQuoteFetcher->(Seq(forexMarket, ohlcIndicator), classOf[Quote])
     
@@ -70,7 +78,6 @@ object RangeExample {
     trader->(forexMarket, classOf[MarketBidOrder])
 
     forexMarket->(backloop, classOf[Transaction])
-    forexMarket->(display, classOf[Transaction])
     
     rangeIndicator->(trader, classOf[RI2])
     ohlcIndicator->(Seq(rangeIndicator, trader), classOf[OHLC])

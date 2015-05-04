@@ -9,31 +9,55 @@ import ch.epfl.ts.data.Quote
 import ch.epfl.ts.indicators.RI2
 import ch.epfl.ts.indicators.RI
 import ch.epfl.ts.data.OHLC
-import akka.actor.ActorLogging 
+import akka.actor.ActorLogging
+import ch.epfl.ts.data.StrategyParameters
+import ch.epfl.ts.data.CurrencyPairParameter
+import ch.epfl.ts.data.RealNumberParameter
+import ch.epfl.ts.data.CoefficientParameter
 
+/**
+ * RangeTrader companion object
+ */
+object RangeTrader extends TraderCompanion {
+
+  /** Currencies to trade */
+  val SYMBOL = "Symbol"
+  /** Volume to trade */
+  val VOLUME = "Volume"
+  /** Size of the window during which we will send order, expressed in percent of the range total size */
+  val ORDER_WINDOW = "OrderWindow"
+  
+  override def strategyRequiredParameters = Map(
+    SYMBOL -> CurrencyPairParameter,
+    VOLUME -> RealNumberParameter,
+    ORDER_WINDOW -> CoefficientParameter
+  )
+}
 
 /** 
  * The strategy used by this trader is a classical mean reversion strategy.
  * We define to range the resistance and the support.  
  * The resistance is considered as a ceiling and when prices are close to it we sell since we expect prices to go back to normal
  * The support is considered as a floor ans when pricess are close to it is a ggod time to buy. But note that if prices breaks the
- * support then we liquidate our position. We avoid the risk that prices will crash. 
- * @param orderWindow the size of the window during which we will send order, expressed in percent of the range total size.
+ * support then we liquidate our position. We avoid the risk that prices will crash.
  * @param volume the volume that we want to buy
  */
-class RangeTrader(id : Long, orderWindow : Double, volume : Double, val symbol : (Currency, Currency)) extends Component 
-with ActorLogging{
+class RangeTrader(uid : Long, parameters: StrategyParameters)
+    extends Trader(uid, parameters) {
 
-  var currentPrice: Double = 0.0
+  override def companion = RangeTrader
   
-  var oid: Long = 0;
-  val uid = id;
-  val (whatC, withC) = symbol
+  val (whatC, withC) = parameters.get[(Currency, Currency)](RangeTrader.SYMBOL)
+  val volume = parameters.get[Double](RangeTrader.VOLUME)
+  val orderWindow = parameters.get[Double](RangeTrader.ORDER_WINDOW)
+  
   var recomputeRange : Boolean = true 
   var resistance : Double = Double.MaxValue
   var support : Double = Double.MinValue
   var rangeSize : Double = 0.0
-  
+  var oid: Long = 0;
+  var currentPrice: Double = 0.0
+
   /**
    * To make sure that we sell when we actually have something to sell
    * and buy only when we haven't buy yet
