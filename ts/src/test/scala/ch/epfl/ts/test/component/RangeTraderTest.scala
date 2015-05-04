@@ -9,30 +9,40 @@ import akka.testkit.TestActorRef
 import akka.testkit.TestKit
 import ch.epfl.ts.component.StartSignal
 import ch.epfl.ts.data.Currency
-import ch.epfl.ts.traders.SimpleFXTrader
 import com.typesafe.config.ConfigFactory
 import ch.epfl.ts.indicators.SMA
 import akka.testkit.EventFilter
 import ch.epfl.ts.traders.RangeTrader
 import ch.epfl.ts.indicators.RI2
 import ch.epfl.ts.data.OHLC
+import ch.epfl.ts.test.TestHelpers
+import ch.epfl.ts.engine.Wallet
+import ch.epfl.ts.data.CurrencyPairParameter
+import ch.epfl.ts.data.StrategyParameters
+import ch.epfl.ts.data.RealNumberParameter
+import ch.epfl.ts.data.WalletParameter
+import ch.epfl.ts.data.CoefficientParameter
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
 
-class RangeTraderTest extends TestKit(ActorSystem("testSystem", ConfigFactory.parseString(
-  """
-  akka.loglevel = "DEBUG"
-  akka.loggers = ["akka.testkit.TestEventListener"]
-  """))) with WordSpecLike {
+@RunWith(classOf[JUnitRunner])
+class RangeTraderTest
+  extends TestKit(TestHelpers.makeTestActorSystem("RangeTraderTestActorSystem"))
+  with WordSpecLike {
 
   /**
    * First part we test a range trader with no gapResitance and gapSupport 
    */
   val traderId: Long = 123L
-  val symbol = (Currency.USD, Currency.CHF)
-  val volume = 1000.0
-  val orderWindow = 0.15
-
-
-  val trader = TestActorRef(Props(classOf[RangeTrader], traderId, orderWindow, volume, symbol))
+  val initialFunds: Wallet.Type = Map(Currency.USD -> 1000.0)
+  val parameters = new StrategyParameters(
+    RangeTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
+    RangeTrader.SYMBOL -> CurrencyPairParameter(Currency.USD, Currency.CHF),
+    RangeTrader.VOLUME -> RealNumberParameter(1000.0),
+    RangeTrader.ORDER_WINDOW -> CoefficientParameter(0.15)
+  )
+  
+  val trader = TestActorRef(Props(classOf[RangeTrader], traderId, parameters))
   trader ! StartSignal
 
   "A range trader " should {

@@ -19,7 +19,9 @@ import ch.epfl.ts.data.CoefficientParameter
  * RangeTrader companion object
  */
 object RangeTrader extends TraderCompanion {
-
+  type ConcreteTrader = RangeTrader
+  override protected val concreteTraderTag = scala.reflect.classTag[RangeTrader]
+  
   /** Currencies to trade */
   val SYMBOL = "Symbol"
   /** Volume to trade */
