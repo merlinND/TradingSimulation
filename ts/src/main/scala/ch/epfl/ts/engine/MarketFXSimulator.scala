@@ -31,7 +31,9 @@ class MarketFXSimulator(marketId: Long, rules: ForexMarketRules) extends MarketS
         case Some(t) => rules.matchingFunction(marketId, marketAsk, book.bids, book.asks, this.send[Streamable], t._1)
         case None    => // TODO: throw an error of some kind
       }
+    //TODO Forward quote (just uncomment) , and disconnect all other components that are connected to the fetcher : use marketFXSimulator instead as quote provider.
     case q: Quote =>
+      //send(q)
       tradingPrices((q.whatC, q.withC)) = (q.bid, q.ask)
 
     case _ =>

@@ -63,7 +63,6 @@ object MovingAverageFXExample {
 
     // Trader: cross moving average
     val traderId = 123L
-    val volume = 1000.0
     val shortPeriod = 2
     val longPeriod = 6
     val periods = List(2, 6)
@@ -72,7 +71,7 @@ object MovingAverageFXExample {
     val initialFund=5000.0
     val initialCurrency=Currency.CHF
     
-    val trader = builder.createRef(Props(classOf[MovingAverageTrader], traderId, symbol,initialFund,initialCurrency, shortPeriod, longPeriod, volume, tolerance, false), "MovingAverageTrader")
+    val trader = builder.createRef(Props(classOf[MovingAverageTrader], traderId, symbol,initialFund,initialCurrency, shortPeriod, longPeriod, tolerance, false), "MovingAverageTrader")
 
     // Indicator
     // Specify period over which we build the OHLC (from quotes)
@@ -93,7 +92,8 @@ object MovingAverageFXExample {
     val traderNames = Map(traderId -> trader.name)
 
     // ----- Connecting actors
-    fxQuoteFetcher -> (Seq(forexMarket, ohlcIndicator,broker), classOf[Quote])
+    //TODO : Leave only forexMarket (other components will get quote from it)
+    fxQuoteFetcher -> (Seq(forexMarket, ohlcIndicator,broker,trader), classOf[Quote])
     
     trader->(broker,classOf[Register],classOf[FundWallet],classOf[GetWalletFunds],classOf[MarketAskOrder], classOf[MarketBidOrder])
     broker->(forexMarket,classOf[MarketAskOrder], classOf[MarketBidOrder])
