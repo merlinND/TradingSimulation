@@ -14,6 +14,9 @@ import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.data.CoefficientParameter
+import akka.actor.Props
+import ch.epfl.ts.component.fetch.MarketNames
+import ch.epfl.ts.indicators.OhlcIndicator
 
 /**
  * RangeTrader companion object
@@ -48,6 +51,7 @@ class RangeTrader(uid : Long, parameters: StrategyParameters)
     extends Trader(uid, parameters) {
 
   override def companion = RangeTrader
+ 
   
   val (whatC, withC) = parameters.get[(Currency, Currency)](RangeTrader.SYMBOL)
   val volume = parameters.get[Double](RangeTrader.VOLUME)
@@ -60,6 +64,16 @@ class RangeTrader(uid : Long, parameters: StrategyParameters)
   var oid: Long = 0;
   var currentPrice: Double = 0.0
 
+  val marketId = MarketNames.FOREX_ID
+  val oneMinute : Long = 1000*60
+  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), oneMinute),"ohlcIndicator")
+  println(ohlcIndicator.path)
+  
+  //period of time over which we will force the recomputation of our range (expressed in OHLC)
+  val timePeriod = 10
+  val tolerance = 1
+  val rangeIndicator = context.actorOf(Props(classOf[RangeIndicator], timePeriod, tolerance), "rangeIndicator")
+  
   /**
    * To make sure that we sell when we actually have something to sell
    * and buy only when we haven't buy yet
@@ -73,15 +87,22 @@ class RangeTrader(uid : Long, parameters: StrategyParameters)
    */
   override def receiver = {
     
+    /**We forward the quote that we receive to
+     * ohlcIndicator*/
+    case quote : Quote => {
+      ohlcIndicator ! quote
+    }
+    
+    /**OHLC we allow us to take decision order by knowing current price
+     * we also forward them to rangeIndicator in order to know support and 
+     * resistance */
     case ohlc : OHLC => {
+      rangeIndicator ! ohlc
       currentPrice = ohlc.close
       println("RangeTrader : received an OHLC")
+      println("price : "+ohlc.close+", support : "+support+", resistance : "+resistance)
       
       if(rangeReady) {
-        println("Range trader current price : "+currentPrice)
-        println("Range trader beggining of buying window " +support + (rangeSize * orderWindow))
-        println("Current holdings " + holdings)
-        println("Range trader resistance "+resistance )
         /**
          * We are in the sell window
          */
@@ -127,7 +148,12 @@ class RangeTrader(uid : Long, parameters: StrategyParameters)
           log.debug("resitance broken allow range recomputation")
           println("resitance broken allow range recomputation")
         }
-
+        
+        else if(currentPrice < support ){
+          log.debug("we break support with no holdings -> recompute range")
+          recomputeRange = true
+        }
+        
         else {
           log.debug("nothing is done")
           println("nothing is done")

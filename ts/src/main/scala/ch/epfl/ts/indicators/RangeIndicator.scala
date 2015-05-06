@@ -3,6 +3,7 @@ package ch.epfl.ts.indicators
 import ch.epfl.ts.component.Component
 import ch.epfl.ts.data.OHLC
 import scala.collection.mutable.MutableList
+import akka.actor.Actor
 
 class RI(val support : Double, val resistance : Double, val period : Int)
 case class RI2( override val support : Double, override val resistance : Double, override val period : Int ) extends RI(support,resistance,period)
@@ -15,7 +16,7 @@ case class RI2( override val support : Double, override val resistance : Double,
  *
  *  @param tolerance the number of extremum value we discarded set to 1 to have the "classical" range.
  */
-class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
+class RangeIndicator(timePeriod : Int, tolerance : Int) extends Actor {
   
   // resistance will be the period^th highest prices  
   var support : Double = 0.0
@@ -35,7 +36,7 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
    */
   var countOHLC : Int = 0
   
-  override def receiver = {
+  override def receive = {
 
     case o: OHLC => {
       price = o.close
@@ -52,7 +53,7 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Component {
         resistance = getResistance(pricesInPeriod)
         support = getSupport(pricesInPeriod)
         var ri = RI2(support, resistance, timePeriod)
-        send(ri)
+        sender() ! ri
         println("RangeIndicator : send a RI2")
       }
     }

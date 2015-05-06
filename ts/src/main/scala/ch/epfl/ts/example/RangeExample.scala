@@ -1,31 +1,37 @@
 package ch.epfl.ts.example
 
-import ch.epfl.ts.component.ComponentBuilder
-import ch.epfl.ts.component.fetch.PullFetchComponent
-import ch.epfl.ts.data.{ Quote, OHLC }
-import ch.epfl.ts.engine.ForexMarketRules
-import ch.epfl.ts.component.fetch.TrueFxFetcher
-import ch.epfl.ts.component.persist.DummyPersistor
-import ch.epfl.ts.component.fetch.MarketNames
-import ch.epfl.ts.engine.MarketFXSimulator
 import akka.actor.Props
+import ch.epfl.ts.component.ComponentBuilder
+import ch.epfl.ts.component.fetch.HistDataCSVFetcher
+import ch.epfl.ts.component.fetch.MarketNames
+import ch.epfl.ts.component.persist.DummyPersistor
 import ch.epfl.ts.component.utils.BackLoop
-import ch.epfl.ts.traders.RangeTrader
-import ch.epfl.ts.indicators.OhlcIndicator
-import ch.epfl.ts.data.Transaction
-import ch.epfl.ts.data.MarketBidOrder
-import scala.reflect.ClassTag
-import ch.epfl.ts.data.MarketAskOrder
-import ch.epfl.ts.indicators.RangeIndicator
-import ch.epfl.ts.indicators.RI2
-import ch.epfl.ts.indicators.RI
-import ch.epfl.ts.data.Currency
-import ch.epfl.ts.engine.Wallet
-import ch.epfl.ts.data.StrategyParameters
-import ch.epfl.ts.data.RealNumberParameter
-import ch.epfl.ts.data.WalletParameter
-import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.CoefficientParameter
+import ch.epfl.ts.data.Currency
+import ch.epfl.ts.data.CurrencyPairParameter
+import ch.epfl.ts.data.MarketAskOrder
+import ch.epfl.ts.data.MarketBidOrder
+import ch.epfl.ts.data.OHLC
+import ch.epfl.ts.data.Quote
+import ch.epfl.ts.data.RealNumberParameter
+import ch.epfl.ts.data.StrategyParameters
+import ch.epfl.ts.data.Transaction
+import ch.epfl.ts.data.WalletParameter
+import ch.epfl.ts.engine.ForexMarketRules
+import ch.epfl.ts.engine.MarketFXSimulator
+import ch.epfl.ts.engine.Wallet
+import ch.epfl.ts.evaluation.Evaluator
+import ch.epfl.ts.indicators.OhlcIndicator
+import ch.epfl.ts.indicators.RI2
+import ch.epfl.ts.indicators.RangeIndicator
+import ch.epfl.ts.traders.RangeTrader
+import ch.epfl.ts.evaluation.Evaluator
+import ch.epfl.ts.evaluation.EvaluationReport
+import ch.epfl.ts.component.utils.Printer
+import scala.language.postfixOps
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.DurationInt
+
 
 object RangeExample {
   
@@ -35,9 +41,16 @@ object RangeExample {
 
     // ----- Creating actors
     // Fetcher
-    val fetcherFx: TrueFxFetcher = new TrueFxFetcher
-    val fxQuoteFetcher = builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "trueFxFetcher")
+    //val fetcherFx: TrueFxFetcher = new TrueFxFetcher
+    //val fetcher = builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "trueFxFetcher")
     
+     val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
+     val startDate = dateFormat.parse("201411");
+     val endDate   = dateFormat.parse("201411");
+     val workingDir = "/Users/arnaud/Documents/data";
+     val currencyPair = "USDCHF";
+     val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 100.0),"HistFetcher")
+
     // Market
     val rules = new ForexMarketRules()
     val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
@@ -62,26 +75,33 @@ object RangeExample {
     // Indicator
     // specify period over which we build the OHLC (from quotes)
     val period : Long = 5
+  
     
-    // Time period over which the indicator is computed (in OHLC)
-    val timePeriod : Int = 10
-    val tolerance : Int = 1
-    val rangeIndicator = builder.createRef(Props(classOf[RangeIndicator], timePeriod, tolerance), "smaShort")
-    val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], fetcherFx.marketId, (Currency.USD, Currency.CHF), period), "ohlcIndicator")
-
-    // TODO: use evaluator if needed
+    // Evaluator
+    val periodEvaluator : FiniteDuration  = 2000 milliseconds
+    val initial = 1000000.0
+    val currency = Currency.CHF
+    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, initial, currency, periodEvaluator), "evaluator")
+    
+    
+    //printer
+    val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")
+   
     
     // ----- Connecting actors
-    fxQuoteFetcher->(Seq(forexMarket, ohlcIndicator), classOf[Quote])
+    
+   // fetcher -> (Seq(forexMarket, evaluator, ohlcIndicator), classOf[Quote])
+    fetcher -> (Seq(forexMarket, evaluator, trader), classOf[Quote])   
+    evaluator -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
+    evaluator -> (printer, classOf[EvaluationReport])
+    
+    //fetcher->(Seq(forexMarket, ohlcIndicator), classOf[Quote])
     
     trader->(forexMarket, classOf[MarketAskOrder])
     trader->(forexMarket, classOf[MarketBidOrder])
 
     forexMarket->(backloop, classOf[Transaction])
-    
-    rangeIndicator->(trader, classOf[RI2])
-    ohlcIndicator->(Seq(rangeIndicator, trader), classOf[OHLC])
-    
+       
     backloop->(trader, classOf[Transaction])
 
     builder.start

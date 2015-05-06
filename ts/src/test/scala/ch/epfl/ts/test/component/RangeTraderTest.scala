@@ -103,7 +103,7 @@ class RangeTraderTest
   
   
   "A range trader " should {
-    "update its range only after a sell order " in {
+    "update its range after a sell order " in {
       within(1 second) {
         EventFilter.debug(message = "range is updated", occurrences = 1) intercept {
           //panic sell order
