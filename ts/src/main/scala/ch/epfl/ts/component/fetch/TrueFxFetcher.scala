@@ -18,31 +18,36 @@ class TrueFxFetcher(symbols: List[(Currency.Currency, Currency.Currency)] = List
   val serverBase = "http://webrates.truefx.com/rates/connect.html" + "?f=csv"
 
   val marketId = MarketNames.FOREX_ID
-
   
   def fetch(): List[Quote] = {
     val csv = Request.Get(serverBase).execute().returnContent().asString()
     
-    for {
-      line <- csv.split('\n').toList
-      if line.length() > 1 // Eliminate the last empty line
-
-      fields = line.split(',')
-      currencies = fields(0).split('/').map(s => Currency.fromString(s.toLowerCase))
-      timestamp = fields(1).toLong
-      values = fields.drop(1).map(s => s.toDouble)
+    /** Parse a single line of TrueFX CSV format to Quote */
+    def parseLine(line: String): Quote = {
+      val fields = line.split(',')
+      val currencies = fields(0).split('/').map(s => Currency.fromString(s.toLowerCase))
+      val timestamp = fields(1).toLong
+      val values = fields.drop(1).map(s => s.toDouble)
       
       /**
        * Prices are separated in "big figure" and "points".
        * We can simply concatenate them to obtain the full price.
        */
-      bid = (fields(2) + fields(3)).toDouble
-      ask = (fields(4) + fields(5)).toDouble
+      val bid = (fields(2) + fields(3)).toDouble
+      val ask = (fields(4) + fields(5)).toDouble
       
-      // Filter on the currencies that the user is interested in
-      if( symbols.isEmpty || symbols.contains((currencies(0), currencies(1))) )
+      Quote(marketId, timestamp, currencies(0), currencies(1), bid, ask)
+    }
+    
+    
+    for {
+      line <- csv.split('\n').toList
+      if (line.length() > 1) // Eliminate the last empty line
+      quote = parseLine(line)
         
-    } yield Quote(marketId, timestamp, currencies(0), currencies(1), bid, ask)
+      // Filter on the currencies that the user is interested in
+      if (symbols.isEmpty || symbols.contains((quote.whatC, quote.withC)))
+    } yield quote
   }
   
   def interval(): Int = 5000
