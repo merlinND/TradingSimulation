@@ -109,10 +109,10 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     case ConfirmRegistration => {
       broker = sender()
       registered = true
-      log.debug("TraderWithB: Broker confirmed")
+      log.debug("MATrader: Broker confirmed")
     }
 
-    case ma: MovingAverage => {
+    case ma: MovingAverage if registered => {
       println("Trader receive MAs")
       ma.value.get(shortPeriod.length.toInt) match {
         case Some(x) => currentShort = x
@@ -122,15 +122,14 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
         case Some(x) => currentLong = x
         case None    => println("Error: Missing indicator with period " + longPeriod)
       }
-
-      decideOrder
+        decideOrder
     }
 
     // Order has been executed on the market = CLOSE Positions
     case _: ExecutedBidOrder => // TODO SimplePrint / Log /.../Frontend log ??
     case _: ExecutedAskOrder => // TODO SimplePrint/Log/.../Frontend log ??
 
-    case whatever => println("SimpleTrader: received unknown : " + whatever)
+    case whatever            => println("SimpleTrader: received unknown : " + whatever)
   }
   def decideOrder = {
     var volume = 0.0
@@ -138,7 +137,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     var shortings = 0.0
 
     implicit val timeout = new Timeout(askTimeout)
-    val future = (broker ? GetWalletFunds(uid,this.self)).mapTo[WalletFunds]
+    val future = (broker ? GetWalletFunds(uid, this.self)).mapTo[WalletFunds]
     future onSuccess {
       case WalletFunds(id, funds: Map[Currency, Double]) => {
         val cashWith = funds.getOrElse(withC, 0.0)
@@ -169,12 +168,10 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
   def decideOrderWithoutShort(volume: Double, holdings: Double) = {
     // BUY signal
     if (currentShort > currentLong * (1 + tolerance) && holdings == 0.0) {
-      log.debug("buying " + volume)
       placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
       oid += 1
     } // SELL signal
     else if (currentShort < currentLong && holdings > 0.0) {
-      log.debug("selling " + holdings)
       placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings, -1))
       oid += 1
     }
@@ -184,24 +181,20 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     // BUY signal
     if (currentShort > currentLong) {
       if (shortings > 0.0) {
-        log.debug("closing short " + shortings)
         placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, shortings, -1))
         oid += 1;
       }
       if (currentShort > currentLong * (1 + tolerance) && holdings == 0.0) {
-        log.debug("buying " + volume)
         placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
         oid += 1
       }
     } // SELL signal
     else if (currentShort < currentLong) {
       if (holdings > 0.0) {
-        log.debug("selling " + holdings)
         placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings, -1))
         oid += 1
       }
       if (currentShort * (1 + tolerance) < currentLong && shortings == 0.0) {
-        log.debug("short " + volume)
         placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
         oid += 1;
       }
@@ -213,7 +206,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     val future = (broker ? order).mapTo[Order]
     future onSuccess {
       //Transaction has been accepted by the broker (but may not be executed : e.g. limit orders) = OPEN Positions
-      case _: AcceptedOrder => log.debug("MATrader: order placement succeeded")
+      case ao: AcceptedOrder => log.debug("Accepted order costCurrency: " + order.costCurrency() + " volume: " + ao.volume)
       case _: RejectedOrder => {
         log.debug("MATrader: order failed")
       }
