@@ -58,20 +58,27 @@ class MovingAverageTraderTest
 
   market ! StartSignal
   broker ! StartSignal
-  trader ! StartSignal
 
   val (bidPrice, askPrice) = (0.90, 0.95)
   val testQuote = Quote(marketID, System.currentTimeMillis(), symbol._1, symbol._2, bidPrice, askPrice)
   market ! testQuote
-  //TODO Quote are received from the market
   broker ! testQuote
-  trader ! testQuote
 
   val initWallet = initialFunds;
   var cash = initialFunds(Currency.CHF)
   var volume = floor(cash / askPrice)
 
   "A trader " should {
+
+    "register" in {
+      within(1 second) {
+        EventFilter.debug(message = "MATrader: Broker confirmed", occurrences = 1) intercept {
+          trader ! StartSignal
+          trader ! testQuote
+        }
+      }
+    }
+
     "buy (20,3)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 1) intercept {

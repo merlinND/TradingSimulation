@@ -109,7 +109,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     case ConfirmRegistration => {
       broker = sender()
       registered = true
-      log.debug("TraderWithB: Broker confirmed")
+      log.debug("MATrader: Broker confirmed")
     }
 
     case ma: MovingAverage => {
