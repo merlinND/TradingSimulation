@@ -122,8 +122,9 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
         case Some(x) => currentLong = x
         case None    => println("Error: Missing indicator with period " + longPeriod)
       }
-
-      decideOrder
+      if (registered) {
+        decideOrder
+      }
     }
 
     // Order has been executed on the market = CLOSE Positions
