@@ -112,7 +112,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
       log.debug("MATrader: Broker confirmed")
     }
 
-    case ma: MovingAverage => {
+    case ma: MovingAverage if registered => {
       println("Trader receive MAs")
       ma.value.get(shortPeriod.length.toInt) match {
         case Some(x) => currentShort = x
@@ -122,9 +122,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
         case Some(x) => currentLong = x
         case None    => println("Error: Missing indicator with period " + longPeriod)
       }
-      if (registered) {
         decideOrder
-      }
     }
 
     // Order has been executed on the market = CLOSE Positions
