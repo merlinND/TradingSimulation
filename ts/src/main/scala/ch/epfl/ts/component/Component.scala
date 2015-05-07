@@ -1,21 +1,33 @@
 package ch.epfl.ts.component
 
-import akka.actor.{Actor, ActorRef, ActorSystem}
+import akka.actor._
 
 import scala.reflect.ClassTag
 
 import scala.language.existentials
 import scala.collection.mutable.{HashMap => MHashMap}
+import com.typesafe.config.{ConfigFactory, Config}
 
 case object StartSignal
 case object StopSignal
 case class ComponentRegistration(ar: ActorRef, ct: Class[_], name: String)
 
-final class ComponentBuilder(name: String) {
+final class ComponentBuilder(val system: ActorSystem) {
   type ComponentProps = akka.actor.Props
-  val system = ActorSystem(name)
   var graph = Map[ComponentRef, List[(ComponentRef, Class[_])]]()
   var instances = List[ComponentRef]()
+  
+  def this() {
+    this(ActorSystem(ConfigFactory.load().getString("akka.systemName"), ConfigFactory.load()))
+  }
+
+  def this(name: String) {
+    this(ActorSystem(name, ConfigFactory.load()))
+  }
+  
+  def this(myName: String, config: Config) {
+    this(ActorSystem(myName, config))
+  }
 
   def add(src: ComponentRef, dest: ComponentRef, data: Class[_]) {
     println("Connecting " + src.ar + " to " + dest.ar + " for type " + data.getSimpleName)
@@ -43,7 +55,7 @@ final class ComponentBuilder(name: String) {
 
 /** Encapsulates [[akka.actor.ActorRef]] to facilitate connection of components
   */
-class ComponentRef(val ar: ActorRef, val clazz: Class[_], val name: String, cb: ComponentBuilder) {
+class ComponentRef(val ar: ActorRef, val clazz: Class[_], val name: String, cb: ComponentBuilder) extends Serializable {
   /** Connects current component to the destination component
     *
     * @param destination the destination component
@@ -63,7 +75,6 @@ class ComponentRef(val ar: ActorRef, val clazz: Class[_], val name: String, cb: 
   }
 }
 
-
 trait Receiver extends Actor {
   def receive: PartialFunction[Any, Unit]
 
@@ -77,7 +88,7 @@ abstract class Component extends Receiver {
 
   final def componentReceive: PartialFunction[Any, Unit] = {
     case ComponentRegistration(ar, ct, name) =>
-      dest += (ct -> (ar :: dest.getOrElse(ct, List())))
+      connect(ar, ct, name)
       println("Received destination " + this.getClass.getSimpleName + ": from " + ar + " to " + ct.getSimpleName)
     case StartSignal => stopped = false
       start
@@ -88,10 +99,27 @@ abstract class Component extends Receiver {
     case y if stopped => println("Received data when stopped " + this.getClass.getSimpleName + " of type " + y.getClass )
   }
 
-  // subclass can override do initialization here
+  /**
+   * Connects two compoenents
+   *
+   * Normally subclass don't need to override this method.
+   * */
+  def connect(ar: ActorRef, ct: Class[_], name: String): Unit = {
+    dest += (ct -> (ar :: dest.getOrElse(ct, List())))
+  }
+
+  /**
+   * Starts the component
+   *
+   * Subclass can override do initialization here
+   * */
   def start: Unit = {}
 
-  // subclass can override do release resources here
+  /**
+   * Stops the component
+   *
+   * Subclass can override do release resources here
+   * */
   def stop: Unit = {}
 
   def receiver: PartialFunction[Any, Unit]
@@ -99,6 +127,6 @@ abstract class Component extends Receiver {
   /* TODO: Dirty hack, componentReceive giving back unmatched to rematch in receiver using a andThen */
   override def receive = componentReceive orElse receiver
 
-  final def send[T: ClassTag](t: T) = dest.get(t.getClass).map(_.map (_ ! t))
-  final def send[T: ClassTag](t: List[T]) = t.map( elem => dest.get(elem.getClass).map(_.map(_ ! elem)))
+  def send[T: ClassTag](t: T) = dest.get(t.getClass).map(_.map (_ ! t)) //TODO(sygi): support superclasses
+  def send[T: ClassTag](t: List[T]) = t.map( elem => dest.get(elem.getClass).map(_.map(_ ! elem)))
 }
