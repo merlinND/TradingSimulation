@@ -169,12 +169,10 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
   def decideOrderWithoutShort(volume: Double, holdings: Double) = {
     // BUY signal
     if (currentShort > currentLong * (1 + tolerance) && holdings == 0.0) {
-      log.debug("buying " + volume)
       placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
       oid += 1
     } // SELL signal
     else if (currentShort < currentLong && holdings > 0.0) {
-      log.debug("selling " + holdings)
       placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings, -1))
       oid += 1
     }
@@ -184,24 +182,20 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     // BUY signal
     if (currentShort > currentLong) {
       if (shortings > 0.0) {
-        log.debug("closing short " + shortings)
         placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, shortings, -1))
         oid += 1;
       }
       if (currentShort > currentLong * (1 + tolerance) && holdings == 0.0) {
-        log.debug("buying " + volume)
         placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
         oid += 1
       }
     } // SELL signal
     else if (currentShort < currentLong) {
       if (holdings > 0.0) {
-        log.debug("selling " + holdings)
         placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings, -1))
         oid += 1
       }
       if (currentShort * (1 + tolerance) < currentLong && shortings == 0.0) {
-        log.debug("short " + volume)
         placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
         oid += 1;
       }
