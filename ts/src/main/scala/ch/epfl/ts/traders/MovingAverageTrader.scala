@@ -213,7 +213,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     val future = (broker ? order).mapTo[Order]
     future onSuccess {
       //Transaction has been accepted by the broker (but may not be executed : e.g. limit orders) = OPEN Positions
-      case _: AcceptedOrder => log.debug("MATrader: order placement succeeded")
+      case ao: AcceptedOrder => log.debug("Accepted order costCurrency: "+order.costCurrency()+" volume: "+ao.volume)
       case _: RejectedOrder => {
         log.debug("MATrader: order failed")
       }
