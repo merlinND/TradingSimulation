@@ -130,7 +130,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     case _: ExecutedBidOrder => // TODO SimplePrint / Log /.../Frontend log ??
     case _: ExecutedAskOrder => // TODO SimplePrint/Log/.../Frontend log ??
 
-    case whatever => println("SimpleTrader: received unknown : " + whatever)
+    case whatever            => println("SimpleTrader: received unknown : " + whatever)
   }
   def decideOrder = {
     var volume = 0.0
@@ -138,7 +138,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     var shortings = 0.0
 
     implicit val timeout = new Timeout(askTimeout)
-    val future = (broker ? GetWalletFunds(uid,this.self)).mapTo[WalletFunds]
+    val future = (broker ? GetWalletFunds(uid, this.self)).mapTo[WalletFunds]
     future onSuccess {
       case WalletFunds(id, funds: Map[Currency, Double]) => {
         val cashWith = funds.getOrElse(withC, 0.0)
@@ -207,7 +207,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     val future = (broker ? order).mapTo[Order]
     future onSuccess {
       //Transaction has been accepted by the broker (but may not be executed : e.g. limit orders) = OPEN Positions
-      case ao: AcceptedOrder => log.debug("Accepted order costCurrency: "+order.costCurrency()+" volume: "+ao.volume)
+      case ao: AcceptedOrder => log.debug("Accepted order costCurrency: " + order.costCurrency() + " volume: " + ao.volume)
       case _: RejectedOrder => {
         log.debug("MATrader: order failed")
       }
