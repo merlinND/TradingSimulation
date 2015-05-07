@@ -36,7 +36,7 @@ import ch.epfl.ts.traders.MovingAverageTrader
 @RunWith(classOf[JUnitRunner])
 class MovingAverageTraderTest
   extends ActorTestSuite("MovingAverageTraderTestSystem") {
-  
+
   val traderId: Long = 123L
   val symbol = (Currency.USD, Currency.CHF)
   val initialFunds: Wallet.Type = Map(symbol._2 -> 5000.0)
@@ -55,27 +55,33 @@ class MovingAverageTraderTest
   val market = system.actorOf(Props(classOf[FxMarketWrapped], marketID, new ForexMarketRules()), MarketNames.FOREX_NAME)
   val broker: ActorRef = system.actorOf(Props(classOf[SimpleBrokerWrapped], market), "Broker")
   val trader = system.actorOf(Props(classOf[MovingAverageTraderWrapped], traderId, parameters, broker), "Trader")
-  
+
   market ! StartSignal
   broker ! StartSignal
-  trader ! StartSignal
 
   val (bidPrice, askPrice) = (0.90, 0.95)
   val testQuote = Quote(marketID, System.currentTimeMillis(), symbol._1, symbol._2, bidPrice, askPrice)
   market ! testQuote
-  //TODO Quote are received from the market
   broker ! testQuote
-  trader ! testQuote
 
-  
   val initWallet = initialFunds;
   var cash = initialFunds(Currency.CHF)
   var volume = floor(cash / askPrice)
 
   "A trader " should {
+
+    "register" in {
+      within(1 second) {
+        EventFilter.debug(message = "MATrader: Broker confirmed", occurrences = 1) intercept {
+          trader ! StartSignal
+          trader ! testQuote
+        }
+      }
+    }
+
     "buy (20,3)" in {
       within(1 second) {
-        EventFilter.debug(message = "buying " + volume, occurrences = 1) intercept {
+        EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 1) intercept {
           trader ! SMA(Map(5 -> 20.0, 30 -> 3.0))
         }
       }
@@ -84,7 +90,7 @@ class MovingAverageTraderTest
 
     "sell(3,20)" in {
       within(1 second) {
-        EventFilter.debug(message = "selling " + volume, occurrences = 1) intercept {
+        EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 1) intercept {
           trader ! SMA(Map(5 -> 3.0, 30 -> 20.0))
         }
       }
@@ -94,7 +100,7 @@ class MovingAverageTraderTest
 
     "not buy(10.001,10)" in {
       within(1 second) {
-        EventFilter.debug(message = "buying " + volume, occurrences = 0) intercept {
+        EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 0) intercept {
           trader ! SMA(Map(5 -> 10.001, 30 -> 10.0))
         }
       }
@@ -103,7 +109,7 @@ class MovingAverageTraderTest
     // For small numbers > is eq to >=  (10*(1+0.0002) = 10.00199999)
     "buy(10.002,10)" in {
       within(1 second) {
-        EventFilter.debug(message = "buying " + volume, occurrences = 1) intercept {
+        EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 1) intercept {
           trader ! SMA(Map(5 -> 10.002, 30 -> 10))
         }
       }
@@ -112,7 +118,7 @@ class MovingAverageTraderTest
 
     "not buy(10.003,10) (already hold a position)" in {
       within(1 second) {
-        EventFilter.debug(message = "buying " + volume, occurrences = 0) intercept {
+        EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 0) intercept {
           trader ! SMA(Map(5 -> 10.003, 30 -> 10))
         }
       }
@@ -120,7 +126,7 @@ class MovingAverageTraderTest
 
     "sell(9.9999,10)" in {
       within(1 second) {
-        EventFilter.debug(message = "selling " + volume, occurrences = 1) intercept {
+        EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 1) intercept {
           trader ! SMA(Map(5 -> 9.9999, 30 -> 10))
         }
       }
@@ -130,7 +136,7 @@ class MovingAverageTraderTest
 
     "not sell(9.9999,10) (no holding)" in {
       within(1 second) {
-        EventFilter.debug(message = "selling " + volume, occurrences = 0) intercept {
+        EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 0) intercept {
           trader ! SMA(Map(5 -> 9.9999, 30 -> 10))
         }
       }
