@@ -87,7 +87,7 @@ class SimpleTraderWithBroker(uid: Long, parameters: StrategyParameters)
       send(FundWallet(uid, USD, 100))
     }
     case 'knowYourWallet => {
-      send(GetWalletFunds(uid))
+      send(GetWalletFunds(uid,this.self))
     }
     case p => {
       println("TraderWithB: received unknown: " + p)
@@ -109,6 +109,5 @@ class SimpleTraderWithBroker(uid: Long, parameters: StrategyParameters)
 
   override def init = {
     log.debug("TraderWithB received startSignal")
-    send(Register(uid))
   }
 }
