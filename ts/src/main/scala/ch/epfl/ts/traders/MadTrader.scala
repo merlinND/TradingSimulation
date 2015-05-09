@@ -4,16 +4,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
 
 import ch.epfl.ts.component.ComponentBuilder
-import ch.epfl.ts.data.CoefficientParameter
-import ch.epfl.ts.data.Currency
-import ch.epfl.ts.data.CurrencyPairParameter
-import ch.epfl.ts.data.MarketAskOrder
-import ch.epfl.ts.data.MarketBidOrder
-import ch.epfl.ts.data.NaturalNumberParameter
-import ch.epfl.ts.data.Order
-import ch.epfl.ts.data.ParameterTrait
-import ch.epfl.ts.data.StrategyParameters
-import ch.epfl.ts.data.TimeParameter
+import ch.epfl.ts.data._
 
 /**
  * Required and optional parameters used by this strategy
@@ -87,7 +78,7 @@ class MadTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, p
       alternate = alternate + 1
       orderId = orderId + 1
     }
-    case _ => println("MadTrader: received unknown")
+    case t => println("MadTrader: received unknown " + t)
   }
 
   /**

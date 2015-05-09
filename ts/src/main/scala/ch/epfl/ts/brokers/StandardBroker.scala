@@ -80,6 +80,7 @@ class StandardBroker extends Component with ActorLogging {
       })
     }
 
+    //TODO(sygi): refactor
     case e: ExecutedBidOrder => {
       if (mapping.contains(e.uid)) {
         val replyTo = mapping.getOrElse(e.uid, null)
@@ -110,6 +111,11 @@ class StandardBroker extends Component with ActorLogging {
       log.debug("Broker: received order")
       val replyTo = sender
       val uid = o.chargedTraderId()
+      if (!ableToProceed(o)){
+        log.debug("Broker: Unable to proceed MarketBid request before getting first quote")
+        replyTo ! RejectedOrder.apply(o)
+        return dummyReturn
+      }
       val placementCost = o match {
         case _: MarketBidOrder => o.volume * tradingPrices(o.whatC, o.withC)._2 // we buy at ask price
         case _: MarketAskOrder => o.volume
@@ -136,6 +142,14 @@ class StandardBroker extends Component with ActorLogging {
     }
 
     case p => log.debug("Broker: received unknown " + p)
+  }
+
+  def ableToProceed(o: Order): Boolean = {
+    o match {
+      case _: MarketBidOrder =>
+        tradingPrices.contains((o.whatC, o.withC))
+      case _ => true
+    }
   }
 
   //TODO(sygi) - implement it

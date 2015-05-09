@@ -54,6 +54,7 @@ final class ComponentBuilder(val system: ActorSystem) {
 }
 
 /** Encapsulates [[akka.actor.ActorRef]] to facilitate connection of components
+  * TODO(sygi): support sending messages to ComponentRefs through !
   */
 class ComponentRef(val ar: ActorRef, val clazz: Class[_], val name: String, cb: ComponentBuilder) extends Serializable {
   /** Connects current component to the destination component
@@ -96,6 +97,7 @@ abstract class Component extends Receiver {
     case StopSignal => context.stop(self)
       stop
       println("Received Stop " + this.getClass.getSimpleName)
+      stopped = true
     case y if stopped => println("Received data when stopped " + this.getClass.getSimpleName + " of type " + y.getClass )
   }
 

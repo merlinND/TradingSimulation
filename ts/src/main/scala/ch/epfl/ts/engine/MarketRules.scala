@@ -1,8 +1,15 @@
 package ch.epfl.ts.engine
 
 import ch.epfl.ts.data.Currency._
-import ch.epfl.ts.data.{DelOrder, LimitAskOrder, LimitBidOrder, MarketAskOrder, MarketBidOrder, Order, Streamable, Transaction}
+import ch.epfl.ts.data._
 import ch.epfl.ts.component.fetch.MarketNames
+import ch.epfl.ts.data.MarketBidOrder
+import ch.epfl.ts.data.Transaction
+import ch.epfl.ts.data.DelOrder
+import ch.epfl.ts.data.LimitBidOrder
+import ch.epfl.ts.engine.Commission
+import ch.epfl.ts.data.MarketAskOrder
+import ch.epfl.ts.data.LimitAskOrder
 
 /**
  * represents the cost of placing a bid and market order
@@ -47,13 +54,13 @@ class MarketRules extends Serializable {
                        matchExists: (Double, Double) => Boolean = alwaysTrue,
                        oldTradingPrice: Double,
                        enqueueOrElse: (Order, PartialOrderBook) => Unit): Double = {
-
+    var result = -1.0
     println("MS: got new order: " + newOrder)
 
     if (bestMatchsBook.isEmpty) {
       println("MS: matching orders book empty")
       enqueueOrElse(newOrder, newOrdersBook)
-      oldTradingPrice
+      result = oldTradingPrice
     } else {
 
       val bestMatch = bestMatchsBook.head
@@ -111,14 +118,24 @@ class MarketRules extends Serializable {
         }
 
         // Update price
-        bestMatch.price
+        result = bestMatch.price
 
         // no match found
       } else {
         println("MS: no match found - enqueuing")
         enqueueOrElse(newOrder, newOrdersBook)
-        oldTradingPrice
+        result = oldTradingPrice
       }
     }
+    generateQuote(marketId, newOrdersBook, bestMatchsBook, newOrder.timestamp, send)
+    result
+  }
+  def generateQuote(marketId: Long, bids: PartialOrderBook, asks: PartialOrderBook, timestamp: Long, send: Streamable => Unit) = {
+    if (!bids.isEmpty && !asks.isEmpty){
+      val topBid = bids.head
+      val topAsk = asks.head
+      send(Quote(marketId, timestamp, topAsk.whatC, topAsk.withC, topBid.price, topAsk.price))
+    }
+
   }
 }

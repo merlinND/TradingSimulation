@@ -3,6 +3,7 @@ package ch.epfl.ts.engine
 import ch.epfl.ts.data.Order
 
 import scala.collection.mutable.{HashMap => MHashMap, TreeSet => MTreeSet}
+import scala.collection.mutable
 
 /**
  * Container for the Order Book
@@ -37,6 +38,14 @@ class PartialOrderBook(val comparator: Ordering[Order]) {
   def head = book.head
 
   def size = book.size
+
+  override def toString :String = {
+    val sb = new mutable.StringBuilder
+    for(i <- book){
+      sb.append(i.toString + "\n")
+    }
+    sb.toString()
+  }
 }
 
 class OrderBook(val bids: PartialOrderBook, val asks: PartialOrderBook) {

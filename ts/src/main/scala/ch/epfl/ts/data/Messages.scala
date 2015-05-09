@@ -92,6 +92,7 @@ case class LimitAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val 
   extends LimitOrder {
   override def costCurrency() = whatC
 }
+//TODO: remove price from common subclass, as for MarketOrders it doesn't make sense
 abstract class MarketOrder extends Order
 
 /**
@@ -144,7 +145,7 @@ case class OHLC(marketId: Long, open: Double, high: Double, low: Double, close: 
  *
  * @see LimitOrder
  */
-case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Currency, bid: Double, ask: Double) {
+case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Currency, bid: Double, ask: Double) extends Streamable {
   override def toString() = "(" + whatC.toString().toUpperCase() + "/" + withC.toString().toUpperCase() + ") = (" + bid + ", " + ask + ")";
 }
 
