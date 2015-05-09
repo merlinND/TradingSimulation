@@ -7,7 +7,6 @@ import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.Transaction
 import ch.epfl.ts.data.DelOrder
 import ch.epfl.ts.data.LimitBidOrder
-import ch.epfl.ts.engine.Commission
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.LimitAskOrder
 
@@ -134,8 +133,9 @@ class MarketRules extends Serializable {
     if (!bids.isEmpty && !asks.isEmpty){
       val topBid = bids.head
       val topAsk = asks.head
+      println("MR: generating quote " + topBid.price + " " + topAsk.price)
       send(Quote(marketId, timestamp, topAsk.whatC, topAsk.withC, topBid.price, topAsk.price))
-    }
-
+    } else
+      println("MR: can't generate quote")
   }
 }

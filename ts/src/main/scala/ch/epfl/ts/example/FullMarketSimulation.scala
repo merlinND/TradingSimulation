@@ -26,6 +26,7 @@ import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.component.utils.BackLoop
 import ch.epfl.ts.component.persist.DummyPersistor
 import java.util.Timer
+import ch.epfl.ts.engine.rules.{SimulationMarketRulesWrapper, FxMarketRulesWrapper}
 
 /**
  * Market simulation with first reading historical data and then running simulation on its own.
@@ -35,7 +36,7 @@ object FullMarketSimulation {
   var producers = Map[Class[_], List[ComponentRef]]()
   var consuments = Map[Class[_], List[ComponentRef]]()
   def main(args: Array[String]): Unit = {
-    //TODO(sygi): create functions to build components to slim main down
+    //TODO(sygi): create functions to build multiple components to slim main down
     implicit val builder = new ComponentBuilder("TestingBroker", ConfigFactory.parseString("akka.loglevel = \"DEBUG\""))
     initProducersAndConsuments()
 
@@ -58,42 +59,44 @@ object FullMarketSimulation {
     connectAllOrders(trader, broker)
 
     //fetcher
-    val useLiveData = true
+    val useLiveData = false
     val symbol = (Currency.USD, Currency.CHF)
     val fxQuoteFetcher = createFetcher(useLiveData, builder, symbol)
     addProducer(classOf[Quote], fxQuoteFetcher)
 
-    //market with fetcher
-    val rules = new ForexMarketRules()
+    //hybrid market
+    val fetcherRules = new FxMarketRulesWrapper()
+    val simulationRules = new SimulationMarketRulesWrapper()
     val marketForexId = MarketNames.FOREX_ID
-    val forexMarketWithFetcher = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
+    val forexMarket = builder.createRef(Props(classOf[HybridMarketSimulator], marketForexId, fetcherRules, simulationRules), MarketNames.FOREX_NAME)
 
-    addConsument(classOf[Quote], forexMarketWithFetcher)
-    addProducer(classOf[Quote], forexMarketWithFetcher)
-    connectAllOrders(broker, forexMarketWithFetcher)
-    forexMarketWithFetcher->(broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
+    addConsument(classOf[Quote], forexMarket)
+    addProducer(classOf[Quote], forexMarket)
+    connectAllOrders(broker, forexMarket)
+    forexMarket->(broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
 
     //Backloop
     val dummyPersistor = new DummyPersistor()
     val backloop = builder.createRef(Props(classOf[BackLoop], marketForexId, dummyPersistor), "backloop")
 
-    forexMarketWithFetcher->(backloop, classOf[Transaction])
+    forexMarket->(backloop, classOf[Transaction])
     addProducer(classOf[Quote], backloop)
 
     connectProducersWithConsuments()
 
     builder.start
-    scheduleChange(fxQuoteFetcher)
+    scheduleChange(fxQuoteFetcher, forexMarket)
   }
 
-  def scheduleChange(quoteFetcher: ComponentRef) = {
+  def scheduleChange(quoteFetcher: ComponentRef, market: ComponentRef) = {
     val timer = new Timer()
     class StopFetcher extends java.util.TimerTask {
       def run() {
         quoteFetcher.ar ! StopSignal
+        market.ar ! 'ChangeMarketRules
       }
     }
-    timer.schedule(new StopFetcher, 5 * 1000)
+    timer.schedule(new StopFetcher, 10 * 1000)
   }
 
   def initProducersAndConsuments() = {

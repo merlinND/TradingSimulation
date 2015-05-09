@@ -100,7 +100,7 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
       if (allQuotes.hasNext) {
         // If there is a next quote, schedule the next call
         currentQuote = nextQuote
-        nextQuote = allQuotes.next
+        nextQuote = allQuotes.next //TODO(sygi): changing speed doesn't make too much sense, when all quotes have the same timestamp
         timer.schedule(new SendQuotes(), (1 / speed * (nextQuote.timestamp - currentQuote.timestamp)).toInt)
       } else {
         // Nothing more to do here, boys!
@@ -193,7 +193,10 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
         Quote(q.marketId, q.timestamp, whatC, withC, q.bid, q.ask)
       })
   }
-  
+
+  override def stop = {
+    timer.cancel()
+  }
 }
 
 /**

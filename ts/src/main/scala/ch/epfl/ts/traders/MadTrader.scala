@@ -2,6 +2,7 @@ package ch.epfl.ts.traders
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
+import scala.language.postfixOps
 
 import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.data._
@@ -60,24 +61,26 @@ class MadTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, p
   val r = new Random
 
   // TODO: make wallet-aware
+  var price = 1.0
   override def receiver = {
     case SendMarketOrder => {
       // Randomize volume and price
       val variation = volumeVariation * (r.nextDouble() - 0.5) * 2.0
       val theVolume = ((1 + variation) * volume).toInt
-      // Since we place a Market order, the price set here isn't used
-      val dummyPrice = -1
+      val dummyPrice = price * (1 + variation)
 
       if (alternate % 2 == 0) {
-        println("MadTrader: sending market bid order")
-        send[Order](MarketAskOrder(orderId, uid, System.currentTimeMillis(), currencies._1, currencies._2, theVolume, dummyPrice))
+        println("MadTrader: sending limit ask order")
+        send[Order](LimitAskOrder(orderId, uid, System.currentTimeMillis(), currencies._1, currencies._2, theVolume, dummyPrice))
       } else {
-        println("MadTrader: sending market ask order")
-        send[Order](MarketBidOrder(orderId, uid, System.currentTimeMillis(), currencies._1, currencies._2, theVolume, dummyPrice))
+        println("MadTrader: sending limit bid order")
+        send[Order](LimitBidOrder(orderId, uid, System.currentTimeMillis(), currencies._1, currencies._2, theVolume, dummyPrice))
       }
       alternate = alternate + 1
       orderId = orderId + 1
     }
+    case q: Quote =>
+      price = q.bid
     case t => println("MadTrader: received unknown " + t)
   }
 
