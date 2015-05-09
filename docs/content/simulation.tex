@@ -62,21 +62,59 @@ not defined by historical or live data anymore, prices must also be determined b
 simulation. 
 
 \subsubsection{Balanced Demand and Offer}
+In general, ask and bid price are determined by limit orders. In the case where there
+exist limit orders on both sides (ask and bid) the current ask price is defined by the
+lowest sell offer and the current bid price is defined by the highest bid offer.
 
 \subsubsection{Extreme Situations}
+It might occur that there are no limit orders and traders still want to trade at the 
+current market price. In order to provide a price definition in such extreme scenarios
+a market maker is introduced. Consider the following scenarios.
 
 %I might also have found a solution to "how is the price defined when there is nobody on the other side (offering when I want to buy or asking when I want to sell)?".
 %here http://www.forextraders.com/market-maker-forex-brokers.html I read that each market maker defines its own spread, which I understand the following way:
 %
-%if there are only sellers and no buyers:
-%-  the ask price is well defined as the lowest ask offer but the bid price is not
-%- the market maker defines the bid price by applying its own spread to the lowest ask price
-%-> selling at market price means selling to the market maker for the lowest ask price MINUS the spread
-%
-%if there are only buyers and no sellers:
-%- the bid price is well defined as the highest bid offer but the ask price is not
-%- again, the market maker defines the bid price by applying its own spread to the highest bid price
-%-> buying at market price means buying from the market maker at the highest bid price PLUS the spread
+If there are only sellers and no buyers:
+\begin{itemize}
+    \item the \textit{ask} price is well defined as the lowest ask offer but the bid price is not
+    \item the market maker defines the \textit{bid} price by applying its own spread to the lowest ask price
+    \item selling at market price means selling to the market maker for the lowest \textit{ask price MINUS the spread}
+\end{itemize}
+
+If there are only buyers and no sellers:
+\begin{itemize}
+    \item the \textit{bid} price is well defined as the highest bid offer but the ask price is not
+    \item the market maker defines the \textit{ask} price by applying its own spread to the highest bid price
+    \item buying at market price means buying from the market maker at the highest \textit{bid price PLUS the spread}
+\end{itemize}
+
+If there are no limit orders at all:
+\begin{itemize}
+    \item ask and bid price stay constant
+    \item random traders hopefully prevent from freezing
+    \item optional: market maker could reduce spread, i.e. offer a higher bid price
+    or a lower ask price
+\end{itemize}
+
+In any case where the prices are defined but there is not enough capacity to buy the
+volume some trader wishes to sell or there is not enough offer to fulfill the demands
+of a buying trader the market maker buys or sells the remaining volume. Thereby the
+assumption of permanent liquidity at the current market price is given as long as the
+market maker has enough funds (which can be controlled through the scale parameter $c$
+at init time.
+
+The above covers the extreme scenarios. Still, one particular problem might arise that
+does not occur in reality: given the buyers-only scenario, a single trader changing
+their mind could make the market maker collapse. By introducing the only ask order (for a low volume) at 
+a ridiculously low price it would define the ask price naturally and thereby force
+the market maker to sell at this low price and eventually lose all its belongings
+while selling at bad prices.
+
+A similarly ill-posed problem occurs in a sellers-only market when a single trader
+decides to make an extremely high bid order (for a low volume) that forces the market
+maker to provide the respective bid price and eventually spend all its funds at buying
+overpriced offers.
+
 %
 %\subsection{Brain Storm}
 %
