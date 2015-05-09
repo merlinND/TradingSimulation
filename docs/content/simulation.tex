@@ -1,109 +1,126 @@
 \section{Simulation}
 
+\subsection{Simplifying the Real Market}
+Our project implements essential parts of the foreign exchange market.
+In order to set up a basic market simulator we make the following
+simplifications:
+
+\begin{itemize}
+    \item traders can only trade one symbol
+    \item instruments are restricted to spot transactions
+    \item two counterparties are involved: nonfinancial customers and market makers (representing all financial customers)
+    \item one market maker per symbol
+\end{itemize}
+
 \subsection{Initial Parameters}
-Even though our project implements essential parts of the foreign exchange 
-market, many scenarios that can happen in reality cannot be modelled in out 
-simulation. Given the interplay of various counterparts involved and also the
-diversity of possible trading options (out of which we only implement spot transactions) make the  market an extremely complex system.
-
-We try to simplify as much as possible by deviding the counterparts into
-non-financial traders (that use our strategies) and market maker. There is 
-one market maker per symbol and each trader is only trading on one symbol. 
-
 Finding appropriate parameters to configure a simulation that reflects the
 true market has become a difficult task since existing statistics focus on 
-the effects of the market, meaning the daily turnover, volumes that are
-traded or market share distribution. However, it seems impossible to find 
-facts like "how many people are involved?" or "what are their funds?".
-As such, we can find information about what results from people's trading 
-activity i.e. the result of people having money to play with and be active.
-However, we need to find a reasonable concept to set their initial funds to allow them being active.
+the effects of the market meaning the daily turnover or distribution of market
+shares by symbol, trading center or large financial customers. These statistics
+are to be seen as results of trading activities. However, this does not allow
+us to infer the cause of trading activity. In order to configure a market
+simulation in a way that it would reflect the evolution of a real market we 
+need to find the cause of activities and therefore we have to answer key questions
+such as ``how many people are involved?'' or ``what are their funds?''.
 
-- to initialize the simulation we assign money to traders and market makers in a certain currency (e.g. USD) and they receive the respective amount in the currency they need. we do it the following way:
+Since we are not able to answer these questions reliably and also since we cannot
+instantiate an infinite number of traders we introduce a different concept to
+initialize a simulation.
 
-for each symbol
+We assign money to traders and market makers in a certain currency (e.g. USD) and 
+they receive the equivalent amount in the currency they need to trade their respective
+symbol.
 
-1. define number of non-financial traders
+\begin{algorithm}
+\caption{Distribution of initial funds.}
+\label{alg:initfunds}
+\begin{algorithmic}[1]
+    \Statex Given: distribution of annual income for a specific country
+    \Statex
+    \ForAll{$s \in symbols$}
+        \State  $n \gets$ defined number of nonfinancial $traders$
+        \ForAll{$t \in traders(s)$}
+            \State $income \gets$ sample of income distribution
+            \State $funds(t) \gets income$
+        \EndFor
+        \State $funds(marketmaker(s)) \gets c \cdot \sum_{i=1}^n funds(traders(i))$
+    \EndFor
+\end{algorithmic}
+\end{algorithm}
 
-2. for each trader: assign initial funds as 1-year income according to a local income distribution (e.g. Switzerland: http://www.bfs.admin.ch/bfs/portal/en/index/themen/03/04/blank/key/lohnstruktur/lohnverteilung.html)
+%1. define number of non-financial traders
+%
+%2. for each trader: assign initial funds as 1-year income according to a local income distribution (e.g. Switzerland: http://www.bfs.admin.ch/bfs/portal/en/index/themen/03/04/blank/key/lohnstruktur/lohnverteilung.html)
+%
+%3. compute market makers initial funds as sum(funds(all traders)) * scale
+%
 
-3. compute market makers initial funds as sum(funds(all traders)) * scale
+\subsection{Price Definition during Simulation}
 
-\subsection{Price Definition in Extreme Cases}
+When our system is running in pure simulation mode, meaning that ask and bid price is
+not defined by historical or live data anymore, prices must also be determined by the
+simulation. 
 
-I might also have found a solution to "how is the price defined when there is nobody on the other side (offering when I want to buy or asking when I want to sell)?".
-here http://www.forextraders.com/market-maker-forex-brokers.html I read that each market maker defines its own spread, which I understand the following way:
+\subsubsection{Balanced Demand and Offer}
 
-if there are only sellers and no buyers:
--  the ask price is well defined as the lowest ask offer but the bid price is not
-- the market maker defines the bid price by applying its own spread to the lowest ask price
--> selling at market price means selling to the market maker for the lowest ask price MINUS the spread
+\subsubsection{Extreme Situations}
 
-if there are only buyers and no sellers:
-- the bid price is well defined as the highest bid offer but the ask price is not
-- again, the market maker defines the bid price by applying its own spread to the highest bid price
--> buying at market price means buying from the market maker at the highest bid price PLUS the spread
+%I might also have found a solution to "how is the price defined when there is nobody on the other side (offering when I want to buy or asking when I want to sell)?".
+%here http://www.forextraders.com/market-maker-forex-brokers.html I read that each market maker defines its own spread, which I understand the following way:
+%
+%if there are only sellers and no buyers:
+%-  the ask price is well defined as the lowest ask offer but the bid price is not
+%- the market maker defines the bid price by applying its own spread to the lowest ask price
+%-> selling at market price means selling to the market maker for the lowest ask price MINUS the spread
+%
+%if there are only buyers and no sellers:
+%- the bid price is well defined as the highest bid offer but the ask price is not
+%- again, the market maker defines the bid price by applying its own spread to the highest bid price
+%-> buying at market price means buying from the market maker at the highest bid price PLUS the spread
+%
+%\subsection{Brain Storm}
+%
+%Market Simulation Research
+%
+%[1] http://www.tpc.org/tpc_documents_current_versions/pdf/tpce-v1.14.0.pdf
+%[2] www.swissquote.com
+%[3] http://vantagepointtrading.com/daily-forex-stats
+%[4] http://www.bis.org/publ/qtrpdf/r_qt1312e.pdf
+%[5] turnovers by counterparty and currency pairs:
+%http://www.reuters.com/article/2013/09/05/bis-survey-volumes-idUSL6N0GZ34R20130905
+%
+%[6] largest forex centers:
+%http://countingpips.com/fx/2011/08/8-largest-forex-trading-centers-in-the-world/
+%
+%[7] directional trading volume:
+%http://www.dailyfx.com/forex/technical/article/special_report/2015/04/13/forex-introducing-volume-by-price.html
+%
+%[8] https://mahifx.com/blog/50-fascinating-facts-about-forex
+%
+%[9] largest brokers by volume:
+%http://www.myfxbook.com/forex-broker-volume
+%
+%[10] volume survey (North America) with explanation
+%http://www.newyorkfed.org/fxc/volumesurvey/explanatory_notes.html
+%
+%[11] forex glossary
+%http://www.cmsfx.com/en/forex-education/Forex-Glossary/ask-price/
+%
+%[12] salary distribution switzerland
+%http://www.bfs.admin.ch/bfs/portal/en/index/themen/03/04/blank/key/lohnstruktur/lohnverteilung.html
+%
+%[13] explanation of market makers
+%http://www.forextraders.com/market-maker-forex-brokers.html
+%
+%p.47 
+%- Entity Relationships
+%- Trade Types
+%- run historical data for 300 business days before simulation starts
+%
+%Wanted:
+%- trader initial funds -> half of annual income according to [12]?
+%- broker initial funds (for leverage trades)
+%- market maker funds
+%- number of traders per currency pair
+%- one market maker per currency pair?
 
-\subsection{Brain Storm}
-
-Market Simulation Research
-
-[1] http://www.tpc.org/tpc_documents_current_versions/pdf/tpce-v1.14.0.pdf
-[2] www.swissquote.com
-[3] http://vantagepointtrading.com/daily-forex-stats
-[4] http://www.bis.org/publ/qtrpdf/r_qt1312e.pdf
-[5] turnovers by counterparty and currency pairs:
-http://www.reuters.com/article/2013/09/05/bis-survey-volumes-idUSL6N0GZ34R20130905
-
-[6] largest forex centers:
-http://countingpips.com/fx/2011/08/8-largest-forex-trading-centers-in-the-world/
-
-[7] directional trading volume:
-http://www.dailyfx.com/forex/technical/article/special_report/2015/04/13/forex-introducing-volume-by-price.html
-
-[8] https://mahifx.com/blog/50-fascinating-facts-about-forex
-
-[9] largest brokers by volume:
-http://www.myfxbook.com/forex-broker-volume
-
-[10] volume survey (North America) with explanation
-http://www.newyorkfed.org/fxc/volumesurvey/explanatory_notes.html
-
-[11] forex glossary
-http://www.cmsfx.com/en/forex-education/Forex-Glossary/ask-price/
-
-[12] salary distribution switzerland
-http://www.bfs.admin.ch/bfs/portal/en/index/themen/03/04/blank/key/lohnstruktur/lohnverteilung.html
-
-[13] explanation of market makers
-http://www.forextraders.com/market-maker-forex-brokers.html
-
-p.47 
-- Entity Relationships
-- Trade Types
-- run historical data for 300 business days before simulation starts
-
-Wanted:
-- trader initial funds -> half of annual income according to [12]?
-- broker initial funds (for leverage trades)
-- market maker funds
-- number of traders per currency pair
-- one market maker per currency pair?
-
-Assumptions:
-1. all traders come from the same country
-    -> initial funds are distributed according to the local wealth distribution
-
-    2. number of traders trading a particular symbol reflects [10]
-
-    Configuration:
-    country:    Switzerland, 5th largest forex center (in 2011), Average Daily Trading Volume: \$263 billion, Percentage of Daily Global Forex Volume: 5 \%
-    for each symbol
-    1. define number of non-financial traders
-    2. assign initial funds to each trader according to [12] equivalent to 1-year income
-    3. compute market makers initial funds as sum(funds(all traders)) * scale
-
-
-    counterparties: pool of non-financial customers, 1 market maker
-
-    instruments:    only spot transactions
