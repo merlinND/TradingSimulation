@@ -2,6 +2,7 @@ package ch.epfl.ts.component.fetch
 
 import ch.epfl.ts.data.Quote
 import ch.epfl.ts.data.Currency
+import ch.epfl.ts.data.EndOfMessages
 import ch.epfl.ts.component.persist.QuotePersistor
 import ch.epfl.ts.component.fetch.MarketNames._
 import scala.util.parsing.combinator._
@@ -77,8 +78,7 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
   }
   
   /**
-   * Index of the next month to be fetched, incremented whenever a month has been fetched.
-   * And the index for the quotes in that month, updated whenever a quote was sent.
+   * And the index for the quotes to be sent, updated whenever a quote was sent.
    */
   var currentQuote = allQuotes.next()
   var nextQuote = allQuotes.next()
@@ -94,19 +94,23 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
   class SendQuotes extends java.util.TimerTask {
     
     def run() {
-      // Get the current quote and send it
-      callback(currentQuote)
+      // Get the currentQuote and send it
+      send(currentQuote)
+      
+      // Schedule sending the nextQuote
+      timer.schedule(new SendQuotes(), (1 / speed * (nextQuote.timestamp - currentQuote.timestamp)).toInt)
   
       if (allQuotes.hasNext) {
-        // If there is a next quote, schedule the next call
+        // If there are more quotes to send, move forward...
         currentQuote = nextQuote
         nextQuote = allQuotes.next
-        timer.schedule(new SendQuotes(), (1 / speed * (nextQuote.timestamp - currentQuote.timestamp)).toInt)
+      } else if (currentQuote == nextQuote) {
+        // Or maybe we already sent the last quote...
+        send(new EndOfMessages())
+        timer.cancel()
       } else {
-        // Send a default quote with value 0 to signal that this fetcher has sent all its data
-        callback(Quote(MarketNames.FOREX_ID, 0, Currency.DEF, Currency.DEF, 0, 0))
-        // Nothing more to do here, boys!
-        timer.cancel() 
+        // Next scheduled call will send the last quote...
+        currentQuote = nextQuote
       }
     }
     

@@ -5,6 +5,7 @@ import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.component.fetch.{HistDataCSVFetcher, PushFetchComponent}
 import ch.epfl.ts.component.utils.Printer
 import ch.epfl.ts.data.Quote
+import ch.epfl.ts.data.EndOfMessages
 import scala.reflect.ClassTag
 
 /**
@@ -30,6 +31,7 @@ object HistDataFetcherExample {
 
     // Create the connection
     fetcher->(printer, classOf[Quote])
+    fetcher->(printer, classOf[EndOfMessages])
 
     // Start the system
     builder.start
