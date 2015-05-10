@@ -46,8 +46,8 @@ object MovingAverageFXExample {
     implicit val builder = new ComponentBuilder()
     val marketForexId = MarketNames.FOREX_ID
 
-    val useLiveData = true
-    val symbol = (Currency.USD, Currency.CHF)
+    val useLiveData = false
+    val symbol = (Currency.EUR, Currency.CHF)
 
     // ----- Creating actors
     // Fetcher
@@ -56,13 +56,16 @@ object MovingAverageFXExample {
         val fetcherFx: TrueFxFetcher = new TrueFxFetcher
         builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "TrueFxFetcher")
       } else {
+        val replaySpeed = 40000.0
+        
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-        val startDate = dateFormat.parse("201411");
-        val endDate = dateFormat.parse("201411");
+        val startDate = dateFormat.parse("201304");
+        val endDate = dateFormat.parse("201305");
         val workingDir = "./data";
         val currencyPair = symbol._1.toString() + symbol._2.toString();
 
-        builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 40000.0), "HistDataFetcher")
+        val fetcherProps = Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, replaySpeed)
+        builder.createRef(fetcherProps, "HistDataFetcher")
       }
     }
     // Market
@@ -76,8 +79,9 @@ object MovingAverageFXExample {
     val parameters = new StrategyParameters(
       MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
       MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
-      MovingAverageTrader.SHORT_PERIOD -> new TimeParameter(periods(0) seconds),
-      MovingAverageTrader.LONG_PERIOD -> new TimeParameter(periods(1) seconds),
+      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 minute),
+      MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
+      MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
       MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002))
 
     val trader = MovingAverageTrader.getInstance(traderId, List(marketForexId), parameters, "MovingAverageTrader")

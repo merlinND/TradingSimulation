@@ -28,8 +28,8 @@ case class RequiredParameterMissingException(message: String) extends RuntimeExc
  * It will throw a `RequiredParameterMissingException` on instantiation if any of the
  * required parameters have not been provided (or have the wrong type).
  * 
- * @param marketIds  Trader receive as parameter a list of market ids it could be used if trader wants to 
- * receive indicators form various markets but nothing is implemented yet to handle those cases.
+ * @param marketIds List of market IDs that this trader trades on.
+ *  This could be useful if the trader wants to receive indicators from various markets.
  */
 
 abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: StrategyParameters) extends Component {

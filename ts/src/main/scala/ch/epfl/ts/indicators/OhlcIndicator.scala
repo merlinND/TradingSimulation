@@ -7,11 +7,13 @@ import ch.epfl.ts.data.Currency.Currency
 import scala.collection.mutable.MutableList
 import akka.actor.Actor
 import akka.event.Logging
+import akka.actor.ActorLogging
 
 /**
  * computes OHLC tick for a tick frame of the provided size, the OHLCs are identified with the provided marketId
  */
-class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis: Long) extends Actor {
+class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis: Long)
+    extends Actor with ActorLogging {
 
   /**
    * Stores transactions' price values
@@ -21,7 +23,6 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis:
   var close: Double = 0.0
   var currentTick: Long = 0
   val (whatC, withC) = symbol
-  val log = Logging(context.system, this)
   
   override def receive = {
 
@@ -30,7 +31,7 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis:
     case t: Transaction => {
       if (whichTick(t.timestamp) > currentTick) {
         // New tick, send OHLC with values stored until now, and reset accumulators (Transaction volume & prices)
-        sender() ! computeOHLC
+        sender ! computeOHLC
         currentTick = whichTick(t.timestamp)
       }
       values += t.price
@@ -43,9 +44,8 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis:
          currentTick = whichTick(q.timestamp)
       }
       if (q.whatC == whatC && q.withC == withC) {
-        // println("OhlcIndicator: at time " + q.timestamp + ", recieved quote " + q.toString)
         if (whichTick(q.timestamp) > currentTick) {
-          sender() ! computeOHLC
+          sender ! computeOHLC
           currentTick = whichTick(q.timestamp)
         }
         values += q.bid //we consider the price as the bid price
@@ -71,7 +71,7 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis:
     if (!values.isEmpty) {
       close = values.head
       val ohlc = OHLC(marketId, values.last, values.max(Ordering.Double), values.min(Ordering.Double), values.head, volume, tickTimeStamp, tickSizeMillis)
-      // clean ancient values
+      // Clean old values
       volume = 0
       values.clear()
       println("OhlcIndicator: sending OHLC : " + ohlc)

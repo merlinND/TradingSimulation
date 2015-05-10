@@ -6,6 +6,7 @@ import ch.epfl.ts.data.Quote
 import scala.collection.mutable.MutableList
 import akka.actor.Actor
 import akka.event.Logging
+import akka.actor.ActorLogging
 
 /**
  * Moving Average value data
@@ -16,13 +17,11 @@ abstract class MovingAverage(val value: Map[Long, Double])
  * Moving average superclass. To implement a moving average indicator,
  * extend this class and implement the computeMa() method.
  */
-abstract class MaIndicator(periods: List[Long]) extends Actor {
+abstract class MaIndicator(periods: List[Long]) extends Actor with ActorLogging {
 
   var values: MutableList[OHLC] = MutableList[OHLC]()
   val sortedPeriod = periods.sorted
   val maxPeriod = periods.last
-  val log = Logging(context.system, this)
-
   
   def receive = {
     
@@ -33,7 +32,7 @@ abstract class MaIndicator(periods: List[Long]) extends Actor {
       if (values.size == maxPeriod) {
         val ma = computeMa
         println("MaIndicator: sending " + ma)
-        sender() ! ma
+        sender ! ma
         values = values.tail
       }
     } 
