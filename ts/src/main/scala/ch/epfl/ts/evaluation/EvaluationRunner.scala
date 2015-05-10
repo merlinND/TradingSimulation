@@ -14,24 +14,25 @@ import ch.epfl.ts.component.utils.Printer
 import ch.epfl.ts.indicators.EmaIndicator
 import ch.epfl.ts.indicators.OhlcIndicator
 import ch.epfl.ts.indicators.EMA
+import ch.epfl.ts.engine.Wallet
 
 /**
  * Evaluates the performance of trading strategies
  */
 //TODO Make Evaluator consistent with a Trader connected to a Broker which provide wallet-awareness  
 object EvaluationRunner {
-  val builder = new ComponentBuilder("evaluation")
+  implicit val builder = new ComponentBuilder("evaluation")
 
-  def test(trader: ComponentRef, traderId: Long) = {
+  def test(trader: ComponentRef, traderId: Long, symbol: (Currency, Currency)) = {
     val marketForexId = MarketNames.FOREX_ID
 
     // Fetcher
     // variables for the fetcher
     val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-    val startDate = dateFormat.parse("201301");
-    val endDate = dateFormat.parse("201312");
+    val startDate = dateFormat.parse("201304");
+    val endDate = dateFormat.parse("201305");
     val workingDir = "./data";
-    val currencyPair = "USDCHF";
+    val currencyPair = symbol._1.toString() + symbol._2.toString();
     val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 4200.0), "HistFetcher")
 
     // Market
@@ -39,20 +40,14 @@ object EvaluationRunner {
     val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
 
     // Evaluator
+    // TODO: evaluator should get the initial funds from the Trader directly
     val period = 10 * 1000 milliseconds
     val initial = 5000.0
-    val currency = CHF
+    val currency = symbol._2
     val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, initial, currency, period), "evaluator")
 
-    //Printer 
+    // Printer 
     val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")
-
-    //TODO Integrate indicators inside trader
-    val symbol = (Currency.USD, Currency.CHF)
-    val periods = List(3, 15)
-    val periodOHLC: Long =  60 * 60 * 1000 //OHLC of 1 hour
-    val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], 4L, symbol, periodOHLC), "ohlcIndicator")
-    val maCross = builder.createRef(Props(classOf[EmaIndicator], periods), "maCross")
 
     // ----- Connecting actors
     fetcher -> (Seq(forexMarket, evaluator), classOf[Quote])
@@ -60,29 +55,28 @@ object EvaluationRunner {
     evaluator -> (printer, classOf[EvaluationReport])
     forexMarket -> (evaluator, classOf[Transaction])
 
-    // -- TODO Integrate indicators inside trader
-    fetcher -> (ohlcIndicator, classOf[Quote])
-    ohlcIndicator -> (maCross, classOf[OHLC])
-    maCross -> (trader, classOf[EMA])
-
     builder.start
   }
 
-  def movingAverageTrader(traderId: Long) = {
+  def movingAverageTrader(traderId: Long, symbol: (Currency, Currency)) = {
     // Trader
-    val symbol = (Currency.USD, Currency.CHF)
-    val volume = 1000.0
-    val shortPeriod = 3
-    val longPeriod = 15
-    val tolerance = 0.0002
-
-    val periods = List(3, 10)
+    val marketIds = List(MarketNames.FOREX_ID)
+    val periods = List(2, 6)
+    val initialFunds: Wallet.Type = Map(Currency.CHF -> 5000.0)
+    val parameters = new StrategyParameters(
+      MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
+      MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
+      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 minute),
+      MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
+      MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
+      MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002))
     
-    //TODO : Now trader need also initialFund,initialCurrency
-    builder.createRef(Props(classOf[MovingAverageTrader], traderId, symbol, shortPeriod, longPeriod, volume, tolerance, true), "simpleTrader")
+    MovingAverageTrader.getInstance(traderId, marketIds, parameters, "SimpleTrader")
   }
 
   def main(args: Array[String]): Unit = {
-    test(movingAverageTrader(123L), 123L)
+    val traderId = 42L
+    val symbol =  (Currency.EUR, Currency.CHF)
+    test(movingAverageTrader(traderId, symbol), traderId, symbol)
   }
 }
