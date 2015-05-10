@@ -83,8 +83,8 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
   val (whatC, withC) = symbol
   
   val ohlcPeriod = parameters.get[FiniteDuration](MovingAverageTrader.OHLC_PERIOD)
-  val shortPeriods = parameters.get[Int](MovingAverageTrader.SHORT_PERIODS)
-  val longPeriods = parameters.get[Int](MovingAverageTrader.LONG_PERIODS)
+  val shortPeriods: Long = parameters.get[Int](MovingAverageTrader.SHORT_PERIODS).toLong
+  val longPeriods: Long = parameters.get[Int](MovingAverageTrader.LONG_PERIODS).toLong
   val tolerance = parameters.get[Double](MovingAverageTrader.TOLERANCE)
   val withShort = parameters.getOrElse[Boolean](MovingAverageTrader.WITH_SHORT, false)
   
@@ -216,7 +216,8 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
         placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
         oid += 1
       }
-    } // SELL signal
+    }
+    // SELL signal
     else if (currentShort < currentLong) {
       if (holdings > 0.0) {
         placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings, -1))
@@ -233,7 +234,7 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
     implicit val timeout = new Timeout(askTimeout)
     val future = (broker ? order).mapTo[Order]
     future onSuccess {
-      //Transaction has been accepted by the broker (but may not be executed : e.g. limit orders) = OPEN Positions
+      // Transaction has been accepted by the broker (but may not be executed : e.g. limit orders) = OPEN Positions
       case ao: AcceptedOrder => log.debug("Accepted order costCurrency: " + order.costCurrency() + " volume: " + ao.volume)
       case _: RejectedOrder => {
         log.debug("MATrader: order failed")

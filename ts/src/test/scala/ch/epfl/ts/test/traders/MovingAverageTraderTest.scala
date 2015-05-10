@@ -88,10 +88,11 @@ class MovingAverageTraderTest
       }
     }
     
-    "notify its movingAverageIndicator when he receives an ohlc" in {
+    "notify its movingAverageIndicator when he receives an OHLC" in {
       within(1 second) {
-        EventFilter.debug(message = "Moving Average Indicator received an olhc", occurrences = 1) intercept {
-          trader ! OHLC(1L, 0.0, 0.0,0.0,0.0,0.0,0L,0L)
+        val ohlc = OHLC(1L, 0.0, 0.0,0.0,0.0,0.0,0L,0L)
+        EventFilter.debug(message = "Moving Average Indicator received an OHLC: " + ohlc, occurrences = 1) intercept {
+          trader ! ohlc
         }
       }
     }
