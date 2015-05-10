@@ -82,7 +82,7 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
   val symbol = parameters.get[(Currency, Currency)](MovingAverageTrader.SYMBOL)
   val (whatC, withC) = symbol
   
-  val ohlcPeriod = parameters.get[FiniteDuration](MovingAverageTrader.SHORT_PERIODS)
+  val ohlcPeriod = parameters.get[FiniteDuration](MovingAverageTrader.OHLC_PERIOD)
   val shortPeriods = parameters.get[Int](MovingAverageTrader.SHORT_PERIODS)
   val longPeriods = parameters.get[Int](MovingAverageTrader.LONG_PERIODS)
   val tolerance = parameters.get[Double](MovingAverageTrader.TOLERANCE)
