@@ -28,6 +28,7 @@ import ch.epfl.ts.test.FxMarketWrapped
 import ch.epfl.ts.test.SimpleBrokerWrapped
 import ch.epfl.ts.traders.MovingAverageTrader
 import ch.epfl.ts.data.OHLC
+import ch.epfl.ts.data.NaturalNumberParameter
 
 /**
  * @warning Some of the following tests are dependent and should be executed in the specified order.
@@ -45,8 +46,9 @@ class MovingAverageTraderTest
   val parameters = new StrategyParameters(
     MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
     MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
-    MovingAverageTrader.SHORT_PERIOD -> new TimeParameter(periods(0)),
-    MovingAverageTrader.LONG_PERIOD -> new TimeParameter(periods(1)),
+    MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 minute),
+    MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
+    MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
     MovingAverageTrader.TOLERANCE -> RealNumberParameter(tolerance),
     MovingAverageTrader.WITH_SHORT -> BooleanParameter(false))
 

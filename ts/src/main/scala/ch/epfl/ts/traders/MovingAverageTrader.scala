@@ -47,10 +47,12 @@ object MovingAverageTrader extends TraderCompanion {
 
   /** Currency pair to trade */
   val SYMBOL = "Symbol"
-  /** Period for the shorter moving average **/
-  val SHORT_PERIOD = "ShortPeriod"
-  /** Period for the longer moving average **/
-  val LONG_PERIOD = "LongPeriod"
+  /** OHLC period (duration) */
+  val OHLC_PERIOD = "OhlcPeriod"
+  /** Number of OHLC periods to use for the shorter moving average **/
+  val SHORT_PERIODS = "ShortPeriods"
+  /** Number of OHLC periods to use for the longer moving average **/
+  val LONG_PERIODS = "LongPeriods"
   /** Tolerance: a kind of sensitivity threshold to avoid "fake" buy signals */
   val TOLERANCE = "Tolerance"
   /** Allow the use of Short orders in the strategy */
@@ -58,8 +60,9 @@ object MovingAverageTrader extends TraderCompanion {
 
   override def strategyRequiredParameters = Map(
     SYMBOL -> CurrencyPairParameter,
-    SHORT_PERIOD -> TimeParameter,
-    LONG_PERIOD -> TimeParameter,
+    OHLC_PERIOD -> TimeParameter,
+    SHORT_PERIODS -> NaturalNumberParameter,
+    LONG_PERIODS -> NaturalNumberParameter,
     TOLERANCE -> RealNumberParameter)
 
   override def optionalParameters = Map(
@@ -77,11 +80,23 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
   override def companion = MovingAverageTrader
 
   val symbol = parameters.get[(Currency, Currency)](MovingAverageTrader.SYMBOL)
-  val shortPeriod = parameters.get[FiniteDuration](MovingAverageTrader.SHORT_PERIOD)
-  val longPeriod = parameters.get[FiniteDuration](MovingAverageTrader.LONG_PERIOD)
+  val (whatC, withC) = symbol
+  
+  val ohlcPeriod = parameters.get[FiniteDuration](MovingAverageTrader.SHORT_PERIODS)
+  val shortPeriods = parameters.get[Int](MovingAverageTrader.SHORT_PERIODS)
+  val longPeriods = parameters.get[Int](MovingAverageTrader.LONG_PERIODS)
   val tolerance = parameters.get[Double](MovingAverageTrader.TOLERANCE)
   val withShort = parameters.getOrElse[Boolean](MovingAverageTrader.WITH_SHORT, false)
+  
+  /**
+   * Indicators needed by the Moving Average Trader 
+   */
+  val marketId = marketIds(0)
+  // TODO: make OHLC take a FiniteDuration
+  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, symbol, ohlcPeriod.toMillis))
+  val movingAverageIndicator = context.actorOf(Props(classOf[EmaIndicator], List(shortPeriods, longPeriods)))
 
+  
   /**
    * Broker information
    */
@@ -100,20 +115,10 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
   var holdings: Double = 0.0
   var shortings: Double = 0.0
 
-  val (whatC, withC) = symbol
-  
-  /**
-   * Indicators needed by the Moving Average Trader 
-   */
-  val ohlcPeriod : Long = 1000*60 //one ohlc per minute
-  val marketId : Long = marketIds(0)
-  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), ohlcPeriod))
-  val movingAverageIndicator = context.actorOf(Props(classOf[EmaIndicator], List(shortPeriod.length,longPeriod.length)))
-
   var tradingPrices = MHashMap[(Currency, Currency), (Double, Double)]()
-/**
- * TODO : actually trader update price based on quotes and MA is computed based on ohlc...
- */
+  /**
+   * TODO : actually trader update price based on quotes and MA is computed based on ohlc...
+   */
   override def receiver = {
 
     /**
@@ -137,13 +142,13 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
 
     case ma: MovingAverage if registered => {
       println("Trader receive MAs")
-      ma.value.get(shortPeriod.length.toInt) match {
+      ma.value.get(shortPeriods) match {
         case Some(x) => currentShort = x
-        case None    => println("Error: Missing indicator with period " + shortPeriod)
+        case None    => println("Error: Missing indicator with period " + shortPeriods)
       }
-      ma.value.get(longPeriod.length.toInt) match {
+      ma.value.get(longPeriods) match {
         case Some(x) => currentLong = x
-        case None    => println("Error: Missing indicator with period " + longPeriod)
+        case None    => println("Error: Missing indicator with period " + longPeriods)
       }
         decideOrder
     }
@@ -246,7 +251,6 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
 
   override def init = {
     log.debug("MovingAverageTrader received startSignal")
-      println("Trader receive the start signal")
   }
 
 }
