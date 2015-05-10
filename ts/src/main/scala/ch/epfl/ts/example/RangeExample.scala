@@ -1,36 +1,37 @@
 package ch.epfl.ts.example
 
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
+import scala.language.postfixOps
 import akka.actor.Props
+import ch.epfl.ts.brokers.StandardBroker
 import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.component.fetch.HistDataCSVFetcher
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.component.persist.DummyPersistor
 import ch.epfl.ts.component.utils.BackLoop
+import ch.epfl.ts.component.utils.Printer
 import ch.epfl.ts.data.CoefficientParameter
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
-import ch.epfl.ts.data.OHLC
 import ch.epfl.ts.data.Quote
 import ch.epfl.ts.data.RealNumberParameter
+import ch.epfl.ts.data.Register
 import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.data.Transaction
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.ForexMarketRules
+import ch.epfl.ts.engine.FundWallet
+import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.MarketFXSimulator
 import ch.epfl.ts.engine.Wallet
-import ch.epfl.ts.evaluation.Evaluator
-import ch.epfl.ts.indicators.OhlcIndicator
-import ch.epfl.ts.indicators.RI2
-import ch.epfl.ts.indicators.RangeIndicator
-import ch.epfl.ts.traders.RangeTrader
-import ch.epfl.ts.evaluation.Evaluator
 import ch.epfl.ts.evaluation.EvaluationReport
-import ch.epfl.ts.component.utils.Printer
-import scala.language.postfixOps
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.duration.DurationInt
+import ch.epfl.ts.evaluation.Evaluator
+import ch.epfl.ts.traders.RangeTrader
+import ch.epfl.ts.engine.ExecutedAskOrder
+import ch.epfl.ts.engine.ExecutedBidOrder
 
 
 object RangeExample {
@@ -86,23 +87,25 @@ object RangeExample {
     
     //printer
     val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")
+    
+    //Broker
+    val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
    
     
     // ----- Connecting actors
     
    // fetcher -> (Seq(forexMarket, evaluator, ohlcIndicator), classOf[Quote])
-    fetcher -> (Seq(forexMarket, evaluator, trader), classOf[Quote])   
-    evaluator -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
-    evaluator -> (printer, classOf[EvaluationReport])
+    
+    //evaluator -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
+    //evaluator -> (printer, classOf[EvaluationReport])
     
     //fetcher->(Seq(forexMarket, ohlcIndicator), classOf[Quote])
     
-    trader->(forexMarket, classOf[MarketAskOrder])
-    trader->(forexMarket, classOf[MarketBidOrder])
-
-    forexMarket->(backloop, classOf[Transaction])
-       
-    backloop->(trader, classOf[Transaction])
+    fetcher -> (Seq(forexMarket, evaluator, trader, broker), classOf[Quote])  
+    
+    trader -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
+    forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])   
+    broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
 
     builder.start
   }

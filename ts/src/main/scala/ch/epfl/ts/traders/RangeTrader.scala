@@ -17,6 +17,8 @@ import ch.epfl.ts.data.CoefficientParameter
 import akka.actor.Props
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.indicators.OhlcIndicator
+import ch.epfl.ts.data.ConfirmRegistration
+import akka.actor.ActorRef
 
 /**
  * RangeTrader companion object
@@ -81,11 +83,24 @@ class RangeTrader(uid : Long, parameters: StrategyParameters)
   var holdings : Double = 0.0
   var rangeReady : Boolean = false
   
+  
+   /**
+   * Broker information
+   */
+  var broker: ActorRef = null
+  var registered = false
+  
   /**
    * When we receive an OHLC we check if the price is in the buying range or in the selling range.
    * If the price break the support we sell (assumption price will crashes)
    */
   override def receiver = {
+    
+     case ConfirmRegistration => {
+      broker = sender()
+      registered = true
+      log.debug("MATrader: Broker confirmed")
+    }
     
     /**We forward the quote that we receive to
      * ohlcIndicator*/
