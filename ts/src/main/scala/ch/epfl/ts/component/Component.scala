@@ -1,15 +1,21 @@
 package ch.epfl.ts.component
 
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{HashMap => MHashMap}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
+import scala.language.existentials
 import scala.language.postfixOps
 import scala.reflect.ClassTag
-import scala.language.existentials
-import scala.concurrent.duration.{ FiniteDuration, DurationInt }
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.collection.mutable.{HashMap => MHashMap}
-import com.typesafe.config.{ConfigFactory, Config}
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import akka.actor._
 import akka.pattern.gracefulStop
-import scala.concurrent.Future
 
 case object StartSignal
 case object StopSignal
@@ -20,6 +26,40 @@ final class ComponentBuilder(val system: ActorSystem) {
   var graph = Map[ComponentRef, List[(ComponentRef, Class[_])]]()
   var instances = List[ComponentRef]()
   
+  /**
+   * Supervising actor that waits for Actors termination
+   * @see http://letitcrash.com/post/30165507578/shutdown-patterns-in-akka-2
+   */
+  private class Reaper extends Actor {
+    var watched = ArrayBuffer.empty[ActorRef]
+    var cb: () => Any = () => Unit
+    
+    override def receive = {
+      case StartKilling(l, onAllDead) => {
+        cb = onAllDead
+        instances.foreach(c => {
+          context.watch(c.ar)
+          c.ar ! PoisonPill
+          
+          watched += c.ar
+        })
+      }
+      
+      case Terminated(ref) => {
+        watched -= ref
+        if(watched.isEmpty) {
+          cb()          
+        }
+      }
+    }
+  }
+  /**
+   * @param references List of components that need to be watched
+   * @param onAllDead Callback function to call when all watched actors have been terminated
+   */
+  private case class StartKilling(references: List[ComponentRef], onAllDead: () => Any)
+  private val reaper = system.actorOf(Props(classOf[Reaper], this), "Reaper")
+    
   def this() {
     this(ActorSystem(ConfigFactory.load().getString("akka.systemName"), ConfigFactory.load()))
   }
@@ -61,14 +101,16 @@ final class ComponentBuilder(val system: ActorSystem) {
    * 
    * @return A future which completes when *all* managed actors have shut down.
    */
-  def shutdownManagedActors(timeout: FiniteDuration = 3 seconds): Future[List[Boolean]] = {
-    val futures = instances.map(component => gracefulStop(component.ar, timeout, PoisonPill))
-    val all = Future.sequence(futures)
-    all.onComplete {
-      _ => instances = List[ComponentRef]()
-    }
+  def shutdownManagedActors(timeout: FiniteDuration = 3 seconds): Future[Unit] = {
+    val p = Promise[Unit]()
     
-    all
+    val cb: () => Any = () => {
+      instances = List[ComponentRef]()
+      p.success(Unit)
+    }
+    reaper ! StartKilling(instances, cb)
+    
+    p.future
   }
 }
 

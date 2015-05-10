@@ -23,8 +23,7 @@ class ComponentBuilderTestSuite extends ActorTestSuite("ComponentBuilderTestSuit
       
       assert(builder.instances.toSet === components)
       val f = builder.shutdownManagedActors()
-      val status = Await.result(f, 3 seconds)
-      assert(status.forall(b => b))
+      Await.result(f, 3 seconds)
       assert(builder.instances === List())
     }
     
