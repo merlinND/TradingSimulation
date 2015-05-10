@@ -61,6 +61,15 @@
             xAxis : [ {
               type : 'datetime'
             } ],
+            navigator : {
+              enabled : true,
+              series : {
+                data : $scope.chartSeries[0]
+              }
+            },
+            rangeSelector : {
+              enabled : true
+            },
           },
           series : $scope.chartSeries,
           title : {

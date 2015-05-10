@@ -47,7 +47,7 @@ object MovingAverageFXExample {
     val marketForexId = MarketNames.FOREX_ID
 
     val useLiveData = false
-    val symbol = (Currency.USD, Currency.CHF)
+    val symbol = (Currency.EUR, Currency.CHF)
 
     // ----- Creating actors
     // Fetcher
@@ -62,7 +62,7 @@ object MovingAverageFXExample {
         val workingDir = "./data";
         val currencyPair = symbol._1.toString() + symbol._2.toString();
 
-        builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 4000.0), "HistDataFetcher")
+        builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 60.0), "HistDataFetcher")
       }
     }
     // Market
