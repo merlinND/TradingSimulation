@@ -22,6 +22,9 @@ trait FundDistribution {
   val rand = new java.util.Random();
   
   def percentListToDistribution(binsInPercent: List[(Int, Double)]) : List[Int] = {
+    
+    assert(Math.abs(binsInPercent.foldRight(0.0)((elem, acc) => elem._2 + acc) - 100.0) < 0.001);
+    
     val minPercent = binsInPercent.minBy(_._2)._2;
     return binsInPercent.flatMap(x => List.fill(Math.round(x._2 / minPercent).toInt)(x._1));
   }
@@ -54,7 +57,7 @@ class FundsGermany extends FundDistribution {
       (175000, 1.6),
       (250000, 0.8),
       (375000, 0.4),
-      (500000, 0.1),
+      (500000, 0.2), // changed from 0.1 to 0.2 to add up to 100 %
       (1000000, 0.1),
       (1000001, 0.1)); // people earning more than this
   
@@ -64,6 +67,7 @@ class FundsGermany extends FundDistribution {
 
 class FundsSwitzerland extends FundDistribution {
   // from http://www.bfs.admin.ch/bfs/portal/en/index/themen/03/04/blank/key/lohnstruktur/lohnverteilung.html
+  // - data were given as weekly income (have to multiply by 12)
   val binsInPercent = List(
       (3000, 2.3),
       (4000, 12.6),
@@ -101,7 +105,7 @@ class FundsUSA extends FundDistribution {
       (190000, 0.7),
       (200000, 0.5),
       (250000, 1.8),
-      (250001, 2.5)); // people earning more than this
+      (250001, 2.1)); // changed from 2.5 to 2.1 to add up to 100 %
   
   override var bins = percentListToDistribution(binsInPercent);
   
@@ -139,7 +143,7 @@ class FundsJapan extends FundDistribution {
 class FundsRussia extends FundDistribution {
   // from http://www.gks.ru/bgd/regl/b12_110/Main.htm (first blue arrow, first file)
   // alternatively in USD http://www.forbes.com/sites/markadomanis/2012/09/10/what-is-the-russian-middle-class-probably-not-what-you-think/
-  // data were given as monthly income
+  // - data were given as monthly income (have to multiply by 12)
   val binsInPercent = List(
       (5000, 7.3),
       (7000, 8.2),
@@ -156,7 +160,7 @@ class FundsRussia extends FundDistribution {
 
 class FundsCanada extends FundDistribution {
   // from http://www.statcan.gc.ca/tables-tableaux/sum-som/l01/cst01/famil105a-eng.htm
-  // source data was given in the form "total of xxx and over, number of people" and converted accordingly
+  // source data were given in the form "total of xxx and over, number of people" and converted accordingly
   val binsInPercent = List(
 //      (0, 1932690.0),
 //      (5000, 23864820.0),
@@ -183,7 +187,7 @@ class FundsCanada extends FundDistribution {
       (150000, 1168950),
       (200000, 306120),
       (250000, 120680),
-      (250001, 192250)).map(x => (x._1, x._2 / 25797510.0)); // people earning more than this
+      (250001, 192250)).map(x => (x._1, x._2 * 100 / 25797510.0)); // people earning more than this
   
   override var bins = percentListToDistribution(binsInPercent);
   
@@ -212,7 +216,7 @@ class FundsUK extends FundDistribution {
 
 class FundsAustralia extends FundDistribution {
   // from http://profile.id.com.au/australia/individual-income
-  // data were given as weekly income
+  // - data were given as weekly income (have to multiply by 52)
   // - negative/NIL income was added to the lowest income bin
   // - not stated was added to the highest income bin
   val binsInPercent = List(
@@ -225,7 +229,7 @@ class FundsAustralia extends FundDistribution {
       (1250, 7.9),
       (1500, 5.5),
       (2000, 6.4),
-      (2001, 6.2 + 7.9)).map(x => (x._1 * 52, x._2)); // people earning more than this
+      (2001, 6.2 + 7.8)).map(x => (x._1 * 52, x._2)); // people earning more than this
   
   override var bins = percentListToDistribution(binsInPercent);
   
