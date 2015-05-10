@@ -116,9 +116,6 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
 
   var tradingPrices = MHashMap[(Currency, Currency), (Double, Double)]()
   
-  /**
-   * TODO : actually trader update price based on quotes and MA is computed based on ohlc...
-   */
   override def receiver = {
 
     /**
