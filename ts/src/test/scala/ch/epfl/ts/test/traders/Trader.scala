@@ -28,6 +28,7 @@ import akka.testkit.TestActorRef
 import ch.epfl.ts.data.StrategyParameters
 import scala.util.Success
 import scala.concurrent.Await
+import ch.epfl.ts.engine.TraderIdentity
 
 @RunWith(classOf[JUnitRunner])
 class TraderTestSuite
@@ -108,8 +109,9 @@ class TraderTestSuite
         builder.start
         val f = (askee.ar ? GetTraderParameters)
         val p = Await.result(f, timeout.duration)
-        //val Success(p: StrategyParameters) = f.value.get
-        assert(p === requiredDefaultParameterization)
+        
+        val expected = TraderIdentity(askee.name, traderId, strategyCompanion, requiredDefaultParameterization)
+        assert(p === expected)
         builder.stop
       }
     }
