@@ -13,7 +13,6 @@ import ch.epfl.ts.data.LimitAskOrder
 
 /**
  * Wrapper around ForexMarketRules, to have ALL the information needed to proceed the order in one method.
- * Created by sygi on 09.05.15.
  */
 class FxMarketRulesWrapper extends MarketRulesWrapper(new ForexMarketRules()) {
   val rules = new ForexMarketRules()

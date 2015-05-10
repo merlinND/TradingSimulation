@@ -30,7 +30,6 @@ import ch.epfl.ts.engine.rules.{SimulationMarketRulesWrapper, FxMarketRulesWrapp
 
 /**
  * Market simulation with first reading historical data and then running simulation on its own.
- * Created by sygi on 08.05.15.
  */
 object FullMarketSimulation {
   var producers = Map[Class[_], List[ComponentRef]]()

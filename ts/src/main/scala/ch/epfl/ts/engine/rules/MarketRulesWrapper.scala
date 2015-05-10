@@ -8,7 +8,6 @@ import ch.epfl.ts.data.Currency._
 /**
  * A wrapper around the MarketRules, so that all the information needed to proceed with the order is in one place.
  * Needed to be able to change between strategies without changing the MarketSimulator.
- * Created by sygi on 09.05.15.
  */
 abstract class MarketRulesWrapper(rules: MarketRules){
   def processOrder(o: Order, marketId: Long,

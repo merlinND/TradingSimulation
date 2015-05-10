@@ -9,9 +9,6 @@ import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.LimitAskOrder
 import scala.collection.mutable.HashMap
 
-/**
- * Created by sygi on 09.05.15.
- */
 class SimulationMarketRulesWrapper() extends MarketRulesWrapper(new MarketRules()){
   val rules = new MarketRules()
   override def processOrder(o: Order, marketId: Long,
