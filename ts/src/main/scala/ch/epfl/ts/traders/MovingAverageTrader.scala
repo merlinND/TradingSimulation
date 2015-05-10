@@ -99,7 +99,6 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
   val (whatC, withC) = symbol
 
   var tradingPrices = MHashMap[(Currency, Currency), (Double, Double)]()
-  var currentTimeMillis : Long = 0L
   
   override def receiver = {
 

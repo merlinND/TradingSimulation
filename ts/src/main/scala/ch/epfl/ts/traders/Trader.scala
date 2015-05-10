@@ -37,6 +37,7 @@ abstract class Trader(val uid: Long, val parameters: StrategyParameters) extends
   
   /** Default timeout to use when Asking another component asynchronously */
   val askTimeout = 500 milliseconds
+  var currentTimeMillis : Long = 0L
   
   val initialFunds = parameters.get[Map[Currency.Currency, Double]]("InitialFunds")
   

@@ -67,7 +67,6 @@ class MadTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, p
 
   var alternate = 0
   val r = new Random
-  var currentTimeMillis : Long = 0L
 
   // TODO: make wallet-aware
   override def receiver = {

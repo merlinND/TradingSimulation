@@ -92,13 +92,13 @@ class SobiTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, 
         currentOrderId = currentOrderId + 1
         //"place an order to buy x shares at (lastPrice-p)"
         println("SobiTrader: making buy order: price=" + (tradingPrice - priceDelta) + ", volume=" + volume)
-        send[Order](LimitBidOrder(currentOrderId, uid, System.currentTimeMillis, USD, USD, volume, tradingPrice - priceDelta))
+        send[Order](LimitBidOrder(currentOrderId, uid, currentTimeMillis, USD, USD, volume, tradingPrice - priceDelta))
       }
       if ((bi - si) > theta) {
         currentOrderId = currentOrderId + 1
         //"place an order to sell x shares at (lastPrice+p)"
         println("SobiTrader: making sell order: price=" + (tradingPrice + priceDelta) + ", volume=" + volume)
-        send[Order](LimitAskOrder(currentOrderId, uid, System.currentTimeMillis(), USD, USD, volume, tradingPrice + priceDelta))
+        send[Order](LimitAskOrder(currentOrderId, uid, currentTimeMillis, USD, USD, volume, tradingPrice + priceDelta))
       }
     }
 
