@@ -125,7 +125,7 @@ The first parameter is the trader ID, the second parameter is a collection of pa
 \item \emph{MarketRulesParameter}: represents rules applied in a certain market.
 \end{itemize}
 
-To create an instance of a specific trader, you need to know what parameters it takes exactly. The parameters information can be found both in code and documentation. Once you know what parameters a trader takes, you can create the \emph{StrategyParameters} object as follows:
+To create an instance of a specific trader, you need to know what parameters it takes exactly. The information about parameters can be found both in code and documentation. Once you know what parameters a trader takes, you can create the \emph{StrategyParameters} object as follows:
 
 \begin{lstlisting}[language=Scala]
   val initialFunds = Map(Currency.CHF -> 5000.0)
@@ -143,7 +143,7 @@ Now, you can create the trader with just one line of code as follows:
   val trader = MovingAverageTrader.getInstance(10L, parameters, "MovingAverageTrader")
 \end{lstlisting}
 
-In the code above, \emph{MovingAverageTrader} is a companion object of the class \emph{MovingAverageTrader}, which provides the method \emph{getInstance} to create a new instance of the object. The method \emph{getInstance} takes a \emph{builder} as implicit parameter. Either make sure an implicit \emph{builder} is in scope or provide it explicitly.
+In the code above, \emph{MovingAverageTrader} is a companion object of the class \emph{MovingAverageTrader}, which provides the method \emph{getInstance} to create a new instance of the component. The method \emph{getInstance} takes a \emph{builder} as implicit parameter. Either make sure an implicit \emph{builder} is in scope or provide it explicitly.
 
 \begin{warning}
 In theory, you can also create an instance of \emph{MovingAverageTrader} like a common component as follows. But this is not recommended, as the \emph{getInstance} approach provides more safety check of parameters.
