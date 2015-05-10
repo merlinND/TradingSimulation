@@ -1,8 +1,8 @@
 (function() {
   'use strict';
 
-  angular.module('myApp').controller('MarketPriceController', [ '$scope', 'alertService',
-      function($scope, alertService) {
+  angular.module('myApp').controller('MarketPriceController',
+      [ '$scope', 'alertService', function($scope, alertService) {
         $scope.alerts = alertService.get();
 
         var ws = new WebSocket('ws://localhost:9000/fetchers/quote');
@@ -65,7 +65,39 @@
               }
             },
             rangeSelector : {
-              enabled : true
+              enabled : true,
+              buttonTheme: {
+                width: null,
+                padding: 2
+              },
+              buttons : [ {
+                type : 'minute',
+                count : 1,
+                text : '1 min'
+              }, {
+                type : 'minute',
+                count : 60,
+                text : '1 hour'
+              }, {
+                type : 'day',
+                count : 1,
+                text : '1 day'
+              }, {
+                type : 'month',
+                count : 1,
+                text : '1 month'
+              }, {
+                type : 'month',
+                count : 6,
+                text : '6 months'
+              }, {
+                type : 'year',
+                count : 1,
+                text : '1 year'
+              }, {
+                type : 'all',
+                text : 'All'
+              } ]
             },
           },
           series : $scope.chartSeries,
