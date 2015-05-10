@@ -43,13 +43,13 @@ final class ComponentBuilder(val system: ActorSystem) {
           
           watched += c.ar
         })
+        
+        if(instances.isEmpty) cb()
       }
       
       case Terminated(ref) => {
         watched -= ref
-        if(watched.isEmpty) {
-          cb()          
-        }
+        if(watched.isEmpty) cb()
       }
     }
   }
