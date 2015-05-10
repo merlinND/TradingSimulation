@@ -75,20 +75,14 @@ object FullMarketSimulation {
     connectAllOrders(broker, forexMarket)
     forexMarket->(broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
 
-    //Backloop
-    val dummyPersistor = new DummyPersistor()
-    val backloop = builder.createRef(Props(classOf[BackLoop], marketForexId, dummyPersistor), "backloop")
-
-    forexMarket->(backloop, classOf[Transaction])
-    addProducer(classOf[Quote], backloop)
-
     connectProducersWithConsuments()
 
     builder.start
-    scheduleChange(fxQuoteFetcher, forexMarket)
+    val delay = 10 * 1000 //in ms
+    scheduleChange(fxQuoteFetcher, forexMarket, delay)
   }
 
-  def scheduleChange(quoteFetcher: ComponentRef, market: ComponentRef) = {
+  def scheduleChange(quoteFetcher: ComponentRef, market: ComponentRef, delay: Long) = {
     val timer = new Timer()
     class StopFetcher extends java.util.TimerTask {
       def run() {
@@ -96,7 +90,7 @@ object FullMarketSimulation {
         market.ar ! 'ChangeMarketRules
       }
     }
-    timer.schedule(new StopFetcher, 10 * 1000)
+    timer.schedule(new StopFetcher, delay)
   }
 
   def initProducersAndConsuments() = {

@@ -81,30 +81,11 @@ class StandardBroker extends Component with ActorLogging {
     }
 
     //TODO(sygi): refactor
-    case e: ExecutedBidOrder => {
-      if (mapping.contains(e.uid)) {
-        val replyTo = mapping.getOrElse(e.uid, null)
-        executeForWallet(e.uid, FundWallet(e.uid, e.whatC, e.volume), {
-          case WalletConfirm(uid) => {
-            log.debug("Broker: Transaction executed")
-            replyTo ! e
-          }
-          case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
-        })
-      }
-    }
-    case e: ExecutedAskOrder => {
-      if (mapping.contains(e.uid)) {
-        val replyTo = mapping.getOrElse(e.uid, null)
-        executeForWallet(e.uid, FundWallet(e.uid, e.withC, e.volume * e.price), {
-          case WalletConfirm(uid) => {
-            log.debug("Broker: Transaction executed")
-            replyTo ! e
-          }
-          case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
-        })
-      }
-    }
+    case e: ExecutedBidOrder =>
+      finishExecutedOrder(e, e.whatC, e.volume)
+
+    case e: ExecutedAskOrder =>
+      finishExecutedOrder(e, e.withC, e.volume * e.price)
 
     //TODO(sygi): refactor charging the wallet/placing an order
     case o: Order => {
@@ -112,7 +93,7 @@ class StandardBroker extends Component with ActorLogging {
       val replyTo = sender
       val uid = o.chargedTraderId()
       if (!ableToProceed(o)){
-        log.debug("Broker: Unable to proceed MarketBid request before getting first quote")
+        log.warning("Broker: Unable to proceed MarketBid request before getting first quote")
         replyTo ! RejectedOrder.apply(o)
         return dummyReturn
       }
@@ -166,6 +147,19 @@ class StandardBroker extends Component with ActorLogging {
         }
       }
       case None => log.debug("Broker: No such wallet")
+    }
+  }
+
+  def finishExecutedOrder(e: Order, currency: Currency, amount: Double){ //TODO(sygi): create a common subclass for ExecutedOrders
+    if (mapping.contains(e.uid)) {
+      val replyTo = mapping.getOrElse(e.uid, null)
+      executeForWallet(e.uid, FundWallet(e.uid, currency, amount), {
+        case WalletConfirm(uid) => {
+          log.debug("Broker: Transaction executed")
+          replyTo ! e
+        }
+        case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
+      })
     }
   }
 }

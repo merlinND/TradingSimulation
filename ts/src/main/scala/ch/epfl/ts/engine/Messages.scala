@@ -39,7 +39,6 @@ object ExecutedBidOrder {
 object ExecutedAskOrder {
   def apply(o: Order,price:Double): ExecutedAskOrder = ExecutedAskOrder(o.oid, o.uid, o.timestamp, o.whatC, o.withC, o.volume, price)
 }
-//TODO(sygi): change this messages and actually use them to communicate broker -> trader
 
 
 /* *****************************

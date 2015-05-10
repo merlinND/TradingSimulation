@@ -19,16 +19,10 @@ class BackLoop(marketId: Long, p: Persistance[Transaction]) extends Component {
     case t: Transaction => {
       send(t)
       p.save(t)
-      send(createQuote(t))
     }
     case la: LimitAskOrder => send(la)
     case lb: LimitBidOrder => send(lb)
     case d: DelOrder => send(d)
     case _ => println("Looper: received unknown")
-  }
-
-  def createQuote(t: Transaction){
-    return Quote(t.mid, t.timestamp, t.whatC, t.withC, t.price, t.price)
-    //TODO(sygi): to implement it properly, we need working MarketSimulator (the one that keeps orderbooks)
   }
 }
