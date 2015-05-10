@@ -50,11 +50,11 @@ abstract class Trader(val uid: Long, val parameters: StrategyParameters) extends
   final def traderReceive: PartialFunction[Any, Unit] = {
     case GetTraderParameters => {
       println("Got a GetTraderParameters")
-      sender() ! parameters
+      sender ! parameters
     }
   }
   
-  override def receive = (componentReceive orElse traderReceive) orElse receiver
+  override def receive = (traderReceive orElse super.receive)
   
   
   /**

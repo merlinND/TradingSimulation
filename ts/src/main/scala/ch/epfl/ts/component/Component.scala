@@ -85,10 +85,14 @@ final class ComponentBuilder(val system: ActorSystem) {
     println("Sending start Signal to " + cr.ar)
   })
 
-  def stop = instances.map { cr => {
+  /**
+   * Send a `StopSignal` to all managed components, giving them the opportunity
+   * to run some cleanup.
+   */
+  def stop = instances.map(cr => {
     cr.ar ! StopSignal
     println("Sending stop Signal to " + cr.ar)
-  } }
+  })
 
   def createRef(props: ComponentProps, name: String) = {
     instances = new ComponentRef(system.actorOf(props, name), props.clazz, name, this) :: instances
@@ -98,6 +102,9 @@ final class ComponentBuilder(val system: ActorSystem) {
   /**
    * Gracefully stop all managed components.
    * When all stops are successful, we clear the `instances` list.
+   * 
+   * @note This differs from the `stop` in that here, actors get killed for good,
+   *       and cannot get restarted.
    * 
    * @return A future which completes when *all* managed actors have shut down.
    */
