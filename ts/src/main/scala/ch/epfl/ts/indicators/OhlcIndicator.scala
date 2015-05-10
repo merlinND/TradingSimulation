@@ -8,13 +8,17 @@ import scala.collection.mutable.MutableList
 import akka.actor.Actor
 import akka.event.Logging
 import akka.actor.ActorLogging
+import scala.concurrent.duration.FiniteDuration
 
 /**
- * computes OHLC tick for a tick frame of the provided size, the OHLCs are identified with the provided marketId
+ * Computes an OHLC tick for a tick frame of the specified duration
+ * The OHLCs are identified with the provided marketId.
  */
-class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis: Long)
+class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickDuration: FiniteDuration)
     extends Actor with ActorLogging {
 
+  val tickSizeMillis = tickDuration.toMillis
+  
   /**
    * Stores transactions' price values
    */

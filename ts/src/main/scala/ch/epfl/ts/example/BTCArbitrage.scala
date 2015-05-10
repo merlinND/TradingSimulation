@@ -23,7 +23,6 @@ import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.data.Transaction
 import ch.epfl.ts.engine.MarketRules
 import ch.epfl.ts.engine.OrderBookMarketSimulator
-import ch.epfl.ts.indicators.OhlcIndicator
 import ch.epfl.ts.traders.Arbitrageur
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
@@ -69,7 +68,7 @@ object BTCArbitrage {
       Arbitrageur.INITIAL_FUNDS -> WalletParameter(Map()),
       Arbitrageur.VOLUME -> NaturalNumberParameter(50),
       Arbitrageur.PRICE_DELTA -> RealNumberParameter(1.0)
-    ) 
+    )
     val arbitrageur = Arbitrageur.getInstance(arbitrageurId, List(btceMarketId, bitstampMarketId) ,parameters, "Arbitrageur")
     // markets
     val rules = new MarketRules()

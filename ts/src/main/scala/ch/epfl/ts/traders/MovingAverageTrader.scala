@@ -92,8 +92,7 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
    * Indicators needed by the Moving Average Trader 
    */
   val marketId = marketIds(0)
-  // TODO: make OHLC take a FiniteDuration
-  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, symbol, ohlcPeriod.toMillis))
+  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, symbol, ohlcPeriod))
   val movingAverageIndicator = context.actorOf(Props(classOf[EmaIndicator], List(shortPeriods, longPeriods)))
 
   
@@ -116,6 +115,7 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
   var shortings: Double = 0.0
 
   var tradingPrices = MHashMap[(Currency, Currency), (Double, Double)]()
+  
   /**
    * TODO : actually trader update price based on quotes and MA is computed based on ohlc...
    */

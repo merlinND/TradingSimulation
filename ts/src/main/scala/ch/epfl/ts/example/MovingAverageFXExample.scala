@@ -18,7 +18,6 @@ import ch.epfl.ts.data.{ Quote, OHLC }
 import ch.epfl.ts.data.Transaction
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
-import ch.epfl.ts.indicators.{ OhlcIndicator, MaIndicator, MovingAverage, SMA }
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.component.fetch.HistDataCSVFetcher
 import ch.epfl.ts.evaluation.Evaluator
@@ -57,7 +56,7 @@ object MovingAverageFXExample {
         builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "TrueFxFetcher")
       } else {
         val replaySpeed = 40000.0
-        
+
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
         val startDate = dateFormat.parse("201304");
         val endDate = dateFormat.parse("201305");
@@ -109,7 +108,7 @@ object MovingAverageFXExample {
     trader -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
     broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
     forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
-    
+
     // ----- Start
     builder.start
   }
