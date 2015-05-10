@@ -1,7 +1,7 @@
 package ch.epfl.ts.evaluation
 
 import akka.util.Timeout
-import ch.epfl.ts.engine.{TraderIdentity, GetTraderParameters}
+import ch.epfl.ts.engine.{Wallet, TraderIdentity, GetTraderParameters}
 
 import scala.concurrent.Future
 import scala.language.postfixOps
@@ -70,7 +70,6 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
   private var schedule: Cancellable = null
   private val returnsList = MList[Double]()
   private val priceTable = MMap[(Currency, Currency), Double]()
-  
 
   private var lastValue = 0.0
   private var maxProfit = 0.0
@@ -78,10 +77,6 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
   /** Max loss as a positive value
    */
   private var maxLoss = 0.0
-
-  // query trader for the initial wallet
-  implicit val timeout = Timeout(5 seconds)
-  (trader.ar ? GetTraderParameters).mapTo[TraderIdentity] pipeTo self
 
   /**
    * Redirects out-going connections to the trader
@@ -106,7 +101,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
     case 'Report =>
       if (canReport) report
     case TraderIdentity(_, _, companion, parameters) =>
-      initialWallet = parameters.get[WalletParameter](companion.INITIAL_FUNDS).wallet
+      initialWallet = parameters.get[Wallet.Type](companion.INITIAL_FUNDS)
       initialWallet.foreach { case (currency, amount) =>
         wallet += currency -> (wallet.getOrElse(currency, 0.0) + amount)
       }
@@ -204,7 +199,11 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
    */
   override def start = {
     schedule = context.system.scheduler.schedule(2000.milliseconds, period, self, 'Report)
-  }
+
+    // query trader for the initial wallet
+    implicit val timeout = Timeout(2 seconds)
+    (trader.ar ? GetTraderParameters).mapTo[TraderIdentity] pipeTo self
+ }
 
   /**
    * Stops the scheduler and trader

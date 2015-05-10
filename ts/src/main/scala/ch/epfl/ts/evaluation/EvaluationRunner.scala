@@ -4,7 +4,7 @@ import ch.epfl.ts.component.fetch.{ HistDataCSVFetcher, MarketNames }
 import ch.epfl.ts.component.{ ComponentBuilder, ComponentRef }
 import ch.epfl.ts.data.Currency._
 import ch.epfl.ts.data._
-import ch.epfl.ts.engine.{ MarketFXSimulator, ForexMarketRules }
+import ch.epfl.ts.engine.{Wallet, MarketFXSimulator, ForexMarketRules}
 import ch.epfl.ts.indicators.SMA
 import akka.actor.Props
 import ch.epfl.ts.traders.MovingAverageTrader
@@ -20,7 +20,7 @@ import ch.epfl.ts.indicators.EMA
  */
 //TODO Make Evaluator consistent with a Trader connected to a Broker which provide wallet-awareness  
 object EvaluationRunner {
-  val builder = new ComponentBuilder("evaluation")
+  implicit val builder = new ComponentBuilder("evaluation")
 
   def test(trader: ComponentRef, traderId: Long) = {
     val marketForexId = MarketNames.FOREX_ID
@@ -28,11 +28,11 @@ object EvaluationRunner {
     // Fetcher
     // variables for the fetcher
     val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-    val startDate = dateFormat.parse("201301");
-    val endDate = dateFormat.parse("201312");
+    val startDate = dateFormat.parse("201503");
+    val endDate = dateFormat.parse("201503");
     val workingDir = "./data";
-    val currencyPair = "USDCHF";
-    val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 4200.0), "HistFetcher")
+    val currencyPair = "EURCHF";
+    val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 20.0), "HistFetcher")
 
     // Market
     val rules = new ForexMarketRules()
@@ -48,9 +48,9 @@ object EvaluationRunner {
     val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")
 
     //TODO Integrate indicators inside trader
-    val symbol = (Currency.USD, Currency.CHF)
-    val periods = List(3, 15)
-    val periodOHLC: Long =  60 * 60 * 1000 //OHLC of 1 hour
+    val symbol = Currency.EUR -> Currency.CHF
+    val periods = List(2, 10)
+    val periodOHLC: Long =  4 * 1000 //OHLC of 1 hour
     val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], 4L, symbol, periodOHLC), "ohlcIndicator")
     val maCross = builder.createRef(Props(classOf[EmaIndicator], periods), "maCross")
 
@@ -59,6 +59,7 @@ object EvaluationRunner {
     evaluator -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
     evaluator -> (printer, classOf[EvaluationReport])
     forexMarket -> (evaluator, classOf[Transaction])
+    forexMarket -> (printer, classOf[Transaction])
 
     // -- TODO Integrate indicators inside trader
     fetcher -> (ohlcIndicator, classOf[Quote])
@@ -70,16 +71,18 @@ object EvaluationRunner {
 
   def movingAverageTrader(traderId: Long) = {
     // Trader
-    val symbol = (Currency.USD, Currency.CHF)
-    val volume = 1000.0
-    val shortPeriod = 3
-    val longPeriod = 15
-    val tolerance = 0.0002
+    val traderId = 123L
+    val periods = List(2, 10)
+    val initialFunds: Wallet.Type = Map(Currency.CHF -> 5000.0)
+    val parameters = new StrategyParameters(
+      MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
+      MovingAverageTrader.SYMBOL -> CurrencyPairParameter(Currency.EUR -> Currency.CHF),
+      MovingAverageTrader.SHORT_PERIOD -> new TimeParameter(periods(0) seconds),
+      MovingAverageTrader.LONG_PERIOD -> new TimeParameter(periods(1) seconds),
+      MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002))
 
-    val periods = List(3, 10)
-    
-    //TODO : Now trader need also initialFund,initialCurrency
-    builder.createRef(Props(classOf[MovingAverageTrader], traderId, symbol, shortPeriod, longPeriod, volume, tolerance, true), "simpleTrader")
+    MovingAverageTrader.getInstance(traderId, parameters, "MovingAverageTrader")
+
   }
 
   def main(args: Array[String]): Unit = {
