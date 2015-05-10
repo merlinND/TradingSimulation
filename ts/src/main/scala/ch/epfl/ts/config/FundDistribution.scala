@@ -18,7 +18,7 @@ package ch.epfl.ts.config
  */
 
 trait FundDistribution {
-  var bins : List[Int];
+  def bins : List[Int];
   val rand = new java.util.Random();
   
   def percentListToDistribution(binsInPercent: List[(Int, Double)]) : List[Int] = {
@@ -26,7 +26,16 @@ trait FundDistribution {
     assert(Math.abs(binsInPercent.foldRight(0.0)((elem, acc) => elem._2 + acc) - 100.0) < 0.001);
     
     val minPercent = binsInPercent.minBy(_._2)._2;
-    return binsInPercent.flatMap(x => List.fill(Math.round(x._2 / minPercent).toInt)(x._1));
+    val distribution = binsInPercent.flatMap(x => List.fill(Math.round(x._2 / minPercent).toInt)(x._1));
+    
+    // add random high values for the entries of "more than xxx"
+    val highestAmount = binsInPercent.maxBy(_._1)._1;
+    return distribution.map(x => {
+      if (x == highestAmount) (x * (1.0 + rand.nextDouble())).toInt
+      else x
+    });
+    
+    
   }
   
   def get: Int = {
@@ -61,7 +70,7 @@ class FundsGermany extends FundDistribution {
       (1000000, 0.1),
       (1000001, 0.1)); // people earning more than this
   
-  override var bins = percentListToDistribution(binsInPercent);
+  override def bins = percentListToDistribution(binsInPercent);
   
 }
 
@@ -77,7 +86,7 @@ class FundsSwitzerland extends FundDistribution {
       (8000, 8.3),
       (8001, 19.3)).map(x => (x._1 * 12, x._2)); // original data was given as monthly income
   
-  override var bins = percentListToDistribution(binsInPercent);
+  override def bins = percentListToDistribution(binsInPercent);
   
 }
 
@@ -107,7 +116,7 @@ class FundsUSA extends FundDistribution {
       (250000, 1.8),
       (250001, 2.1)); // changed from 2.5 to 2.1 to add up to 100 %
   
-  override var bins = percentListToDistribution(binsInPercent);
+  override def bins = percentListToDistribution(binsInPercent);
   
 }
 
@@ -136,7 +145,7 @@ class FundsJapan extends FundDistribution {
       (2000000, 0.2),
       (2000001, 1.0)); // people earning more than this
   
-  override var bins = percentListToDistribution(binsInPercent);
+  override def bins = percentListToDistribution(binsInPercent);
   
 }
 
@@ -154,7 +163,7 @@ class FundsRussia extends FundDistribution {
       (45000, 15.0),
       (45001, 8.2)).map(x => (x._1 * 12, x._2)); // people earning more than this
   
-  override var bins = percentListToDistribution(binsInPercent);
+  override def bins = percentListToDistribution(binsInPercent);
   
 }
 
@@ -189,7 +198,7 @@ class FundsCanada extends FundDistribution {
       (250000, 120680),
       (250001, 192250)).map(x => (x._1, x._2 * 100 / 25797510.0)); // people earning more than this
   
-  override var bins = percentListToDistribution(binsInPercent);
+  override def bins = percentListToDistribution(binsInPercent);
   
 }
 
@@ -210,7 +219,7 @@ class FundsUK extends FundDistribution {
       (75000, 2.0),
       (75001, 1.0)); // people earning more than this
   
-  override var bins = percentListToDistribution(binsInPercent);
+  override def bins = percentListToDistribution(binsInPercent);
   
 }
 
@@ -231,6 +240,6 @@ class FundsAustralia extends FundDistribution {
       (2000, 6.4),
       (2001, 6.2 + 7.8)).map(x => (x._1 * 52, x._2)); // people earning more than this
   
-  override var bins = percentListToDistribution(binsInPercent);
+  override def bins = percentListToDistribution(binsInPercent);
   
 }
