@@ -2,7 +2,6 @@ package ch.epfl.ts.traders
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
-
 import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.data.CoefficientParameter
 import ch.epfl.ts.data.Currency
@@ -14,6 +13,7 @@ import ch.epfl.ts.data.Order
 import ch.epfl.ts.data.ParameterTrait
 import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.data.TimeParameter
+import ch.epfl.ts.data.Quote
 
 /**
  * Required and optional parameters used by this strategy
@@ -67,9 +67,15 @@ class MadTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, p
 
   var alternate = 0
   val r = new Random
+  var currentTimeMillis : Long = 0L
 
   // TODO: make wallet-aware
   override def receiver = {
+    
+    case q : Quote => {
+     currentTimeMillis = q.timestamp
+    }
+    
     case SendMarketOrder => {
       // Randomize volume and price
       val variation = volumeVariation * (r.nextDouble() - 0.5) * 2.0
@@ -79,10 +85,10 @@ class MadTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, p
 
       if (alternate % 2 == 0) {
         println("MadTrader: sending market bid order")
-        send[Order](MarketAskOrder(orderId, uid, System.currentTimeMillis(), currencies._1, currencies._2, theVolume, dummyPrice))
+        send[Order](MarketAskOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       } else {
         println("MadTrader: sending market ask order")
-        send[Order](MarketBidOrder(orderId, uid, System.currentTimeMillis(), currencies._1, currencies._2, theVolume, dummyPrice))
+        send[Order](MarketBidOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       }
       alternate = alternate + 1
       orderId = orderId + 1
