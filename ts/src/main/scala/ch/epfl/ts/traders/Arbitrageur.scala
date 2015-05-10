@@ -71,8 +71,6 @@ class Arbitrageur(uid: Long, parameters: StrategyParameters) extends Trader(uid,
           // trading price of market with id=mId > trading price of market with id=a._1
           // sell mId shares, buy a._1 shares
           log.info("Arbitrageur: sending sell to " + marketIdToName(mId) + " and buy to " + marketIdToName(a._1))
-          send(marketIdToName(mId), MarketAskOrder(oid, uid, System.currentTimeMillis(), BTC, USD, volume, 0.0))
-          oid = oid + 1
           send(marketIdToName(a._1), MarketBidOrder(oid, uid, System.currentTimeMillis(), BTC, USD, volume, 0.0))
           oid = oid + 1
         } else if (-difference > priceDelta) {
@@ -80,8 +78,6 @@ class Arbitrageur(uid: Long, parameters: StrategyParameters) extends Trader(uid,
           // sell a._1 shares, buy mId shares
           log.info("Arbitrageur: sending sell to " + marketIdToName(a._1) + " and buy to " + marketIdToName(mId))
           send(marketIdToName(a._1), MarketAskOrder(oid, uid, System.currentTimeMillis(), BTC, USD, volume, 0.0))
-          oid = oid + 1
-          send(marketIdToName(mId), MarketBidOrder(oid, uid, System.currentTimeMillis(), BTC, USD, volume, 0.0))
           oid = oid + 1
         }
 

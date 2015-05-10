@@ -14,6 +14,7 @@ import ch.epfl.ts.data.ParameterTrait
 import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.data.TimeParameter
 import akka.event.Logging
+import ch.epfl.ts.data.Quote
 
 /**
  * Required and optional parameters used by this strategy
@@ -71,6 +72,11 @@ class MadTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, p
 
   // TODO: make wallet-aware
   override def receiver = {
+    
+    case q : Quote => {
+     currentTimeMillis = q.timestamp
+    }
+    
     case SendMarketOrder => {
       // Randomize volume and price
       val variation = volumeVariation * (r.nextDouble() - 0.5) * 2.0
@@ -80,10 +86,11 @@ class MadTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, p
 
       if (alternate % 2 == 0) {
         log.debug("MadTrader: sending market bid order")
-        send[Order](MarketAskOrder(orderId, uid, System.currentTimeMillis(), currencies._1, currencies._2, theVolume, dummyPrice))
+        send[Order](MarketAskOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       } else {
         log.debug("MadTrader: sending market ask order")
-        send[Order](MarketBidOrder(orderId, uid, System.currentTimeMillis(), currencies._1, currencies._2, theVolume, dummyPrice))
+        send[Order](MarketBidOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
+
       }
       alternate = alternate + 1
       orderId = orderId + 1

@@ -74,12 +74,12 @@ class SimpleTraderWithBroker(uid: Long, parameters: StrategyParameters)
     }
 
     case 'sendTooBigOrder => {
-      val order = MarketBidOrder(oid, uid, System.currentTimeMillis(), CHF, USD, 1000.0, 100000.0)
+      val order = MarketBidOrder(oid, uid, currentTimeMillis, CHF, USD, 1000.0, 100000.0)
       placeOrder(order)
       oid = oid + 1
     }
     case 'sendMarketOrder => {
-      val order = MarketBidOrder(oid, uid, System.currentTimeMillis(), CHF, USD, 3.0, 14.0)
+      val order = MarketBidOrder(oid, uid, currentTimeMillis, CHF, USD, 3.0, 14.0)
       placeOrder(order)
       oid = oid + 1
     }

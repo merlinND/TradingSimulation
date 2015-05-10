@@ -17,6 +17,8 @@ import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.GetTraderParameters
 import akka.actor.ActorLogging
+import ch.epfl.ts.engine.TraderIdentity
+
 
 case class RequiredParameterMissingException(message: String) extends RuntimeException(message)
 
@@ -39,6 +41,7 @@ abstract class Trader(val uid: Long, val parameters: StrategyParameters) extends
   
   /** Default timeout to use when Asking another component asynchronously */
   val askTimeout = 500 milliseconds
+  var currentTimeMillis : Long = 0L
   
   val initialFunds = parameters.get[Map[Currency.Currency, Double]]("InitialFunds")
   
@@ -51,7 +54,7 @@ abstract class Trader(val uid: Long, val parameters: StrategyParameters) extends
   final def traderReceive: PartialFunction[Any, Unit] = {
     case GetTraderParameters => {
       println("Got a GetTraderParameters")
-      sender ! parameters
+      sender ! TraderIdentity(self.path.name, uid, companion, parameters)
     }
   }
   
