@@ -1,12 +1,15 @@
 package ch.epfl.ts.component
 
-import akka.actor._
-
+import scala.language.postfixOps
 import scala.reflect.ClassTag
-
 import scala.language.existentials
+import scala.concurrent.duration.{ FiniteDuration, DurationInt }
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable.{HashMap => MHashMap}
 import com.typesafe.config.{ConfigFactory, Config}
+import akka.actor._
+import akka.pattern.gracefulStop
+import scala.concurrent.Future
 
 case object StartSignal
 case object StopSignal
@@ -50,6 +53,22 @@ final class ComponentBuilder(val system: ActorSystem) {
   def createRef(props: ComponentProps, name: String) = {
     instances = new ComponentRef(system.actorOf(props, name), props.clazz, name, this) :: instances
     instances.head
+  }
+  
+  /**
+   * Gracefully stop all managed components.
+   * When all stops are successful, we clear the `instances` list.
+   * 
+   * @return A future which completes when *all* managed actors have shut down.
+   */
+  def shutdownManagedActors(timeout: FiniteDuration = 3 seconds): Future[List[Boolean]] = {
+    val futures = instances.map(component => gracefulStop(component.ar, timeout, PoisonPill))
+    val all = Future.sequence(futures)
+    all.onComplete {
+      _ => instances = List[ComponentRef]()
+    }
+    
+    all
   }
 }
 
@@ -96,6 +115,7 @@ abstract class Component extends Receiver {
     case StopSignal => context.stop(self)
       stop
       println("Received Stop " + this.getClass.getSimpleName)
+    
     case y if stopped => println("Received data when stopped " + this.getClass.getSimpleName + " of type " + y.getClass )
   }
 
