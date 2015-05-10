@@ -1,59 +1,254 @@
 \section{Catalog of Components}
 
-\subsection{Simulators}
+This section introduces each component that TradingSimulation provides in detail, including what data they expect, what data they output, what parameters can be set.
 
-Details of various simulators
+After reading this section, you should able to select appropriate components for a specific algorithmic trading purpose, parameterize and connect them correctly.
+
+\subsection{Market Simulators}
+
+Market simulators are core components of TradingSimulation, which simulate virtual markets. Currently TradingSimulation provides two market simulators:
 
 \begin{itemize}
-\item MarketSimulator
+\item OrderBookMarketSimulator
 \item MarketFxSimulator
 \end{itemize}
 
+\emph{OrderBookMarketSimulator} is usually used to simulate the trading of bitcoins, while \emph{MarketFxSimulator} is used for Forex markets. The Forex market has high liquidity, so it doesn't need order books.
+
+\subsubsection{OrderBookMarketSimulator}
+
+\begin{tabularx}{\textwidth}{|c|X|}
+  \hline
+  \multicolumn{2}{|c|}{\sc{Parameters}} \\
+  \hline
+  id: Long  & The market id. It takes one of following values: \emph{MarketNames.BTCE\_ID}, \emph{MarketNames.BITSTAMP\_ID},  \emph{MarketNames.BITFINEX\_ID}. \\
+  \hline
+  rules: MarketRules & The market rules. The value should be an instance of \emph{MarketRules}, which internally uses order book. \\
+  \hline
+\end{tabularx}\\[0.4cm]
+
+\noindent
+\begin{tabularx}{\textwidth}{|c|X|}
+  \hline
+  \multicolumn{2}{|c|}{\sc{Message Input}} \\
+  \hline
+  LimitBidOrder  & the limit bid order from traders or brokers \\
+  \hline
+  LimitAskOrder  & the limit ask order from traders or brokers \\
+  \hline
+  MarketBidOrder  & the market bid order from traders or brokers \\
+  \hline
+  MarketAskOrder  & the market ask order from traders or brokers \\
+  \hline
+  DelOrder  & the delete order command from traders or brokers \\
+  \hline
+  PrintBooks  & prints the order book \\
+  \hline
+\end{tabularx}\\[0.4cm]
+
+\noindent
+\begin{tabularx}{\textwidth}{|c|X|}
+  \hline
+  \multicolumn{2}{|c|}{\sc{Message Output}} \\
+  \hline
+  Transaction  & the transactions to inform traders or brokers \\
+  \hline
+  DelOrder  & the delete order to inform traders or brokers \\
+  \hline
+\end{tabularx}
+
+\subsubsection{MarketFxSimulator}
+
+\begin{tabularx}{\textwidth}{|c|X|}
+  \hline
+  \multicolumn{2}{|c|}{\sc{Parameters}} \\
+  \hline
+  id: Long  & The market id. It usually takes the value \emph{MarketNames.FOREX\_ID}. \\
+  \hline
+  rules: MarketRules & The market rules. The value should be an instance of \emph{ForexMarketRules}. \\
+  \hline
+\end{tabularx}\\[0.4cm]
+
+\noindent
+\begin{tabularx}{\textwidth}{|c|X|}
+  \hline
+  \multicolumn{2}{|c|}{\sc{Message Input}} \\
+  \hline
+  LimitBidOrder  & the limit bid order from traders or brokers \\
+  \hline
+  LimitAskOrder  & the limit ask order from traders or brokers \\
+  \hline
+  MarketBidOrder  & the market bid order from traders or brokers \\
+  \hline
+  MarketAskOrder  & the market ask order from traders or brokers \\
+  \hline
+  Quote  & the quote from live fetcher or playback  \\
+  \hline
+\end{tabularx}\\[0.4cm]
+
+\noindent
+\begin{tabularx}{\textwidth}{|c|X|}
+  \hline
+  \multicolumn{2}{|c|}{\sc{Message Output}} \\
+  \hline
+  Transaction  & the transactions to inform traders or brokers \\
+  \hline
+  Quote  & the quote to inform traders or brokers \\
+  \hline
+\end{tabularx}
+
+
 \subsection{Indicators}
 
-Details various indicators
+Indicators measure the activities of the market. Traders depend on indicators to make sell or buy decisions. Currently TradingSimulation provides following indicators:\\
 
-\begin{itemize}
-\item MA
-\item EMA
-\item SMA
-\item OHLC
-\end{itemize}
+\noindent
+\begin{tabularx}{\textwidth}{|c|X|}
+  \hline
+  Class & Description  \\
+  \hline
+  SmaIndicator & Simple Moving Average \\
+  \hline
+  EmaIndicator & Exponential Moving Average  \\
+  \hline
+  OhlcIndicator & OHLC(Open-high-low-close)  \\
+  \hline
+\end{tabularx}
 
 \subsection{Traders}
 
-Details of various traders
+Traders buy or sell in the virtual market. Different types of traders use different trading strategies. The same strategy may take different parameters thus perform differently. Currently TradingSimulation provides following indicators:\\
 
-\begin{itemize}
-\item Arbitrageur
-\item DoubleCrossOverTrader
-\item DoubleEnvelopeTrader
-\item SimpleFXTrader
-\item SimplerTrader
-\item SobiTrader
-\item TransactionVmapTrader
-\end{itemize}
+\noindent
+\begin{tabularx}{\textwidth}{|c|X|}
+  \hline
+  Class & Description  \\
+  \hline
+  Arbitrageur & the \emph{arbitrageur} strategy \\
+  \hline
+  DoubleCrossOverTrader & the \emph{double cross over} strategy  \\
+  \hline
+  DoubleEnvelopeTrader & the \emph{double envelope} strategy  \\
+  \hline
+  SobiTrader & the \emph{static order book imbalance} strategy  \\
+  \hline
+  TransactionVwapTrader & the \emph{volume weighted average price} strategy  \\
+  \hline
+  SimpleTrader & a simple trader \\
+  \hline
+  SimpleFXtrader & a simple Forex trader \\
+  \hline
+\end{tabularx}
 
 \subsection{Fetchers}
 
-Details of various fecthers
+Fetchers in TradingSimulation play the role of feeding market data from external sources(internet or file system) into market simulator. Currently TradingSimulation provides following fetchers:\\
 
-\begin{itemize}
-\item BitfinexFetcher
-\item BitStampFetcher
-\item BtceFetcher
-\item CSVFetcher
-\item TrueFXFetcher
-\end{itemize}
+\noindent
+\begin{tabularx}{\textwidth}{|l|X|}
+  \hline
+  Class & Description  \\
+  \hline
+  BtceOrderPullFetcher & the fetcher for BTC-e orders \\
+  \hline
+  BtceTransactionPullFetcher  & the fetcher for BTC-e transactions  \\
+  \hline
+  BitfinexOrderPullFetcher & the fetcher for Bitfinex orders  \\
+  \hline
+  BitfinexTransactionPullFetcher & the fetcher for Bitfinex transactions  \\
+  \hline
+  BitstampOrderPullFetcher & the fetcher for Bitstamp orders  \\
+  \hline
+  BitstampTransactionPullFetcher & the fetcher for Bitstamp transactions \\
+  \hline
+  TrueFxFetcher & the fetcher for  live Forex quotes  \\
+  \hline
+  HistDataCSVFetcher & reads data from csv source and converts it to Quotes \\
+  \hline
+\end{tabularx}\\[0.3cm]
 
-\subsection{Utilities}
+Note that all the fetchers in the table above are not components themselves, except \emph{HistDataCSVFetcher}. Non-component fetchers are used together with \emph{PullFetchComponent} as following snippet shows:
 
-Other components
+\begin{lstlisting}[language=Scala]
+  val fetcherFx: TrueFxFetcher = new TrueFxFetcher
+  val fetcher = builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "TrueFxFetcher")
+\end{lstlisting}
 
-\begin{itemize}
-\item Printer
-\item Backloop
-\item Replay
-\item BatcherComponent
-\item Evaluator
-\end{itemize}
+\subsection{Persistors}
+
+Persistors load data from and save data to SQLite database. Currently TradingSimulation provides following persistors:
+
+\noindent
+\begin{tabularx}{\textwidth}{|l|X|}
+  \hline
+  Class & Description  \\
+  \hline
+  OrderPersistor & loads or saves orders from or to database \\
+  \hline
+  TransactionPersistor  & loads or saves transactions from or to database  \\
+  \hline
+  QuotePersistor & loads or saves quotes from or to database  \\
+  \hline
+\end{tabularx}\\[0.3cm]
+
+Note that none of the persistors above are components themselves. They have to be used together with other classes for different purposes.
+
+\subsubsection{Storing Data to Database}
+
+To store data to database, the persistors can be used together with the class \emph{Persistor}. The definition of \emph{Persistor} is as follows:
+
+\begin{lstlisting}[language=Scala]
+  class Persistor[T: ClassTag](p: Persistance[T]) extends Component {
+    // ...
+  }
+\end{lstlisting}
+
+We can see that the class \emph{Persistor} takes an object of \emph{Persistance} as parameter. Following code illustrates how to use them together:
+
+\begin{lstlisting}[language=Scala]
+  // Initialize the Interface to DB
+  val btceXactPersit = new TransactionPersistor("btce-transaction-db-batch")
+  btceXactPersit.init()
+
+  val btcePersistor = builder.createRef(Props(classOf[Persistor[Transaction]], btceXactPersit, implicitly[ClassTag[Transaction]]), "btcePersistor")
+\end{lstlisting}
+
+\subsubsection{Loading Data from Database}
+
+To load data from database, the persistors can be used together with the class \emph{Replay}. The definition of \emph{Replay} is as follows:
+
+\begin{lstlisting}[language=Scala]
+  class Replay[T: ClassTag](p: Persistance[T], conf: ReplayConfig) extends Component {
+    // ...
+  }
+\end{lstlisting}
+
+We can see that the class \emph{Replay} takes an object of \emph{Persistance} as parameter. Following code illustrates how to use persistors together with \emph{Replay}:
+
+\begin{lstlisting}[language=Scala]
+  // Initialize the Interface to DB
+  val btceXactPersit = new TransactionPersistor("btce-transaction-db")
+  btceXactPersit.init()
+
+  // Configuration object for Replay
+  val replayConf = new ReplayConfig(1418737788400L, 0.01)
+
+  val replayer = builder.createRef(Props(classOf[Replay[Transaction]], btceXactPersit, replayConf, implicitly[ClassTag[Transaction]]), "replayer")
+\end{lstlisting}
+
+\subsection{Miscellaneous}
+
+TradingSimulation also provide some utility components as shown in the table below.\\
+
+\noindent
+\begin{tabularx}{\textwidth}{|l|X|}
+  \hline
+  Class & Description  \\
+  \hline
+  Printer & prints anything it receives in the console \\
+  \hline
+  Backloop  & saves transaction to database and forward, similar to the UNIX command \emph{tee}  \\
+  \hline
+  Evaluator & evaluates the performance of traders\\
+  \hline
+\end{tabularx}\\[0.3cm]
