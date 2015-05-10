@@ -149,6 +149,11 @@ case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Curren
 }
 
 /**
+ *  Signal that the sending component will not send any more messages
+ */
+case class EndOfMessages() extends Streamable
+
+/**
  * Data Transfer Object representing a Tweet
  * @param timestamp
  * @param content
