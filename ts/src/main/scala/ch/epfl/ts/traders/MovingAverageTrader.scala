@@ -33,6 +33,10 @@ import scala.math.abs
 import scala.math.floor
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.engine.GetWalletFunds
+import akka.actor.Props
+import ch.epfl.ts.indicators.OhlcIndicator
+import ch.epfl.ts.indicators.SmaIndicator
+import ch.epfl.ts.indicators.EmaIndicator
 
 /**
  * MovingAverageTrader companion object
@@ -65,8 +69,8 @@ object MovingAverageTrader extends TraderCompanion {
 /**
  * Simple momentum strategy.
  */
-class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
-  extends Trader(uid, parameters) with ActorLogging {
+class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameters)
+  extends Trader(uid, marketIds, parameters) with ActorLogging {
 
   import context.dispatcher
 
@@ -97,13 +101,32 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
   var shortings: Double = 0.0
 
   val (whatC, withC) = symbol
+  
+  /**
+   * Indicators needed by the Moving Average Trader 
+   */
+  val ohlcPeriod : Long = 1000*60 //one ohlc per minute
+  val marketId : Long = marketIds(0)
+  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), ohlcPeriod))
+  val movingAverageIndicator = context.actorOf(Props(classOf[EmaIndicator], List(shortPeriod.length,longPeriod.length)))
 
   var tradingPrices = MHashMap[(Currency, Currency), (Double, Double)]()
-
+/**
+ * TODO : actually trader update price based on quotes and MA is computed based on ohlc...
+ */
   override def receiver = {
 
+    /**
+     * When receive a quote update bid and ask
+     * and forward to ohlcIndicator
+     */
     case q: Quote => {
       tradingPrices((q.whatC, q.withC)) = (q.bid, q.ask)
+      ohlcIndicator ! q
+    }
+    
+    case ohlc : OHLC => {
+      movingAverageIndicator ! ohlc
     }
 
     case ConfirmRegistration => {
@@ -223,6 +246,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
 
   override def init = {
     log.debug("MovingAverageTrader received startSignal")
+      println("Trader receive the start signal")
   }
 
 }

@@ -59,7 +59,7 @@ object SobiTrader extends TraderCompanion {
 /**
  * SOBI trader
  */
-class SobiTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, parameters) {
+class SobiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   import context._
   case object PossibleOrder
 

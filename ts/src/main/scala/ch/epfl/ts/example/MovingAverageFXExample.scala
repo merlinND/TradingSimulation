@@ -46,7 +46,7 @@ object MovingAverageFXExample {
     implicit val builder = new ComponentBuilder()
     val marketForexId = MarketNames.FOREX_ID
 
-    val useLiveData = false
+    val useLiveData = true
     val symbol = (Currency.USD, Currency.CHF)
 
     // ----- Creating actors
@@ -57,12 +57,12 @@ object MovingAverageFXExample {
         builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "TrueFxFetcher")
       } else {
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-        val startDate = dateFormat.parse("201304");
-        val endDate = dateFormat.parse("201305");
+        val startDate = dateFormat.parse("201411");
+        val endDate = dateFormat.parse("201411");
         val workingDir = "./data";
         val currencyPair = symbol._1.toString() + symbol._2.toString();
 
-        builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 4000.0), "HistDataFetcher")
+        builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 40000.0), "HistDataFetcher")
       }
     }
     // Market
@@ -80,19 +80,13 @@ object MovingAverageFXExample {
       MovingAverageTrader.LONG_PERIOD -> new TimeParameter(periods(1) seconds),
       MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002))
 
-    val trader = MovingAverageTrader.getInstance(traderId, parameters, "MovingAverageTrader")
-
-    // Indicator
-    // Specify period over which we build the OHLC (from quotes)
-    val period = 3600000L // OHLC of 1 hour
-    val maCross = builder.createRef(Props(classOf[EmaIndicator], periods), "maCross")
-    val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], MarketNames.FOREX_ID, symbol, period), "OHLCIndicator")
+    val trader = MovingAverageTrader.getInstance(traderId, List(marketForexId), parameters, "MovingAverageTrader")
 
     // Evaluation
     val evaluationPeriod = 2000 milliseconds
     val evaluationInitialDelay = 1000000.0
     val currency = symbol._1
-    //    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, evaluationInitialDelay, currency, evaluationPeriod), "Evaluator")
+    //val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, evaluationInitialDelay, currency, evaluationPeriod), "Evaluator")
 
     // Broker
     val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
@@ -106,15 +100,12 @@ object MovingAverageFXExample {
     // ----- Connecting actors
 
     // TODO : connect fetcher only to the market (other components will get quotes from it)
-    fxQuoteFetcher -> (Seq(forexMarket, ohlcIndicator, broker, trader), classOf[Quote])
+    fxQuoteFetcher -> (Seq(forexMarket, broker, trader), classOf[Quote])
 
     trader -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
     broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
     forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
-
-    maCross -> (trader, classOf[EMA])
-    ohlcIndicator -> (maCross, classOf[OHLC])
-
+    
     // ----- Start
     builder.start
   }
