@@ -8,31 +8,18 @@
           'alertService',
           function($scope, alertService) {
             $scope.alerts = alertService.get();
+            $scope.ohlcData = [];
+            $scope.volumeData = [];
 
             var ws = new WebSocket('ws://localhost:9000/market/ohlc');
 
             ws.onmessage = function(event) {
               var ohlc = JSON.parse(event.data);
               $scope.$apply(function() {
-                var name = 'market ' + ohlc.marketId;
 
-                var ohlcSeries = $scope.chartSeries.filter(function(series) {
-                  return series.name == name;
-                })[0];
-
-                if (!ohlcSeries) {
-                  ohlcSeries = {
-                    'type' : 'candlestick',
-                    'name' : name,
-                    'data' : []
-                  };
-
-
-                  $scope.chartSeries.push(ohlcSeries);
-                }
-
-                ohlcSeries.data.push([ ohlc.timestamp, ohlc.open, ohlc.high,
-                    ohlc.low, ohlc.close ]);
+                $scope.ohlcData.push([ ohlc.timestamp, ohlc.open, ohlc.high, ohlc.low,
+                    ohlc.close ]);
+                $scope.volumeData.push([ ohlc.timestamp, ohlc.volume ]);
 
                 if ($scope.chartConfig.loading) {
                   $scope.chartConfig.loading = false;
@@ -57,21 +44,51 @@
 
             $scope.chartConfig = {
               options : {
+                // axis
                 xAxis : [ {
                   type : 'datetime'
                 } ],
+                yAxis : [ {
+                  labels : {
+                    align : 'right',
+                    x : -3
+                  },
+                  title : {
+                    text : 'OHLC'
+                  },
+                  height : '60%',
+                  lineWidth : 2
+                }, {
+                  labels : {
+                    align : 'right',
+                    x : -3
+                  },
+                  title : {
+                    text : 'Volume'
+                  },
+                  top : '65%',
+                  height : '35%',
+                  offset : 0,
+                  lineWidth : 2
+                } ],
+                // navigator
                 navigator : {
                   enabled : true,
                   series : {
                     data : $scope.chartSeries[0]
                   }
                 },
+                // plot options
                 plotOptions : {
                   candlestick : {
                     color : 'green',
                     upColor : 'red'
                   }
                 },
+                legend: {
+                  enabled: false
+                },
+                // range selector and buttons
                 rangeSelector : {
                   enabled : true,
                   buttonTheme : {
@@ -104,7 +121,17 @@
                   } ]
                 },
               },
-              series : $scope.chartSeries,
+              // data series
+              series : [ {
+                type : 'candlestick',
+                name : 'OHLC',
+                data : $scope.ohlcData,
+              }, {
+                type : 'column',
+                name : 'Volume',
+                data : $scope.volumeData,
+                yAxis : 1,
+              } ],
               title : {
                 text : 'Market price'
               },
