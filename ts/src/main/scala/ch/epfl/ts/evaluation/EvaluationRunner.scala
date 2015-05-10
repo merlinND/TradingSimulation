@@ -42,7 +42,7 @@ object EvaluationRunner {
     val period = 10 * 1000 milliseconds
     val initial = 5000.0
     val currency = CHF
-    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, initial, currency, period), "evaluator")
+    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, currency, period), "evaluator")
 
     //Printer 
     val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")
