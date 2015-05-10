@@ -64,7 +64,6 @@ class MadTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, p
   val volume = parameters.get[Int](MadTrader.ORDER_VOLUME)
   val volumeVariation = parameters.getOrElse[Double](MadTrader.ORDER_VOLUME_VARIATION, 0.1)
   val currencies = parameters.get[(Currency.Currency, Currency.Currency)](MadTrader.CURRENCY_PAIR)
-  val log = Logging(context.system, this)
 
 
   var alternate = 0

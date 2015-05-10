@@ -16,6 +16,7 @@ import ch.epfl.ts.data.Register
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.GetTraderParameters
+import akka.actor.ActorLogging
 
 case class RequiredParameterMissingException(message: String) extends RuntimeException(message)
 
@@ -28,7 +29,7 @@ case class RequiredParameterMissingException(message: String) extends RuntimeExc
  * It will throw a `RequiredParameterMissingException` on instantiation if any of the
  * required parameters have not been provided (or have the wrong type).
  */
-abstract class Trader(val uid: Long, val parameters: StrategyParameters) extends Component {
+abstract class Trader(val uid: Long, val parameters: StrategyParameters) extends Component with ActorLogging{
   /** Gives a handle to the companion object */
   def companion: TraderCompanion
   

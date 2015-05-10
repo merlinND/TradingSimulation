@@ -91,18 +91,18 @@ class SobiTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, 
       if ((si - bi) > theta) {
         currentOrderId = currentOrderId + 1
         //"place an order to buy x shares at (lastPrice-p)"
-        println("SobiTrader: making buy order: price=" + (tradingPrice - priceDelta) + ", volume=" + volume)
+        log.info("SobiTrader: making buy order: price=" + (tradingPrice - priceDelta) + ", volume=" + volume)
         send[Order](LimitBidOrder(currentOrderId, uid, System.currentTimeMillis, USD, USD, volume, tradingPrice - priceDelta))
       }
       if ((bi - si) > theta) {
         currentOrderId = currentOrderId + 1
         //"place an order to sell x shares at (lastPrice+p)"
-        println("SobiTrader: making sell order: price=" + (tradingPrice + priceDelta) + ", volume=" + volume)
+        log.info("SobiTrader: making sell order: price=" + (tradingPrice + priceDelta) + ", volume=" + volume)
         send[Order](LimitAskOrder(currentOrderId, uid, System.currentTimeMillis(), USD, USD, volume, tradingPrice + priceDelta))
       }
     }
 
-    case _ => println("SobiTrader: received unknown")
+    case _ => log.info("SobiTrader: received unknown")
   }
 
   override def init = {

@@ -91,7 +91,7 @@ class SimpleTraderWithBroker(uid: Long, parameters: StrategyParameters)
       send(GetWalletFunds(uid,this.self))
     }
     case p => {
-      println("TraderWithB: received unknown: " + p)
+      log.info("TraderWithB: received unknown: " + p)
     }
   }
 

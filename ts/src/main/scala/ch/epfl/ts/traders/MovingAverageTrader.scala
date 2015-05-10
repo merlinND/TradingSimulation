@@ -129,7 +129,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     case _: ExecutedBidOrder => // TODO SimplePrint / Log /.../Frontend log ??
     case _: ExecutedAskOrder => // TODO SimplePrint/Log/.../Frontend log ??
 
-    case whatever            => println("SimpleTrader: received unknown : " + whatever)
+    case whatever            => log.info("SimpleTrader: received unknown : " + whatever)
   }
   def decideOrder = {
     var volume = 0.0
