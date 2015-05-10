@@ -12,6 +12,7 @@ import ch.epfl.ts.data.OHLC
 import ch.epfl.ts.indicators.SMA
 import ch.epfl.ts.data.Quote
 import ch.epfl.ts.data.Transaction
+import ch.epfl.ts.data.Register
 
 object Application extends Controller {
 
@@ -32,6 +33,11 @@ object Application extends Controller {
   def transaction = WebSocket.acceptWithActor[String, String] { request =>
     out => 
       Props(classOf[MessageToJson[Transaction]], out, implicitly[ClassTag[Transaction]])
+  }
+
+  def traderRegistration = WebSocket.acceptWithActor[String, String] { request =>
+    out => 
+      Props(classOf[MessageToJson[Register]], out, implicitly[ClassTag[Register]])
   }
 
 

@@ -10,6 +10,8 @@
             $scope.alerts = alertService.get();
             $scope.ohlcData = [];
             $scope.volumeData = [];
+            var groupingUnits = [ [ 'week', [ 1 ] ], [ 'day', [ 1 ] ],
+                [ 'month', [ 1, 2, 3, 6 ] ] ];
 
             var ws = new WebSocket('ws://localhost:9000/market/ohlc');
 
@@ -17,8 +19,8 @@
               var ohlc = JSON.parse(event.data);
               $scope.$apply(function() {
 
-                $scope.ohlcData.push([ ohlc.timestamp, ohlc.open, ohlc.high, ohlc.low,
-                    ohlc.close ]);
+                $scope.ohlcData.push([ ohlc.timestamp, ohlc.open, ohlc.high,
+                    ohlc.low, ohlc.close ]);
                 $scope.volumeData.push([ ohlc.timestamp, ohlc.volume ]);
 
                 if ($scope.chartConfig.loading) {
@@ -85,8 +87,8 @@
                     upColor : 'red'
                   }
                 },
-                legend: {
-                  enabled: false
+                legend : {
+                  enabled : false
                 },
                 // range selector and buttons
                 rangeSelector : {
@@ -126,11 +128,17 @@
                 type : 'candlestick',
                 name : 'OHLC',
                 data : $scope.ohlcData,
+                dataGrouping : {
+                  units : groupingUnits
+                }
               }, {
                 type : 'column',
                 name : 'Volume',
                 data : $scope.volumeData,
                 yAxis : 1,
+                dataGrouping : {
+                  units : groupingUnits
+                }
               } ],
               title : {
                 text : 'Market price'
