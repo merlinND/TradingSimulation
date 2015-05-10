@@ -13,7 +13,21 @@ simplifications:
 \begin{itemize}
     \item traders can only trade one symbol
     \item instruments are restricted to spot transactions
-    \item two counterparties are involved: nonfinancial customers and market makers (representing all financial customers)
+        \footnote{Referring to \url{http://www.newyorkfed.org/fxc/volumesurvey/explanatory_notes.html},
+        instruments
+        are product types available on the forex market, namely spot transactions, outright
+        forwards, foreign exchange swaps and currency options. \textit{Spot transactions are single 
+        outright transactions that involve the exchange of two currencies at a rate agreed 
+        to on the date of the contract for value or delivery within two business days, including 
+        U.S. dollar-Canadian dollar (USD-CAD) transactions delivered within one day).}
+
+        All the other instruments involve contracts over a longer period of time and are
+        currently not available.}
+
+
+    \item two counterparties are involved: nonfinancial customers and market makers
+        \footnote{\url{http://www.forextraders.com/market-maker-forex-brokers.html}}
+        (representing all financial customers)
     \item one market maker per symbol
 \end{itemize}
 
@@ -34,13 +48,14 @@ initialize a simulation.
 
 We assign money to traders and market makers in a certain currency (e.g. USD) and 
 they receive the equivalent amount in the currency they need to trade their respective
-symbol.
+symbol as sketched in Algorithm~\ref{alg:initfunds}.
 
 \begin{algorithm}
 \caption{Distribution of initial funds.}
 \label{alg:initfunds}
 \begin{algorithmic}[1]
     \Statex Given: distribution of annual income for a specific country
+    \footnote{example distribution: \url{http://www.bfs.admin.ch/bfs/portal/en/index/themen/03/04/blank/key/lohnstruktur/lohnverteilung.html}}
     \Statex
     \ForAll{$s \in symbols$}
         \State  $n \gets$ defined number of nonfinancial $traders$
@@ -96,7 +111,7 @@ If there are only buyers and no sellers:
 If there are no limit orders at all:
 \begin{itemize}
     \item ask and bid price stay constant
-    \item random traders hopefully prevent from freezing
+    \item random traders hopefully prevent the simulation from freezing
     \item optional: market maker could reduce spread, i.e. offer a higher bid price
     or a lower ask price
 \end{itemize}
@@ -121,6 +136,13 @@ maker to provide the respective bid price and eventually spend all its funds at 
 overpriced offers.
 
 \subsection{Outline}
+The software developed in this project is designed in a modular way. Hence, it is open
+to adding new strategies and components. Extending the latter is particularly 
+promising since the complexity of a real market is by far not fully covered yet. The next
+important components are central banks. Since they fix interest rates on currencies 
+they function as important indicators for strategies. Continuously implementing more
+real actors will make the simulation more realistic and bring it closer to the goal 
+of reflecting the actual market.
 
 
 %
