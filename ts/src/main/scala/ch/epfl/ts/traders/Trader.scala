@@ -15,6 +15,8 @@ import ch.epfl.ts.engine.FundWallet
 import ch.epfl.ts.data.Register
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.WalletParameter
+import ch.epfl.ts.engine.GetTraderParameters
+import ch.epfl.ts.engine.TraderIdentity
 
 case class RequiredParameterMissingException(message: String) extends RuntimeException(message)
 
@@ -40,6 +42,22 @@ abstract class Trader(val uid: Long, val parameters: StrategyParameters) extends
   var currentTimeMillis : Long = 0L
   
   val initialFunds = parameters.get[Map[Currency.Currency, Double]]("InitialFunds")
+  
+  /**
+   * @note We *do not* catch everything, we leave this partial function undefined
+   *       for all messages we cannot handle explicitly here so that concrete Traders
+   *       may handle them their own way using their `receiver` function.
+   */
+  // TODO: move all common Trader behaviors to this receiver
+  final def traderReceive: PartialFunction[Any, Unit] = {
+    case GetTraderParameters => {
+      println("Got a GetTraderParameters")
+      sender ! TraderIdentity(self.path.name, uid, companion, parameters)
+    }
+  }
+  
+  override def receive = (traderReceive orElse super.receive)
+  
   
   /**
    * Initialization common to all trading strategies:

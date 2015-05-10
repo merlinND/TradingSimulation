@@ -1,12 +1,21 @@
 package ch.epfl.ts.component
 
-import akka.actor._
-
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{HashMap => MHashMap}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
+import scala.language.existentials
+import scala.language.postfixOps
 import scala.reflect.ClassTag
 
-import scala.language.existentials
-import scala.collection.mutable.{HashMap => MHashMap}
-import com.typesafe.config.{ConfigFactory, Config}
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
+import akka.actor._
+import akka.pattern.gracefulStop
 
 case object StartSignal
 case object StopSignal
@@ -17,6 +26,40 @@ final class ComponentBuilder(val system: ActorSystem) {
   var graph = Map[ComponentRef, List[(ComponentRef, Class[_])]]()
   var instances = List[ComponentRef]()
   
+  /**
+   * Supervising actor that waits for Actors termination
+   * @see http://letitcrash.com/post/30165507578/shutdown-patterns-in-akka-2
+   */
+  private class Reaper extends Actor {
+    var watched = ArrayBuffer.empty[ActorRef]
+    var cb: () => Any = () => Unit
+    
+    override def receive = {
+      case StartKilling(l, onAllDead) => {
+        cb = onAllDead
+        instances.foreach(c => {
+          context.watch(c.ar)
+          c.ar ! PoisonPill
+          
+          watched += c.ar
+        })
+        
+        if(instances.isEmpty) cb()
+      }
+      
+      case Terminated(ref) => {
+        watched -= ref
+        if(watched.isEmpty) cb()
+      }
+    }
+  }
+  /**
+   * @param references List of components that need to be watched
+   * @param onAllDead Callback function to call when all watched actors have been terminated
+   */
+  private case class StartKilling(references: List[ComponentRef], onAllDead: () => Any)
+  private val reaper = system.actorOf(Props(classOf[Reaper], this), "Reaper")
+    
   def this() {
     this(ActorSystem(ConfigFactory.load().getString("akka.systemName"), ConfigFactory.load()))
   }
@@ -42,14 +85,39 @@ final class ComponentBuilder(val system: ActorSystem) {
     println("Sending start Signal to " + cr.ar)
   })
 
-  def stop = instances.map { cr => {
+  /**
+   * Send a `StopSignal` to all managed components, giving them the opportunity
+   * to run some cleanup.
+   */
+  def stop = instances.map(cr => {
     cr.ar ! StopSignal
     println("Sending stop Signal to " + cr.ar)
-  } }
+  })
 
   def createRef(props: ComponentProps, name: String) = {
     instances = new ComponentRef(system.actorOf(props, name), props.clazz, name, this) :: instances
     instances.head
+  }
+  
+  /**
+   * Gracefully stop all managed components.
+   * When all stops are successful, we clear the `instances` list.
+   * 
+   * @note This differs from the `stop` in that here, actors get killed for good,
+   *       and cannot get restarted.
+   * 
+   * @return A future which completes when *all* managed actors have shut down.
+   */
+  def shutdownManagedActors(timeout: FiniteDuration = 3 seconds): Future[Unit] = {
+    val p = Promise[Unit]()
+    
+    val cb: () => Any = () => {
+      instances = List[ComponentRef]()
+      p.success(Unit)
+    }
+    reaper ! StartKilling(instances, cb)
+    
+    p.future
   }
 }
 
@@ -96,6 +164,7 @@ abstract class Component extends Receiver {
     case StopSignal => context.stop(self)
       stop
       println("Received Stop " + this.getClass.getSimpleName)
+    
     case y if stopped => println("Received data when stopped " + this.getClass.getSimpleName + " of type " + y.getClass )
   }
 
@@ -126,7 +195,7 @@ abstract class Component extends Receiver {
 
   /* TODO: Dirty hack, componentReceive giving back unmatched to rematch in receiver using a andThen */
   override def receive = componentReceive orElse receiver
-
+  
   def send[T: ClassTag](t: T) = dest.get(t.getClass).map(_.map (_ ! t)) //TODO(sygi): support superclasses
   def send[T: ClassTag](t: List[T]) = t.map( elem => dest.get(elem.getClass).map(_.map(_ ! elem)))
 }
