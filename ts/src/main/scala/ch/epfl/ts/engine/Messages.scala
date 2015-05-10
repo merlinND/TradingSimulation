@@ -41,6 +41,14 @@ object ExecutedAskOrder {
 }
 //TODO(sygi): change this messages and actually use them to communicate broker -> trader
 
+/* *****************************
+ * Traders
+ */
+abstract class TraderQuery
+/**
+ * Send this message when needing to retrieve a trader's strategy parameters
+ */
+case object GetTraderParameters extends TraderQuery
 
 /* *****************************
  * Wallet
