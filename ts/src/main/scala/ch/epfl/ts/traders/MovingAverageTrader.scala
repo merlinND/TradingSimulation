@@ -113,14 +113,14 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     }
 
     case ma: MovingAverage if registered => {
-      println("Trader receive MAs")
+      log.info("Trader receive MAs")
       ma.value.get(shortPeriod.length.toInt) match {
         case Some(x) => currentShort = x
-        case None    => println("Error: Missing indicator with period " + shortPeriod)
+        case None    => log.error("Error: Missing indicator with period " + shortPeriod)
       }
       ma.value.get(longPeriod.length.toInt) match {
         case Some(x) => currentLong = x
-        case None    => println("Error: Missing indicator with period " + longPeriod)
+        case None    => log.error("Error: Missing indicator with period " + longPeriod)
       }
         decideOrder
     }

@@ -5,6 +5,7 @@ import ch.epfl.ts.data.{ OHLC, Transaction, Quote }
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.Currency.Currency
 import scala.collection.mutable.MutableList
+import akka.event.Logging
 
 /**
  * computes OHLC tick for a tick frame of the provided size, the OHLCs are identified with the provided marketId
@@ -19,6 +20,8 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis:
   var close: Double = 0.0
   var currentTick: Long = 0
   val (whatC, withC) = symbol
+  val log = Logging(context.system, this)
+
 
   override def receiver = {
 
@@ -47,7 +50,7 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis:
         values += q.bid //we consider the price as the bid price
       }
     }
-    case _ => println("OhlcIndicator: received unknown")
+    case _ => log.info("OhlcIndicator: received unknown")
   }
 
   /**
@@ -70,7 +73,7 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickSizeMillis:
       // clean ancient values
       volume = 0
       values.clear()
-      println("OhlcIndicator: sending OHLC : " + ohlc)
+      log.info("OhlcIndicator: sending OHLC : " + ohlc)
       ohlc
     } else {
       OHLC(marketId, close, close, close, close, 0, tickTimeStamp, tickSizeMillis)
