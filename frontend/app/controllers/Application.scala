@@ -24,6 +24,11 @@ object Application extends Controller {
       Props(classOf[MessageToJson[Quote]], out, implicitly[ClassTag[Quote]])
   }
 
+  def ohlc = WebSocket.acceptWithActor[String, String] { request =>
+    out => 
+      Props(classOf[MessageToJson[OHLC]], out, implicitly[ClassTag[OHLC]])
+  }
+
   def transaction = WebSocket.acceptWithActor[String, String] { request =>
     out => 
       Props(classOf[MessageToJson[Transaction]], out, implicitly[ClassTag[Transaction]])

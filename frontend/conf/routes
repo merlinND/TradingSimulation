@@ -7,6 +7,7 @@ GET   /                     controllers.Application.index
 
 GET   /fetchers/quote       controllers.Application.quote
 
+GET   /market/ohlc          controllers.Application.ohlc
 GET   /market/transaction   controllers.Application.transaction
 
 # Static

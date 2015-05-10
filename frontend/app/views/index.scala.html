@@ -3,7 +3,7 @@
 @main("Welcome to Play") {
 
 
-<div data-ng-controller="MarketPriceController">
+<div data-ng-controller="OhlcGraphController">
   <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="alert.close()">
     {{ alert.msg }}
   </alert>
@@ -12,9 +12,11 @@
 </div>
 
 <tabset >
-	<tab heading="Statistics">TODO Statistics</tab>
-	<tab heading="Traders">TODO Traders</tab>
-	<tab heading="Transactions">TODO Transactions</tab>
+  <tab heading="Transactions" data-ng-controller="TransactionController">
+    {{ test }}
+  </tab>
+  <tab heading="Statistics">TODO Statistics</tab>
+  <tab heading="Traders">TODO Traders</tab>
 </tabset>
 
 

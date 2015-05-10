@@ -1,7 +1,7 @@
 (function() {
   'use strict';
 
-  angular.module('myApp').controller('MarketPriceController',
+  angular.module('myApp').controller('LineGraphController',
       [ '$scope', 'alertService', function($scope, alertService) {
         $scope.alerts = alertService.get();
 
