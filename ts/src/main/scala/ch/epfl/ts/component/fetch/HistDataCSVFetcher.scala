@@ -103,6 +103,8 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
         nextQuote = allQuotes.next
         timer.schedule(new SendQuotes(), (1 / speed * (nextQuote.timestamp - currentQuote.timestamp)).toInt)
       } else {
+        // Send a default quote with value 0 to signal that this fetcher has sent all its data
+        callback(Quote(MarketNames.FOREX_ID, 0, Currency.DEF, Currency.DEF, 0, 0))
         // Nothing more to do here, boys!
         timer.cancel() 
       }
