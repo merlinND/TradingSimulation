@@ -1,14 +1,18 @@
-val builder = new ComponentBuilder("example")
+implicit val builder = new ComponentBuilder("ReplayFlowTesterSystem")
 
-// market params
-val marketId = 0L
-val rules = new MarketRules()
+// Initialize the Interface to DB
+val btceXactPersit = new TransactionPersistor("btce-transaction-db")
+btceXactPersit.init()
 
-// Create components
-val market = builder.createRef(Props(classOf[OrderBookMarketSimulator], marketId, rules), "market")
-val sobiTrader = builder.createRef(Props(classOf[SobiTrader], 123L, 3000, 2, 700.0, 50, 100.0, rules), "sobiTrader")
+// Configuration object for Replay
+val replayConf = new ReplayConfig(1418737788400L, 0.01)
 
-// Connect components
-sobiTrader -> (market, classOf[LimitBidOrder], classOf[LimitAskOrder])
+// Create Components
+val printer = builder.createRef(Props(classOf[Printer], "printer"), "printer")
+val replayer = builder.createRef(Props(classOf[Replay[Transaction]], btceXactPersit, replayConf, implicitly[ClassTag[Transaction]]), "replayer")
 
+// Create the connections
+replayer->(printer, classOf[Transaction])
+
+// Start the system
 builder.start

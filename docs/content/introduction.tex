@@ -51,7 +51,7 @@ The functions of the filters in Figure~\ref{fig-filter-graph} are explained as f
 \item{Replay}: Read historical market order data from file system and send them one by one at a constant rate to connected filters. Replay is also called \emph{source filter}, as it doesn't have any input from other filters.
 \item{Market}: Receive market orders, create transactions from matching bid and ask orders according to the configured market rules, and send transaction data to connected filters.
 \item {BackLoop}: It's a utility filter, which sends everything it receives from input to output.
-\item {OHLC}: It receives transaction data and send the prices of Opening, Highest, Lowest and Closing once a time in a configured period.
+\item {OHLC}: It receives transaction data and send the prices of Opening, Highest, Lowest and Closing once a time in a configured interval.
 \item {Display}: As its name suggests, this filter shows the data it receives in the terminal. It's also called \emph{sink filter}, as it doesn't send any data to other filters.
 \item {SobiTrader}: This filter is a trader who employs the \emph{Static Order Book Imbalance}(SOBI) trading strategy. It receives market data such as orders, transactions and OHLC, and sends bid or ask orders to the \emph{Market}.
 \end{itemize}
