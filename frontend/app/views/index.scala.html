@@ -12,11 +12,34 @@
 </div>
 
 <tabset >
-  <tab heading="Transactions" data-ng-controller="TransactionController">
-    {{ test }}
-  </tab>
-  <tab heading="Statistics">TODO Statistics</tab>
-  <tab heading="Traders">TODO Traders</tab>
+  	<tab heading="Transactions" data-ng-controller="TransactionController">
+	    <table datatable="" class="table table-striped">
+		    <thead>
+		    <tr>
+		        <th>Time</th>
+		        <th>What Currency</th>
+		        <th>With Currency</th>
+		        <th>Price</th>
+		        <th>Volume</th>
+		        <th>Buyer</th>
+		        <th>Seller</th>
+		    </tr>
+		    </thead>
+		    <tbody>
+	        <tr ng-repeat="t in transactions">
+	            <td>{{ t.timestamp | date:'MM.dd.yyyy HH:mm:ss' }}</td>
+	            <td>{{ t.whatC.name | uppercase }}</td>
+	            <td>{{ t.withC.name | uppercase }}</td>
+	            <td>{{ t.price }}</td>
+	            <td>{{ t.volume }}</td>
+	            <td>{{ t.buyerId }}</td>
+	            <td>{{ t.sellerId }}</td>
+	        </tr>
+		    </tbody>
+	  	</table>
+  	</tab>
+  	<tab heading="Statistics">TODO Statistics</tab>
+  	<tab heading="Traders">TODO Traders</tab>
 </tabset>
 
 

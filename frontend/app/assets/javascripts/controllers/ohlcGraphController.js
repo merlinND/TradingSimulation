@@ -100,7 +100,7 @@
                     count : 1,
                     text : '1 day'
                   }, {
-                    type : 'month',
+                    type : 'day',
                     count : 7,
                     text : '1 week'
                   }, {
