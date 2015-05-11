@@ -16,7 +16,6 @@ abstract class MovingAverage(val value: Map[Long, Double])
 /**
  * Moving average superclass. To implement a moving average indicator,
  * extend this class and implement the computeMa() method.
- *
  * @param periods List of periods (expressed in "Number of OHLC" unit)
  */
 abstract class MaIndicator(periods: List[Long]) extends Actor with ActorLogging {

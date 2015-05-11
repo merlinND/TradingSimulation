@@ -108,8 +108,6 @@ object MovingAverageFXExample {
     forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
     forexMarket -> (Seq(evaluator, printer), classOf[Transaction])
 
-
-
     // ----- Start
     builder.start
   }

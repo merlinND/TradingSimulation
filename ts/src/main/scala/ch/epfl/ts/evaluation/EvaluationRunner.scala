@@ -65,7 +65,6 @@ object EvaluationRunner {
     forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
     broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
 
-
     builder.start
   }
 
