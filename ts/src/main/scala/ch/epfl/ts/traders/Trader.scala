@@ -28,8 +28,12 @@ case class RequiredParameterMissingException(message: String) extends RuntimeExc
  * 
  * It will throw a `RequiredParameterMissingException` on instantiation if any of the
  * required parameters have not been provided (or have the wrong type).
+ * 
+ * @param marketIds List of market IDs that this trader trades on.
+ *  This could be useful if the trader wants to receive indicators from various markets.
  */
-abstract class Trader(val uid: Long, val parameters: StrategyParameters) extends Component {
+
+abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: StrategyParameters) extends Component {
   /** Gives a handle to the companion object */
   def companion: TraderCompanion
   
@@ -119,9 +123,9 @@ trait TraderCompanion {
    * 
    * This is the preferred method to instantiate a Trader, as it will perform parameter checking first. 
    */
-  final def getInstance(uid: Long, parameters: StrategyParameters, name: String)(implicit builder: ComponentBuilder): ComponentRef = {
+  final def getInstance(uid: Long, marketIds : List[Long], parameters: StrategyParameters, name: String)(implicit builder: ComponentBuilder): ComponentRef = {
     verifyParameters(parameters)
-    getConcreteInstance(builder, uid, parameters, name)
+    getConcreteInstance(builder, uid, marketIds, parameters, name)
   }
   
   /**
@@ -129,9 +133,11 @@ trait TraderCompanion {
    * Can be overriden by concrete TraderCompanion, but the generic implementation should be sufficient.
    */
   protected def getConcreteInstance(builder: ComponentBuilder,
-                                    uid: Long, parameters: StrategyParameters,
+                                    uid: Long, 
+                                    marketIds : List[Long],
+                                    parameters: StrategyParameters,
                                     name: String) = {
-    builder.createRef(Props(concreteTraderTag.runtimeClass, uid, parameters), name)
+    builder.createRef(Props(concreteTraderTag.runtimeClass, uid, marketIds, parameters), name)
   }
   
   /**
