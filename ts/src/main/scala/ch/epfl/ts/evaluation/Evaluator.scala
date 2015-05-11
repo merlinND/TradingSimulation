@@ -59,10 +59,10 @@ case class EvaluationReport(traderId: Long, traderName: String, wallet: Map[Curr
   * @param period the time period to send evaluation report
   */
 class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period: FiniteDuration) extends Component {
-  // for usage of scheduler
+  // For usage of Scheduler
   import context._
 
-  // initial value
+  // Initial values
   private var initialValueReceived = false
   private var initialWallet: Map[Currency, Double] = Map.empty
   private val wallet = MMap[Currency, Double]()
@@ -175,7 +175,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
     lastValue = curVal
 
     // Generate report
-    //TODO find appropriate value for risk free rate
+    // TODO: Find appropriate value for risk free rate
     val riskFreeRate = 0.03
     val totalReturns = (curVal - initial) / initial
     val volatility = computeVolatility
@@ -187,7 +187,8 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
 
   /**
    * Tells whether it's OK to report
-   * @return True if and only if each currency appearing in the wallet also appears in the price table.
+   * @return True if each currency appearing in the wallet also appears in the price table
+   *         and we have received the initial funds from the trader we are evaluating.
    * */
   private def canReport: Boolean = {
     if (priceTable.size == 0 || !initialValueReceived) false
@@ -198,9 +199,9 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
    * Starts the scheduler and trader
    */
   override def start = {
-    schedule = context.system.scheduler.schedule(2000.milliseconds, period, self, 'Report)
+    schedule = context.system.scheduler.schedule(2 seconds, period, self, 'Report)
 
-    // query trader for the initial wallet
+    // Query trader for the initial wallet
     implicit val timeout = Timeout(2 seconds)
     (trader.ar ? GetTraderParameters).mapTo[TraderIdentity] pipeTo self
  }
