@@ -6,6 +6,13 @@ import ch.epfl.ts.data.Currency._
  * Definition of the System's internal messages.
  */
 trait Streamable
+ 
+/**
+ * Message sent out by an actor which takes authority on the system's time.
+ * This way, we may override both physical time and historical data time if needed.
+ * @see Timekeeper
+ */
+case class TheTimeIs(now: Long) extends Streamable
 
 /**
  * Data Transfer Object representing a Transaction
