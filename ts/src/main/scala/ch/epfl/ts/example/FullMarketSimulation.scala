@@ -34,7 +34,7 @@ object FullMarketSimulation {
 
     //trader
     val parameters = new StrategyParameters(
-      MadTrader.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 1000.0)),
+      MadTrader.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.USD -> 10000.0)),
       MadTrader.INTERVAL -> new TimeParameter(1 seconds),
       MadTrader.ORDER_VOLUME -> NaturalNumberParameter(10),
       MadTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.USD, Currency.CHF))
@@ -69,7 +69,7 @@ object FullMarketSimulation {
     connectProducersWithConsuments()
 
     builder.start
-    val delay = 10 * 1000 //in ms
+    val delay = 20 * 1000 //in ms
     scheduleChange(fxQuoteFetcher, forexMarket, delay)
   }
 
