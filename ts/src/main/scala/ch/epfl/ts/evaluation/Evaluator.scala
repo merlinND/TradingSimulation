@@ -71,7 +71,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
   private val returnsList = MList[Double]()
   private val priceTable = MMap[(Currency, Currency), Double]()
 
-  private var lastValue = 0.0
+  private var lastValue: Option[Double] = None
   private var maxProfit = 0.0
 
   /** Max loss as a positive value
@@ -107,7 +107,9 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
         wallet += currency -> (wallet.getOrElse(currency, 0.0) + amount)
       }
       initialValueReceived = true
-      lastValue = valueOfWallet(wallet.toMap)
+      if(canReport) {
+        lastValue = Some(valueOfWallet(wallet.toMap))
+      }
     case m => trader.ar ! m
   }
 
@@ -150,6 +152,10 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
     val Quote(_, _, whatC, withC, bid, ask) = q
     priceTable.put(whatC -> withC, bid)
     priceTable.put(withC -> whatC, 1/ask)
+    
+    if(lastValue.isEmpty) {
+      lastValue = Some(valueOfWallet(wallet.toMap))
+    }
   }
 
   /**
@@ -171,9 +177,9 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
     if (profit > maxProfit) maxProfit = profit
     else if (profit < 0 && 0 - profit > maxLoss) maxLoss = 0 - profit
 
-    returnsList += (curVal - lastValue) / lastValue
+    returnsList += (curVal - lastValue.get) / lastValue.get
 
-    lastValue = curVal
+    lastValue = Some(curVal)
 
     // Generate report
     // TODO: Find appropriate value for risk free rate
@@ -192,7 +198,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
    *         and we have received the initial funds from the trader we are evaluating.
    * */
   private def canReport: Boolean = {
-    if (priceTable.size == 0 || !initialValueReceived) false
+    if (priceTable.size == 0 || !initialValueReceived || lastValue.isEmpty) false
     else wallet.keys.forall(c => c == currency || priceTable.contains(c -> currency))
   }
 
