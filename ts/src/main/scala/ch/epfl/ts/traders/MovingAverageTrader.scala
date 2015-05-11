@@ -33,6 +33,7 @@ import scala.math.abs
 import scala.math.floor
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.engine.GetWalletFunds
+import ch.epfl.ts.engine.GetWalletFunds
 
 /**
  * MovingAverageTrader companion object
@@ -140,7 +141,6 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     var shortings = 0.0
     var toShortAmount = 0.0
 
-    val (bidPrice,askPrice) = tradingPrices(whatC, withC)
     implicit val timeout = new Timeout(askTimeout)
 
     val future = (broker ? GetWalletFunds(uid, this.self)).mapTo[WalletFunds]
@@ -148,16 +148,19 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
       case WalletFunds(id, funds: Map[Currency, Double]) => {
         val cashWith = funds.getOrElse(withC, 0.0)
         holdings = funds.getOrElse(whatC, 0.0)
+        val askPrice = tradingPrices(whatC, withC)._2
         if (holdings < 0.0) {
           shortings = abs(holdings)
           holdings = 0.0
-          val estimateWithC = cashWith-shortings*bidPrice
-          volume=floor(estimateWithC/askPrice)
+          val estimateWithC = cashWith - shortings * askPrice
+          log.debug("estm" + estimateWithC)
+          volume = floor(estimateWithC / askPrice)
+          log.debug("Volume" + volume + "Short" + shortings)
         } else {
           //estimation of withC available for shorting
           val estimateWithC = holdings * askPrice * shortPercent
           //We took askPrice : we short the volume that we could BUY with estimateWithC
-          toShortAmount = floor(estimateWithC/askPrice)
+          toShortAmount = floor(estimateWithC / askPrice)
         }
 
         //Prevent slippage leading to insufisent funds
@@ -196,7 +199,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     if (currentShort > currentLong) {
       if (shortings > 0.0) {
         if (currentShort > currentLong * (1 + tolerance)) {
-          placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, shortings+volume, -1))
+          placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, shortings + volume, -1))
         } else {
           placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, shortings, -1))
         }
@@ -209,12 +212,12 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
       //hold money
       if (holdings > 0.0) {
         if (currentShort * (1 + tolerance) < currentLong && shortings == 0.0) {
-          placeOrder(MarketShortOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings+toShortAmount, -1))
+          placeOrder(MarketShortOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings + toShortAmount, -1))
         } else {
           placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings, -1))
         }
       } else if (currentShort * (1 + tolerance) < currentLong && shortings == 0) {
-        placeOrder(MarketShortOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume*shortPercent, -1))
+        placeOrder(MarketShortOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume * shortPercent, -1))
       }
 
     }

@@ -31,6 +31,8 @@ import ch.epfl.ts.data.LimitAskOrder
 import ch.epfl.ts.data.MarketShortOrder
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.LimitShortOrder
+import ch.epfl.ts.data.LimitShortOrder
+import ch.epfl.ts.data.MarketAskOrder
 
 /**
  * Created by sygi on 03.04.15.
@@ -127,10 +129,16 @@ class StandardBroker extends Component with ActorLogging {
 
       }
       val costCurrency = o.costCurrency()
+      val orderToSend = o match {
+        //converting shortOrders
+        case o:MarketShortOrder => MarketAskOrder(o.oid,o.uid,o.timestamp,o.whatC,o.withC,o.volume,o.price)
+        case o:LimitShortOrder => LimitAskOrder(o.oid,o.uid,o.timestamp,o.whatC,o.withC,o.volume,o.price)
+        case _ => o
+      }
       executeForWallet(uid, FundWallet(uid, costCurrency, -placementCost, allowShort), {
         case WalletConfirm(uid) => {
           log.debug("Broker: Wallet confirmed")
-          send(o)
+          send(orderToSend)
           replyTo ! AcceptedOrder.apply(o) //means: order placed
         }
         case WalletInsufficient(uid) => {
