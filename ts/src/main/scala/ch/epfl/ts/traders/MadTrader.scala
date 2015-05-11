@@ -72,10 +72,6 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   var price = 1.0
   override def receiver = {
     
-    case q : Quote => {
-     currentTimeMillis = q.timestamp
-    }
-    
     case SendMarketOrder => {
       // Randomize volume and price
       val variation = volumeVariation * (r.nextDouble() - 0.5) * 2.0
@@ -92,8 +88,10 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
       alternate = alternate + 1
       orderId = orderId + 1
     }
-    case q: Quote =>
+    case q: Quote => {
+      currentTimeMillis = q.timestamp
       price = q.bid
+    }
     case t => println("MadTrader: received unknown " + t)
   }
 

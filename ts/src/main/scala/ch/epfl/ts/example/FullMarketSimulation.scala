@@ -40,8 +40,9 @@ object FullMarketSimulation {
       MadTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.USD, Currency.CHF))
 
     val tId = 15L
+    val marketId = MarketNames.FOREX_ID
 
-    val trader = MadTrader.getInstance(tId, parameters, "OneMadTrader")
+    val trader = MadTrader.getInstance(tId, List(marketId), parameters, "OneMadTrader")
     addConsument(classOf[Quote], trader)
     val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
     addConsument(classOf[Quote], broker)
@@ -53,13 +54,12 @@ object FullMarketSimulation {
     //fetcher
     val useLiveData = false
     val symbol = (Currency.USD, Currency.CHF)
-    val fxQuoteFetcher = createFetcher(useLiveData, builder, symbol)
 
+    val fxQuoteFetcher = createFetcher(useLiveData, builder, symbol)
     //hybrid market
     val fetcherRules = new FxMarketRulesWrapper
     val simulationRules = new SimulationMarketRulesWrapper
-    val marketForexId = MarketNames.FOREX_ID
-    val forexMarket = builder.createRef(Props(classOf[HybridMarketSimulator], marketForexId, fetcherRules, simulationRules), MarketNames.FOREX_NAME)
+    val forexMarket = builder.createRef(Props(classOf[HybridMarketSimulator], marketId, fetcherRules, simulationRules), MarketNames.FOREX_NAME)
     fxQuoteFetcher->(forexMarket, classOf[Quote])
 
     addProducer(classOf[Quote], forexMarket)

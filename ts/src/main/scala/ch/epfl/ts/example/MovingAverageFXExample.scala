@@ -39,6 +39,7 @@ import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.component.utils.Printer
 import ch.epfl.ts.evaluation.EvaluationReport
+import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 
 object MovingAverageFXExample {
   def main(args: Array[String]): Unit = {
@@ -68,7 +69,7 @@ object MovingAverageFXExample {
       }
     }
     // Market
-    val rules = new ForexMarketRules()
+    val rules = new FxMarketRulesWrapper()
     val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
 
     // Trader: cross moving average
