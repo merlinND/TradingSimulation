@@ -2,37 +2,42 @@ package ch.epfl.ts.engine
 
 import ch.epfl.ts.data.{Quote, Order, Streamable}
 import ch.epfl.ts.engine.rules.{FxMarketRulesWrapper, MarketRulesWrapper}
+import akka.actor.ActorLogging
 
 /**
  * Market simulator, where first the data is being received from fetcher and market behaves in a way that traders' orders
- * don't influence the prices (quotes) and after some time it changes to the regular market simulation,
+ * don't influence the prices (replay mode) and after some time it changes to the regular market simulation (simulation mode),
  * where traders buy/sell only among them.
  * Rules should have same bids/asks ordering.
  * Works only for one currency pair.
  * Created by sygi on 09.05.15.
  */
-class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2: MarketRulesWrapper) extends MarketSimulator(marketId, rules1.getRules) {
-  var rulesChanged = false
+class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2: MarketRulesWrapper)
+    extends MarketSimulator(marketId, rules1.getRules) with ActorLogging {
+  /** information whether the market is now in simulation mode (traders trade only among themselves) or in replay mode
+   * (with high liquidity assumption = all market orders are executed immediately at the market price)
+   */
+  var isSimulating = false
   override def receiver: PartialFunction[Any, Unit] = {
     case o: Order =>
       getCurrentRules.processOrder(o, marketId, book, tradingPrices, this.send[Streamable])
     case 'ChangeMarketRules =>
-      println("Hybrid market: changing rules")
+      log.info("Hybrid market: changing rules")
       changeRules
     case q: Quote =>
-      println("Hybrid market: got quote: " + q)
+      log.debug("Hybrid market: got quote: " + q)
       tradingPrices((q.withC, q.whatC)) = (q.bid, q.ask)
-      if (!rulesChanged)
+      if (!isSimulating)
         rules1.checkPendingOrders(marketId, book, tradingPrices, this.send[Streamable])
       send(q)
   }
 
   def getCurrentRules = {
-    if (rulesChanged)
+    if (isSimulating)
       rules2
     else
       rules1
   }
   def changeRules =
-    rulesChanged = !rulesChanged
+    isSimulating = !isSimulating
 }

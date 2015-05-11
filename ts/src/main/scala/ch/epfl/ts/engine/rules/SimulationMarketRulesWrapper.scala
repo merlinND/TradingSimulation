@@ -22,8 +22,6 @@ class SimulationMarketRulesWrapper(val rules: MarketRules = new MarketRules()) e
           (a, b) => a <= b, currentPrice._1,
           (limitBid, bidOrdersBook) => {
             bidOrdersBook insert limitBid
-            send(limitBid)
-            println("SMRW: order enqueued")
           })
         tradingPrices((limitBid.withC, limitBid.whatC)) = (newBidPrice, currentPrice._2)
 
@@ -35,8 +33,6 @@ class SimulationMarketRulesWrapper(val rules: MarketRules = new MarketRules()) e
           (a, b) => a >= b, currentPrice._2,
           (limitAsk, askOrdersBook) => {
             askOrdersBook insert limitAsk
-            send(limitAsk)
-            println("SMRW: order enqueued")
           })
         tradingPrices((limitAsk.withC, limitAsk.whatC)) = (currentPrice._1, newAskPrice)
 
@@ -47,7 +43,7 @@ class SimulationMarketRulesWrapper(val rules: MarketRules = new MarketRules()) e
           send,
           (a, b) => true,
           currentPrice._1,
-          (marketBid, bidOrdersBook) => println("SMRW: market order discarded"))
+          (marketBid, bidOrdersBook) => println("SMRW: market order discarded - there is no matching order"))
         tradingPrices((marketBid.withC, marketBid.whatC)) = (newBidPrice, currentPrice._2)
 
       case marketAsk: MarketAskOrder =>
@@ -57,7 +53,7 @@ class SimulationMarketRulesWrapper(val rules: MarketRules = new MarketRules()) e
           send,
           (a, b) => true,
           currentPrice._2,
-          (marketAsk, askOrdersBook) => println("SMRW: market order discarded"))
+          (marketAsk, askOrdersBook) => println("SMRW: market order discarded - there is no matching order"))
         tradingPrices((marketAsk.withC, marketAsk.whatC)) = (currentPrice._1, newAskPrice)
     }
   }

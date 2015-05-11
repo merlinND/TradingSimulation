@@ -20,7 +20,7 @@ class BackLoop(marketId: Long, p: Persistance[Transaction]) extends Component {
       send(t)
       p.save(t)
     }
-    case la: LimitAskOrder => send(la)
+    case la: LimitAskOrder => send(la) //WhereTF is this being used?
     case lb: LimitBidOrder => send(lb)
     case d: DelOrder => send(d)
     case _ => println("Looper: received unknown")

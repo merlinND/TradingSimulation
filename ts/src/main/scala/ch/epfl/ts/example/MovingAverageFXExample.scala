@@ -11,7 +11,6 @@ import ch.epfl.ts.component.persist.DummyPersistor
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.engine.MarketFXSimulator
 import ch.epfl.ts.traders.MovingAverageTrader
-import ch.epfl.ts.component.utils.BackLoop
 import ch.epfl.ts.indicators.SmaIndicator
 import ch.epfl.ts.component.fetch.PullFetchComponent
 import ch.epfl.ts.data.{ Quote, OHLC }

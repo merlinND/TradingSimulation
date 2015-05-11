@@ -6,7 +6,8 @@ import scala.collection.mutable.{HashMap => MHashMap, TreeSet => MTreeSet}
 import scala.collection.mutable
 
 /**
- * Container for the Order Book
+ * Container for the Order Book.
+ * It contains the ordered set of pending Order for one symbol, for either bid or ask.
  * The implementation has a HashMap with the orderIds matching the orders
  * because the naive implementation that required to execute a find() with
  * a predicate on the TreeSet to acquire the Order reference was executed 
@@ -26,7 +27,7 @@ class PartialOrderBook(val comparator: Ordering[Order]) {
   }
 
   /**
-   * insert order in book
+   * insert order in book.
    */
   def insert(o: Order): Unit = {
     bookMap update(o.oid, o)

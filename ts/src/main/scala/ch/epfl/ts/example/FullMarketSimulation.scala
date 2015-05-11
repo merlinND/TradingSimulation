@@ -7,13 +7,8 @@ import ch.epfl.ts.brokers.StandardBroker
 import scala.language.postfixOps
 import scala.concurrent.duration._
 import ch.epfl.ts.data._
-import ch.epfl.ts.traders.{MadTrader, MovingAverageTrader, SimpleTraderWithBroker}
-import ch.epfl.ts.data.Register
+import ch.epfl.ts.traders.MadTrader
 import ch.epfl.ts.engine._
-import ch.epfl.ts.data.MarketBidOrder
-import ch.epfl.ts.data.Register
-import ch.epfl.ts.engine.FundWallet
-import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.component.fetch.{HistDataCSVFetcher, PullFetchComponent, TrueFxFetcher, MarketNames}
 import scala.reflect.ClassTag
 import ch.epfl.ts.data.Currency._
@@ -23,8 +18,6 @@ import ch.epfl.ts.engine.FundWallet
 import ch.epfl.ts.data.Quote
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.MarketAskOrder
-import ch.epfl.ts.component.utils.BackLoop
-import ch.epfl.ts.component.persist.DummyPersistor
 import java.util.Timer
 import ch.epfl.ts.engine.rules.{SimulationMarketRulesWrapper, FxMarketRulesWrapper}
 
