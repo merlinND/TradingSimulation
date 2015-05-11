@@ -129,10 +129,15 @@ class MarketRules extends Serializable {
     generateQuote(marketId, newOrdersBook, bestMatchsBook, newOrder.timestamp, send)
     result
   }
-  def generateQuote(marketId: Long, bids: PartialOrderBook, asks: PartialOrderBook, timestamp: Long, send: Streamable => Unit) = {
-    if (!bids.isEmpty && !asks.isEmpty){
-      val topBid = bids.head
-      val topAsk = asks.head
+  def generateQuote(marketId: Long, ob1: PartialOrderBook, ob2: PartialOrderBook, timestamp: Long, send: Streamable => Unit) = {
+    if (!ob1.isEmpty && !ob2.isEmpty){
+      var topAsk = ob1.head
+      var topBid = ob2.head
+      if (topAsk.price < topBid.price){
+        val tmp = topAsk
+        topAsk = topBid
+        topBid = tmp
+      }
       println("MR: generating quote " + topBid.price + " " + topAsk.price)
       send(Quote(marketId, timestamp, topAsk.whatC, topAsk.withC, topBid.price, topAsk.price))
     } else
