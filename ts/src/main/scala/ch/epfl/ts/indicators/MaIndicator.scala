@@ -28,7 +28,6 @@ abstract class MaIndicator(periods: List[Long]) extends Actor with ActorLogging 
   def receive = {
     
     case o: OHLC => {
-      log.debug("Moving Average Indicator received an OHLC: " + o)
       values += o
       if(values.size == maxPeriod) {
         val ma = computeMa

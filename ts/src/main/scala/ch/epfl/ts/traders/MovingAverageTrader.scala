@@ -139,7 +139,6 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
     }
 
     case ma: MovingAverage if registered => {
-      println("Trader receive MAs")
       ma.value.get(shortPeriods) match {
         case Some(x) => currentShort = x
         case None    => println("Error: Missing indicator with period " + shortPeriods)
@@ -155,7 +154,8 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
     case _: ExecutedBidOrder => // TODO SimplePrint / Log /.../Frontend log ??
     case _: ExecutedAskOrder => // TODO SimplePrint/Log/.../Frontend log ??
 
-    case whatever            => println("SimpleTrader: received unknown : " + whatever)
+    case whatever if !registered => println("MATrader: received while not registered [check that you have a Broker]: " + whatever)
+    case whatever            => println("MATrader: received unknown : " + whatever)
   }
   def decideOrder = {
     var volume = 0.0
