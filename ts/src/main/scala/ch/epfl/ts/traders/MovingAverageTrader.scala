@@ -97,14 +97,6 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
 
 
   /**
-   * Indicators needed by the Moving Average Trader
-   */
-  val marketId = marketIds(0)
-  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, symbol, ohlcPeriod))
-  val movingAverageIndicator = context.actorOf(Props(classOf[EmaIndicator], List(shortPeriods, longPeriods)))
-
-
-  /**
    * Broker information
    */
   var broker: ActorRef = null
