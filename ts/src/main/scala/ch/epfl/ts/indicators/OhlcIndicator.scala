@@ -78,7 +78,6 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickDuration: F
       // Clean old values
       volume = 0
       values.clear()
-      println("OhlcIndicator: sending OHLC : " + ohlc)
       ohlc
     } else {
       OHLC(marketId, close, close, close, close, 0, tickTimeStamp, tickSizeMillis)

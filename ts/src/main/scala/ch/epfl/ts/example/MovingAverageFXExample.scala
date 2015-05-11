@@ -39,6 +39,7 @@ import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.component.utils.Printer
+import ch.epfl.ts.evaluation.EvaluationReport
 
 object MovingAverageFXExample {
   def main(args: Array[String]): Unit = {
@@ -86,28 +87,26 @@ object MovingAverageFXExample {
     val trader = MovingAverageTrader.getInstance(traderId, List(marketForexId), parameters, "MovingAverageTrader")
 
     // Evaluation
-    val evaluationPeriod = 2000 milliseconds
-    val evaluationInitialDelay = 1000000.0
-    val currency = symbol._1
-    //val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, evaluationInitialDelay, currency, evaluationPeriod), "Evaluator")
+    val evaluationPeriod = 2 seconds
+    val referenceCurrency = symbol._2
+    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, referenceCurrency, evaluationPeriod), "Evaluator")
 
     // Broker
     val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
 
-    // Display
-    val traderNames = Map(traderId -> trader.name)
     // Add printer if needed to debug / display
-    //val printer = builder.createRef(Props(classOf[Printer], "MyPrinter"), "Printer")
-
+    val printer = builder.createRef(Props(classOf[Printer], "MyPrinter"), "Printer")
 
     // ----- Connecting actors
 
     // TODO : connect fetcher only to the market (other components will get quotes from it)
-    fxQuoteFetcher -> (Seq(forexMarket, broker, trader), classOf[Quote])
+    fxQuoteFetcher -> (Seq(forexMarket, broker, evaluator), classOf[Quote])
 
-    trader -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
+    evaluator -> (printer, classOf[EvaluationReport])
+    evaluator -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
     broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
     forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
+    forexMarket -> (Seq(evaluator, printer), classOf[Transaction])
 
     // ----- Start
     builder.start
