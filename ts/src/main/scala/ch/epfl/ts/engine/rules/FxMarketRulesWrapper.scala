@@ -14,8 +14,7 @@ import ch.epfl.ts.data.LimitAskOrder
 /**
  * Wrapper around ForexMarketRules, to have ALL the information needed to proceed the order in one method.
  */
-class FxMarketRulesWrapper extends MarketRulesWrapper(new ForexMarketRules()) {
-  val rules = new ForexMarketRules()
+class FxMarketRulesWrapper(val rules :ForexMarketRules = new ForexMarketRules()) extends MarketRulesWrapper(rules) {
   override def processOrder(o: Order, marketId: Long,
                             book: OrderBook, tradingPrices: mutable.HashMap[(Currency, Currency), (Double, Double)],
                             send: Streamable => Unit): Unit =

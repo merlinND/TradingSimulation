@@ -64,8 +64,8 @@ object FullMarketSimulation {
     addProducer(classOf[Quote], fxQuoteFetcher)
 
     //hybrid market
-    val fetcherRules = new FxMarketRulesWrapper()
-    val simulationRules = new SimulationMarketRulesWrapper()
+    val fetcherRules = new FxMarketRulesWrapper
+    val simulationRules = new SimulationMarketRulesWrapper
     val marketForexId = MarketNames.FOREX_ID
     val forexMarket = builder.createRef(Props(classOf[HybridMarketSimulator], marketForexId, fetcherRules, simulationRules), MarketNames.FOREX_NAME)
 
@@ -135,7 +135,7 @@ object FullMarketSimulation {
       val workingDir = "./data"
       val currencyPair = symbol._1.toString() + symbol._2.toString();
 
-      builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 1e-2), "HistDataFetcher")
+      builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 1.0), "HistDataFetcher")
     }
   }
 }

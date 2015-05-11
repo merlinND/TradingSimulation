@@ -9,8 +9,7 @@ import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.LimitAskOrder
 import scala.collection.mutable.HashMap
 
-class SimulationMarketRulesWrapper() extends MarketRulesWrapper(new MarketRules()){
-  val rules = new MarketRules()
+class SimulationMarketRulesWrapper(val rules: MarketRules = new MarketRules()) extends MarketRulesWrapper(rules){
   override def processOrder(o: Order, marketId: Long,
                    book: OrderBook, tradingPrices: HashMap[(Currency, Currency), (Double, Double)],
                    send: Streamable => Unit) = {
@@ -52,7 +51,6 @@ class SimulationMarketRulesWrapper() extends MarketRulesWrapper(new MarketRules(
         tradingPrices((marketBid.withC, marketBid.whatC)) = (newBidPrice, currentPrice._2)
 
       case marketAsk: MarketAskOrder =>
-        // TODO: check currencies haven't been swapped here by mistake
         val currentPrice = tradingPrices((marketAsk.withC, marketAsk.whatC))
         val newAskPrice = rules.matchingFunction(
           marketId, marketAsk, book.asks, book.bids,
