@@ -1,29 +1,14 @@
 package ch.epfl.ts.traders
 
-import ch.epfl.ts.component.Component
 import ch.epfl.ts.indicators.MovingAverage
 import ch.epfl.ts.data.Currency._
-import ch.epfl.ts.data.{ MarketAskOrder, MarketBidOrder, Quote }
-import ch.epfl.ts.data.Currency
 import akka.actor.ActorLogging
-import ch.epfl.ts.engine.MarketFXSimulator
 import akka.actor.ActorRef
-import ch.epfl.ts.data.ConfirmRegistration
-import ch.epfl.ts.data.Register
-import ch.epfl.ts.engine.FundWallet
-import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.AcceptedOrder
 import ch.epfl.ts.engine.RejectedOrder
 import ch.epfl.ts.engine.ExecutedAskOrder
 import ch.epfl.ts.engine.ExecutedBidOrder
 import scala.concurrent.duration.FiniteDuration
-import ch.epfl.ts.data.CurrencyPairParameter
-import ch.epfl.ts.data.NaturalNumberParameter
-import ch.epfl.ts.data.StrategyParameters
-import ch.epfl.ts.data.TimeParameter
-import ch.epfl.ts.data.RealNumberParameter
-import ch.epfl.ts.data.BooleanParameter
-import scala.slick.direct.order
 import akka.pattern.ask
 import ch.epfl.ts.data._
 import akka.util.Timeout
@@ -31,7 +16,6 @@ import scala.collection.mutable.{ HashMap => MHashMap }
 import ch.epfl.ts.engine.WalletFunds
 import scala.math.abs
 import scala.math.floor
-import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.engine.GetWalletFunds
 
 /**

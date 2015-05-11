@@ -70,6 +70,9 @@ class OrderBookMarketSimulator(marketId: Long, rules: MarketRules) extends Marke
       // TODO: how to know which currency of the two was bought? (Which to update, bid or ask price?)
       tradingPrices((t.withC, t.whatC)) = (???, ???)
 
+    case q: Quote =>
+      throw new UnsupportedOperationException("OrderBook MarketSimulator should never receive and handle quotes. It generates them by itself.")
+
     case PrintBooks =>
       // print shows heap order (binary tree)
       println("Ask Orders Book: " + book.bids)

@@ -16,10 +16,10 @@ class MarketFXSimulator(marketId: Long, val rulesWrapper: FxMarketRulesWrapper =
     case o: Order =>
       rulesWrapper.processOrder(o, marketId, book, tradingPrices, this.send[Streamable])
     case q: Quote =>
+      send(q)
       log.debug("FxMS: got quote: " + q)
       tradingPrices((q.withC, q.whatC)) = (q.bid, q.ask)
       rulesWrapper.checkPendingOrders(marketId, book, tradingPrices, this.send[Streamable])
-      send(q)
     case _ =>
       println("FxMS: got unknown")
   }

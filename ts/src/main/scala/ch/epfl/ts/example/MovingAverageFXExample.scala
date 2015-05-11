@@ -104,8 +104,8 @@ object MovingAverageFXExample {
 
     // ----- Connecting actors
 
-    // TODO : connect fetcher only to the market (other components will get quotes from it)
-    fxQuoteFetcher -> (Seq(forexMarket, ohlcIndicator, broker, trader), classOf[Quote])
+    fxQuoteFetcher -> (forexMarket, classOf[Quote])
+    forexMarket -> (Seq(ohlcIndicator, broker, trader), classOf[Quote])
 
     trader -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
     broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])

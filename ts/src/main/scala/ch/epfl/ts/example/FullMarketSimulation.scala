@@ -29,7 +29,7 @@ object FullMarketSimulation {
   var consuments = Map[Class[_], List[ComponentRef]]()
   def main(args: Array[String]): Unit = {
     //TODO(sygi): create functions to build multiple components to slim main down
-    implicit val builder = new ComponentBuilder("TestingBroker", ConfigFactory.parseString("akka.loglevel = \"DEBUG\""))
+    implicit val builder = new ComponentBuilder
     initProducersAndConsuments()
 
     //trader
@@ -54,15 +54,14 @@ object FullMarketSimulation {
     val useLiveData = false
     val symbol = (Currency.USD, Currency.CHF)
     val fxQuoteFetcher = createFetcher(useLiveData, builder, symbol)
-    addProducer(classOf[Quote], fxQuoteFetcher)
 
     //hybrid market
     val fetcherRules = new FxMarketRulesWrapper
     val simulationRules = new SimulationMarketRulesWrapper
     val marketForexId = MarketNames.FOREX_ID
     val forexMarket = builder.createRef(Props(classOf[HybridMarketSimulator], marketForexId, fetcherRules, simulationRules), MarketNames.FOREX_NAME)
+    fxQuoteFetcher->(forexMarket, classOf[Quote])
 
-    addConsument(classOf[Quote], forexMarket)
     addProducer(classOf[Quote], forexMarket)
     connectAllOrders(broker, forexMarket)
     forexMarket->(broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])

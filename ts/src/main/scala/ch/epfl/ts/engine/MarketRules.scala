@@ -154,8 +154,9 @@ class MarketRules extends Serializable {
         topAsk = topBid
         topBid = tmp
       }
-      println("MR: generating quote " + topBid.price + " " + topAsk.price)
-      send(Quote(marketId, timestamp, topAsk.whatC, topAsk.withC, topBid.price, topAsk.price))
+      val q = Quote(marketId, timestamp, topAsk.whatC, topAsk.withC, topBid.price, topAsk.price)
+      println("MR: generating quote " + q)
+      send(q)
     } else
       println("MR: can't generate quote")
   }

@@ -24,12 +24,13 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
     case 'ChangeMarketRules =>
       log.info("Hybrid market: changing rules")
       changeRules
-    case q: Quote =>
-      log.debug("Hybrid market: got quote: " + q)
+    case q: Quote if (!isSimulating) =>
+      rules1.checkPendingOrders(marketId, book, tradingPrices, this.send[Streamable])
+      log.debug("HybridMarket: got quote: " + q)
       tradingPrices((q.withC, q.whatC)) = (q.bid, q.ask)
-      if (!isSimulating)
-        rules1.checkPendingOrders(marketId, book, tradingPrices, this.send[Streamable])
       send(q)
+    case q: Quote if (isSimulating) =>
+      log.warning("HybridMarket received a quote when in simulation mode")
   }
 
   def getCurrentRules = {
