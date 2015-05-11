@@ -98,6 +98,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
       sell(t)
     case q: Quote =>
       updatePrice(q)
+      trader.ar ! q
     case 'Report =>
       if (canReport) report
     case TraderIdentity(_, _, companion, parameters) =>
