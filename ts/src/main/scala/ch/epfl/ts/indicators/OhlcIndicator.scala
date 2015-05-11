@@ -43,6 +43,7 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickDuration: F
     }
 
     case q: Quote => {
+      log.debug("olhc just received a quote")
       if(currentTick == 0){
          currentTick = whichTick(q.timestamp)
       }

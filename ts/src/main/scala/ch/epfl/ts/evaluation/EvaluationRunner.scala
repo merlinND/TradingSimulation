@@ -24,7 +24,7 @@ import ch.epfl.ts.engine.ExecutedBidOrder
 /**
  * Evaluates the performance of trading strategies
  */
-//TODO Make Evaluator consistent with a Trader connected to a Broker which provide wallet-awareness  
+//TODO Make Evaluator consistent with a Trader connected to a Broker which provide wallet-awareness
 object EvaluationRunner {
   implicit val builder = new ComponentBuilder("evaluation")
 
@@ -47,13 +47,13 @@ object EvaluationRunner {
 
     // Broker
     val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
-    
+
     // Evaluator
     val period = 10 seconds
     val referenceCurrency = symbol._2
     val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, referenceCurrency, period), "evaluator")
 
-    // Printer 
+    // Printer
     val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")
 
     // ----- Connecting actors
@@ -64,7 +64,8 @@ object EvaluationRunner {
     forexMarket -> (Seq(evaluator, printer), classOf[Transaction])
     forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
     broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
-    
+
+
     builder.start
   }
 
@@ -80,7 +81,7 @@ object EvaluationRunner {
       MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
       MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
       MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002))
-    
+
     MovingAverageTrader.getInstance(traderId, marketIds, parameters, "MovingAverageTrader")
   }
 

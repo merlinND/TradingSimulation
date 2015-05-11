@@ -81,21 +81,21 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
 
   val symbol = parameters.get[(Currency, Currency)](MovingAverageTrader.SYMBOL)
   val (whatC, withC) = symbol
-  
+
   val ohlcPeriod = parameters.get[FiniteDuration](MovingAverageTrader.OHLC_PERIOD)
   val shortPeriods: Long = parameters.get[Int](MovingAverageTrader.SHORT_PERIODS).toLong
   val longPeriods: Long = parameters.get[Int](MovingAverageTrader.LONG_PERIODS).toLong
   val tolerance = parameters.get[Double](MovingAverageTrader.TOLERANCE)
   val withShort = parameters.getOrElse[Boolean](MovingAverageTrader.WITH_SHORT, false)
-  
+
   /**
-   * Indicators needed by the Moving Average Trader 
+   * Indicators needed by the Moving Average Trader
    */
   val marketId = marketIds(0)
   val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, symbol, ohlcPeriod))
   val movingAverageIndicator = context.actorOf(Props(classOf[EmaIndicator], List(shortPeriods, longPeriods)))
 
-  
+
   /**
    * Broker information
    */
@@ -115,7 +115,7 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
   var shortings: Double = 0.0
 
   var tradingPrices = MHashMap[(Currency, Currency), (Double, Double)]()
-  
+
   override def receiver = {
 
     /**
@@ -127,7 +127,7 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
       tradingPrices((q.whatC, q.withC)) = (q.bid, q.ask)
       ohlcIndicator ! q
     }
-    
+
     case ohlc : OHLC => {
       movingAverageIndicator ! ohlc
     }

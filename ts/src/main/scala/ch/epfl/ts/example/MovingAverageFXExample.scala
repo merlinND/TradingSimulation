@@ -88,7 +88,7 @@ object MovingAverageFXExample {
 
     // Evaluation
     val evaluationPeriod = 2 seconds
-    val referenceCurrency = symbol._1
+    val referenceCurrency = symbol._2
     val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, referenceCurrency, evaluationPeriod), "Evaluator")
 
     // Broker
@@ -100,15 +100,16 @@ object MovingAverageFXExample {
     // ----- Connecting actors
 
     // TODO : connect fetcher only to the market (other components will get quotes from it)
-    fxQuoteFetcher -> (Seq(forexMarket, broker, trader), classOf[Quote])
+    fxQuoteFetcher -> (Seq(forexMarket, broker, evaluator), classOf[Quote])
 
-    trader -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
+    evaluator -> (printer, classOf[EvaluationReport])
+    evaluator -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
     broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
     forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
-  
-    evaluator -> (printer, classOf[EvaluationReport])
-    
-    
+    forexMarket -> (Seq(evaluator, printer), classOf[Transaction])
+
+
+
     // ----- Start
     builder.start
   }
