@@ -50,7 +50,7 @@ object MadTrader extends TraderCompanion {
 /**
  * Trader that gives just random ask and bid orders alternatively
  */
-class MadTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, parameters) {
+class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   import context._
   override def companion = MadTrader
 

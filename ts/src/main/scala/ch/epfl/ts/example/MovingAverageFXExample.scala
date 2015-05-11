@@ -18,7 +18,6 @@ import ch.epfl.ts.data.{ Quote, OHLC }
 import ch.epfl.ts.data.Transaction
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
-import ch.epfl.ts.indicators.{ OhlcIndicator, MaIndicator, MovingAverage, SMA }
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.component.fetch.HistDataCSVFetcher
 import ch.epfl.ts.evaluation.Evaluator
@@ -47,7 +46,7 @@ object MovingAverageFXExample {
     val marketForexId = MarketNames.FOREX_ID
 
     val useLiveData = false
-    val symbol = (Currency.USD, Currency.CHF)
+    val symbol = (Currency.EUR, Currency.CHF)
 
     // ----- Creating actors
     // Fetcher
@@ -56,13 +55,16 @@ object MovingAverageFXExample {
         val fetcherFx: TrueFxFetcher = new TrueFxFetcher
         builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "TrueFxFetcher")
       } else {
+        val replaySpeed = 40000.0
+
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
         val startDate = dateFormat.parse("201304");
         val endDate = dateFormat.parse("201305");
         val workingDir = "./data";
         val currencyPair = symbol._1.toString() + symbol._2.toString();
 
-        builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 4000.0), "HistDataFetcher")
+        val fetcherProps = Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, replaySpeed)
+        builder.createRef(fetcherProps, "HistDataFetcher")
       }
     }
     // Market
@@ -76,23 +78,18 @@ object MovingAverageFXExample {
     val parameters = new StrategyParameters(
       MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
       MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
-      MovingAverageTrader.SHORT_PERIOD -> new TimeParameter(periods(0) seconds),
-      MovingAverageTrader.LONG_PERIOD -> new TimeParameter(periods(1) seconds),
+      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 minute),
+      MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
+      MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
       MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002))
 
-    val trader = MovingAverageTrader.getInstance(traderId, parameters, "MovingAverageTrader")
-
-    // Indicator
-    // Specify period over which we build the OHLC (from quotes)
-    val period = 3600000L // OHLC of 1 hour
-    val maCross = builder.createRef(Props(classOf[EmaIndicator], periods), "maCross")
-    val ohlcIndicator = builder.createRef(Props(classOf[OhlcIndicator], MarketNames.FOREX_ID, symbol, period), "OHLCIndicator")
+    val trader = MovingAverageTrader.getInstance(traderId, List(marketForexId), parameters, "MovingAverageTrader")
 
     // Evaluation
     val evaluationPeriod = 2000 milliseconds
     val evaluationInitialDelay = 1000000.0
     val currency = symbol._1
-    //    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, evaluationInitialDelay, currency, evaluationPeriod), "Evaluator")
+    //val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, evaluationInitialDelay, currency, evaluationPeriod), "Evaluator")
 
     // Broker
     val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
@@ -106,14 +103,11 @@ object MovingAverageFXExample {
     // ----- Connecting actors
 
     // TODO : connect fetcher only to the market (other components will get quotes from it)
-    fxQuoteFetcher -> (Seq(forexMarket, ohlcIndicator, broker, trader), classOf[Quote])
+    fxQuoteFetcher -> (Seq(forexMarket, broker, trader), classOf[Quote])
 
     trader -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
     broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
     forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
-
-    maCross -> (trader, classOf[EMA])
-    ohlcIndicator -> (maCross, classOf[OHLC])
 
     // ----- Start
     builder.start

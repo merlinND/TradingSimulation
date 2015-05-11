@@ -20,6 +20,7 @@ import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.test.ActorTestSuite
+import ch.epfl.ts.component.fetch.MarketNames
 
 @RunWith(classOf[JUnitRunner])
 class MadTraderTest
@@ -32,6 +33,7 @@ class MadTraderTest
   val interval = 50 milliseconds
   val volume = 100
   val volumeVariation = 0.1
+  val marketId = MarketNames.FOREX_ID
   
   /** Give a little margin of error in our timing assumptions */
   val gracePeriod = (10 milliseconds)
@@ -46,7 +48,7 @@ class MadTraderTest
   )
   
   // TODO: refactor generic strategy testing from `StrategyParameter` test suite?
-  val trader = MadTrader.getInstance(traderId, parameters, "MadTrader")
+  val trader = MadTrader.getInstance(traderId, List(marketId), parameters, "MadTrader")
   
   "A MadTrader" should {
     "send its first order within the given initial delay" in {

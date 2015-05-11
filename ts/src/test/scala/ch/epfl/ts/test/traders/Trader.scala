@@ -59,12 +59,13 @@ class TraderTestSuite
   class ConcreteStrategyTestSuite(val strategyCompanion: TraderCompanion)
                                   (implicit builder: ComponentBuilder) {
 
-    var traderId = 42L
+    val marketId = 1L
+    val traderId = 42L
     def make(p: StrategyParameters) = {
       // Need to give actors a unique name
       val suffix = System.currentTimeMillis() + (Math.random() * 100000L).toLong
       val name = "TraderBeingTested-" + suffix.toString
-      strategyCompanion.getInstance(traderId, p, name)
+      strategyCompanion.getInstance(traderId, List(marketId),p, name)
     }
     val emptyParameters = new StrategyParameters()
     val required = strategyCompanion.requiredParameters
