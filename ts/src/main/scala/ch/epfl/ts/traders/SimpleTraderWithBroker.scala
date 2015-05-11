@@ -33,8 +33,8 @@ object SimpleTraderWithBroker extends TraderCompanion {
 /**
  * Dummy broker-aware trader.
  */
-class SimpleTraderWithBroker(uid: Long, parameters: StrategyParameters)
-    extends Trader(uid, parameters)
+class SimpleTraderWithBroker(uid: Long, marketIds: List[Long], parameters: StrategyParameters)
+    extends Trader(uid, marketIds, parameters)
     with ActorLogging {
   
   // Allows the usage of ask pattern in an Actor
