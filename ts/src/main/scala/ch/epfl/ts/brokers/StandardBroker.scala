@@ -127,7 +127,7 @@ class StandardBroker extends Component with ActorLogging {
 
       }
       val costCurrency = o.costCurrency()
-      executeForWallet(uid, FundWallet(uid, costCurrency, -placementCost), {
+      executeForWallet(uid, FundWallet(uid, costCurrency, -placementCost, allowShort), {
         case WalletConfirm(uid) => {
           log.debug("Broker: Wallet confirmed")
           send(o)

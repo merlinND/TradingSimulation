@@ -51,6 +51,8 @@ object MovingAverageTrader extends TraderCompanion {
   val TOLERANCE = "Tolerance"
   /** Allow the use of Short orders in the strategy */
   val WITH_SHORT = "WithShort"
+  /** Percetange of wallet to short */
+  val SHORT_PERCENT = "ShortPercent"
 
   override def strategyRequiredParameters = Map(
     SYMBOL -> CurrencyPairParameter,
@@ -59,7 +61,8 @@ object MovingAverageTrader extends TraderCompanion {
     TOLERANCE -> RealNumberParameter)
 
   override def optionalParameters = Map(
-    WITH_SHORT -> BooleanParameter)
+    WITH_SHORT -> BooleanParameter,
+    SHORT_PERCENT -> RealNumberParameter)
 }
 
 /**
@@ -77,7 +80,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
   val longPeriod = parameters.get[FiniteDuration](MovingAverageTrader.LONG_PERIOD)
   val tolerance = parameters.get[Double](MovingAverageTrader.TOLERANCE)
   val withShort = parameters.getOrElse[Boolean](MovingAverageTrader.WITH_SHORT, false)
-
+  val shortPercent = parameters.getOrElse[Double](MovingAverageTrader.SHORT_PERCENT, 0.0)
   /**
    * Broker information
    */
@@ -122,7 +125,7 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
         case Some(x) => currentLong = x
         case None    => println("Error: Missing indicator with period " + longPeriod)
       }
-        decideOrder
+      decideOrder
     }
 
     // Order has been executed on the market = CLOSE Positions
@@ -135,8 +138,11 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     var volume = 0.0
     var holdings = 0.0
     var shortings = 0.0
+    var toShortAmount = 0.0
 
+    val (bidPrice,askPrice) = tradingPrices(whatC, withC)
     implicit val timeout = new Timeout(askTimeout)
+
     val future = (broker ? GetWalletFunds(uid, this.self)).mapTo[WalletFunds]
     future onSuccess {
       case WalletFunds(id, funds: Map[Currency, Double]) => {
@@ -145,12 +151,20 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
         if (holdings < 0.0) {
           shortings = abs(holdings)
           holdings = 0.0
+          val estimateWithC = cashWith-shortings*bidPrice
+          volume=floor(estimateWithC/askPrice)
+        } else {
+          //estimation of withC available for shorting
+          val estimateWithC = holdings * askPrice * shortPercent
+          //We took askPrice : we short the volume that we could BUY with estimateWithC
+          toShortAmount = floor(estimateWithC/askPrice)
         }
-        val askPrice = tradingPrices(whatC, withC)._2
+
         //Prevent slippage leading to insufisent funds
         volume = floor(cashWith / askPrice)
         if (withShort) {
-          decideOrderWithShort(volume, holdings, shortings)
+
+          decideOrderWithShort(volume, holdings, shortings, toShortAmount)
         } else {
           decideOrderWithoutShort(volume, holdings)
         }
@@ -177,32 +191,38 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
     }
   }
 
-  def decideOrderWithShort(volume: Double, holdings: Double, shortings: Double) = {
+  def decideOrderWithShort(volume: Double, holdings: Double, shortings: Double, toShortAmount: Double) = {
     // BUY signal
     if (currentShort > currentLong) {
       if (shortings > 0.0) {
-        placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, shortings, -1))
-        oid += 1;
-      }
-      if (currentShort > currentLong * (1 + tolerance) && holdings == 0.0) {
+        if (currentShort > currentLong * (1 + tolerance)) {
+          placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, shortings+volume, -1))
+        } else {
+          placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, shortings, -1))
+        }
+      } //No shorting
+      else if (currentShort > currentLong * (1 + tolerance) && holdings == 0.0) {
         placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
-        oid += 1
       }
     } // SELL signal
     else if (currentShort < currentLong) {
+      //hold money
       if (holdings > 0.0) {
-        placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings, -1))
-        oid += 1
+        if (currentShort * (1 + tolerance) < currentLong && shortings == 0.0) {
+          placeOrder(MarketShortOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings+toShortAmount, -1))
+        } else {
+          placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings, -1))
+        }
+      } else if (currentShort * (1 + tolerance) < currentLong && shortings == 0) {
+        placeOrder(MarketShortOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume*shortPercent, -1))
       }
-      if (currentShort * (1 + tolerance) < currentLong && shortings == 0.0) {
-        placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
-        oid += 1;
-      }
+
     }
   }
 
   def placeOrder(order: MarketOrder) = {
     implicit val timeout = new Timeout(askTimeout)
+    oid += 1
     val future = (broker ? order).mapTo[Order]
     future onSuccess {
       //Transaction has been accepted by the broker (but may not be executed : e.g. limit orders) = OPEN Positions

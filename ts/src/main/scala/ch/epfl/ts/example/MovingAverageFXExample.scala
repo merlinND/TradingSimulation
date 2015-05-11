@@ -40,6 +40,8 @@ import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.component.utils.Printer
+import com.sun.javafx.scene.control.behavior.OptionalBoolean
+import ch.epfl.ts.data.BooleanParameter
 
 object MovingAverageFXExample {
   def main(args: Array[String]): Unit = {
@@ -78,7 +80,9 @@ object MovingAverageFXExample {
       MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
       MovingAverageTrader.SHORT_PERIOD -> new TimeParameter(periods(0) seconds),
       MovingAverageTrader.LONG_PERIOD -> new TimeParameter(periods(1) seconds),
-      MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002))
+      MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002),
+      MovingAverageTrader.WITH_SHORT -> BooleanParameter(true),
+      MovingAverageTrader.SHORT_PERCENT -> RealNumberParameter(0.2))
 
     val trader = MovingAverageTrader.getInstance(traderId, parameters, "MovingAverageTrader")
 
@@ -101,7 +105,6 @@ object MovingAverageFXExample {
     val traderNames = Map(traderId -> trader.name)
     // Add printer if needed to debug / display
     //val printer = builder.createRef(Props(classOf[Printer], "MyPrinter"), "Printer")
-
 
     // ----- Connecting actors
 
