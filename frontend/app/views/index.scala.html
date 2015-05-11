@@ -3,28 +3,43 @@
 @main("Welcome to Play") {
 
 
-
-
-<div data-ng-controller="MyController">
-  <ol>
-    <li data-ng-repeat="quote in quotes">{{ quote }}</li>
-  </ol>
-
-	<alert ng-repeat="alert in alerts" type="{{alert.type}}" close="alert.close()">
-	  {{ alert.msg }}
-	</alert>
-
-  <ol>
-    <li data-ng-repeat="i in currencies">{{ i }}</li>
-  </ol>
+<div data-ng-controller="OhlcGraphController">
+  <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="alert.close()">
+    {{ alert.msg }}
+  </alert>
 
   <highchart class="chart" config="chartConfig" ></highchart>
 </div>
 
 <tabset >
-	<tab heading="Statistics">TODO Statistics</tab>
-	<tab heading="Traders">TODO Traders</tab>
-	<tab heading="Transactions">TODO Transactions</tab>
+  	<tab heading="Transactions" data-ng-controller="TransactionController">
+	    <table datatable="" class="table table-striped">
+		    <thead>
+		    <tr>
+		        <th>Time</th>
+		        <th>What Currency</th>
+		        <th>With Currency</th>
+		        <th>Price</th>
+		        <th>Volume</th>
+		        <th>Buyer</th>
+		        <th>Seller</th>
+		    </tr>
+		    </thead>
+		    <tbody>
+	        <tr ng-repeat="t in transactions">
+	            <td>{{ t.timestamp | date:'MM.dd.yyyy HH:mm:ss' }}</td>
+	            <td>{{ t.whatC.name | uppercase }}</td>
+	            <td>{{ t.withC.name | uppercase }}</td>
+	            <td>{{ t.price }}</td>
+	            <td>{{ t.volume }}</td>
+	            <td>{{ t.buyerId }}</td>
+	            <td>{{ t.sellerId }}</td>
+	        </tr>
+		    </tbody>
+	  	</table>
+  	</tab>
+  	<tab heading="Statistics">TODO Statistics</tab>
+  	<tab heading="Traders">TODO Traders</tab>
 </tabset>
 
 
