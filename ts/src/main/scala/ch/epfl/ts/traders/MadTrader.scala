@@ -4,8 +4,16 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
 import scala.language.postfixOps
 
-import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.data._
+import ch.epfl.ts.data.CoefficientParameter
+import ch.epfl.ts.data.Currency
+import ch.epfl.ts.data.CurrencyPairParameter
+import ch.epfl.ts.data.NaturalNumberParameter
+import ch.epfl.ts.data.Order
+import ch.epfl.ts.data.ParameterTrait
+import ch.epfl.ts.data.StrategyParameters
+import ch.epfl.ts.data.TimeParameter
+import ch.epfl.ts.data.Quote
 
 /**
  * Required and optional parameters used by this strategy
@@ -42,7 +50,7 @@ object MadTrader extends TraderCompanion {
 /**
  * Trader that gives just random ask and bid orders alternatively
  */
-class MadTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, parameters) {
+class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   import context._
   override def companion = MadTrader
 
@@ -63,6 +71,11 @@ class MadTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, p
   // TODO: make wallet-aware
   var price = 1.0
   override def receiver = {
+    
+    case q : Quote => {
+     currentTimeMillis = q.timestamp
+    }
+    
     case SendMarketOrder => {
       // Randomize volume and price
       val variation = volumeVariation * (r.nextDouble() - 0.5) * 2.0

@@ -1,20 +1,24 @@
 package ch.epfl.ts.test
 
-import scala.language.postfixOps
 import scala.concurrent.duration.DurationInt
-import akka.actor.ActorSystem
-import com.typesafe.config.ConfigFactory
-import akka.testkit.TestKit
-import org.scalatest.WordSpecLike
-import org.scalatest.BeforeAndAfterAll
-import ch.epfl.ts.engine.MarketFXSimulator
-import ch.epfl.ts.brokers.StandardBroker
-import ch.epfl.ts.engine.ForexMarketRules
+import scala.language.postfixOps
 import scala.reflect.ClassTag
+
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.WordSpecLike
+
+import com.typesafe.config.ConfigFactory
+
 import akka.actor.ActorRef
+import akka.actor.ActorSystem
+import akka.actor.actorRef2Scala
+import akka.testkit.TestKit
 import akka.util.Timeout
+import ch.epfl.ts.brokers.StandardBroker
 import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
+import ch.epfl.ts.engine.{MarketFXSimulator, ForexMarketRules}
 
 object TestHelpers {
   def makeTestActorSystem(name: String = "TestActorSystem") =
@@ -33,15 +37,16 @@ object TestHelpers {
 abstract class ActorTestSuite(val name: String)
   extends TestKit(TestHelpers.makeTestActorSystem(name))
   with WordSpecLike
-  with BeforeAndAfterAll {
+  with BeforeAndAfterAll
+  with BeforeAndAfterEach {
   
   implicit val builder = new ComponentBuilder(system)
   
+  val shutdownTimeout = 3 seconds
+  
 	/** After all tests have run, shut down the system */
   override def afterAll() = {
-    // TODO: use system.terminate (for some reason, doesn't compile in SBT)
-    system.shutdown()
-    system.awaitTermination()
+    TestKit.shutdownActorSystem(system, shutdownTimeout)
   }
   
 }
