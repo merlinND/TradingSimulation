@@ -15,6 +15,11 @@ import ch.epfl.ts.indicators.EmaIndicator
 import ch.epfl.ts.indicators.OhlcIndicator
 import ch.epfl.ts.indicators.EMA
 import ch.epfl.ts.engine.Wallet
+import ch.epfl.ts.brokers.StandardBroker
+import ch.epfl.ts.engine.ExecutedAskOrder
+import ch.epfl.ts.engine.GetWalletFunds
+import ch.epfl.ts.engine.FundWallet
+import ch.epfl.ts.engine.ExecutedBidOrder
 
 /**
  * Evaluates the performance of trading strategies
@@ -28,7 +33,7 @@ object EvaluationRunner {
 
     // Fetcher
     // variables for the fetcher
-  	val speed = 20.0
+  	val speed = 500.0
     val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
     val startDate = dateFormat.parse("201304");
     val endDate = dateFormat.parse("201305");
@@ -40,6 +45,9 @@ object EvaluationRunner {
     val rules = new ForexMarketRules()
     val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
 
+    // Broker
+    val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
+    
     // Evaluator
     val period = 10 seconds
     val referenceCurrency = symbol._2
@@ -49,12 +57,14 @@ object EvaluationRunner {
     val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")
 
     // ----- Connecting actors
-    fetcher -> (Seq(forexMarket, evaluator), classOf[Quote])
+    fetcher -> (Seq(forexMarket, broker, evaluator), classOf[Quote])
+    evaluator -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
     evaluator -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
     evaluator -> (printer, classOf[EvaluationReport])
-    forexMarket -> (evaluator, classOf[Transaction])
-    forexMarket -> (printer, classOf[Transaction])
-
+    forexMarket -> (Seq(evaluator, printer), classOf[Transaction])
+    forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
+    broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
+    
     builder.start
   }
 
