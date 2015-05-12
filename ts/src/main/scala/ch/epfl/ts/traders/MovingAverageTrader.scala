@@ -25,7 +25,7 @@ import ch.epfl.ts.indicators.EmaIndicator
 /**
  * MovingAverageTrader companion object
  */
-object MovingAverageTrader extends TraderCompanion {
+object MovingAverageTrader extends TraderCompanion with Serializable {
   type ConcreteTrader = MovingAverageTrader
   override protected val concreteTraderTag = scala.reflect.classTag[MovingAverageTrader]
 
