@@ -76,14 +76,15 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
       // Randomize volume and price
       val variation = volumeVariation * (r.nextDouble() - 0.5) * 2.0
       val theVolume = ((1 + variation) * volume).toInt
-      val dummyPrice = price * (1 + variation)
+      // TODO: this is not a dummy price anymore!
+      val dummyPrice = price * (1 + 1e-3 * variation)
 
       if (alternate % 2 == 0) {
         println("MadTrader: sending limit ask order")
-        send[Order](LimitAskOrder(orderId, uid, System.currentTimeMillis(), currencies._1, currencies._2, theVolume, dummyPrice))
+        send[Order](LimitAskOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       } else {
         println("MadTrader: sending limit bid order")
-        send[Order](LimitBidOrder(orderId, uid, System.currentTimeMillis(), currencies._1, currencies._2, theVolume, dummyPrice))
+        send[Order](LimitBidOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       }
       alternate = alternate + 1
       orderId = orderId + 1

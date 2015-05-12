@@ -1,7 +1,7 @@
 package ch.epfl.ts.test
 
-import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
+import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
 
 import org.scalatest.BeforeAndAfterAll

@@ -27,17 +27,21 @@ import ch.epfl.ts.engine.rules.{SimulationMarketRulesWrapper, FxMarketRulesWrapp
 object FullMarketSimulation {
   var producers = Map[Class[_], List[ComponentRef]]()
   var consuments = Map[Class[_], List[ComponentRef]]()
+  
   def main(args: Array[String]): Unit = {
     //TODO(sygi): create functions to build multiple components to slim main down
     implicit val builder = new ComponentBuilder
     initProducersAndConsuments()
+    
+    val useLiveData = false
+    val symbol = (Currency.EUR, Currency.CHF)
 
-    //trader
+    // Trader
     val parameters = new StrategyParameters(
-      MadTrader.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.USD -> 10000.0)),
+      MadTrader.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
       MadTrader.INTERVAL -> new TimeParameter(1 seconds),
       MadTrader.ORDER_VOLUME -> NaturalNumberParameter(10),
-      MadTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.USD, Currency.CHF))
+      MadTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.EUR, Currency.CHF))
 
     val tId = 15L
     val marketId = MarketNames.FOREX_ID
@@ -51,26 +55,26 @@ object FullMarketSimulation {
     trader->(broker, classOf[FundWallet])
     connectAllOrders(trader, broker)
 
-    //fetcher
-    val useLiveData = false
-    val symbol = (Currency.USD, Currency.CHF)
-
-    val fxQuoteFetcher = createFetcher(useLiveData, builder, symbol)
-    //hybrid market
+    // Fetcher
+    val fetcher = createFetcher(useLiveData, builder, symbol)
+    
+    // Hybrid market
     val fetcherRules = new FxMarketRulesWrapper
     val simulationRules = new SimulationMarketRulesWrapper
-    val forexMarket = builder.createRef(Props(classOf[HybridMarketSimulator], marketId, fetcherRules, simulationRules), MarketNames.FOREX_NAME)
-    fxQuoteFetcher->(forexMarket, classOf[Quote])
+    val market = builder.createRef(Props(classOf[HybridMarketSimulator], marketId, fetcherRules, simulationRules), MarketNames.FOREX_NAME)
+    fetcher->(market, classOf[Quote])
 
-    addProducer(classOf[Quote], forexMarket)
-    connectAllOrders(broker, forexMarket)
-    forexMarket->(broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
+    addProducer(classOf[Quote], market)
+    addProducer(classOf[TheTimeIs], market)
+    addConsument(classOf[TheTimeIs], trader)
+    connectAllOrders(broker, market)
+    market->(broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
 
     connectProducersWithConsuments()
 
     builder.start
     val delay = 20 * 1000 //in ms
-    scheduleChange(fxQuoteFetcher, forexMarket, delay)
+    scheduleChange(fetcher, market, delay)
   }
 
   def scheduleChange(quoteFetcher: ComponentRef, market: ComponentRef, delay: Long) = {
@@ -121,13 +125,14 @@ object FullMarketSimulation {
       val fetcherFx: TrueFxFetcher = new TrueFxFetcher
       builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "TrueFxFetcher")
     } else {
+      val speed = 100.0
       val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
       val startDate = dateFormat.parse("201304")
       val endDate = dateFormat.parse("201305")
       val workingDir = "./data"
       val currencyPair = symbol._1.toString() + symbol._2.toString();
 
-      builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 1.0), "HistDataFetcher")
+      builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, speed), "HistDataFetcher")
     }
   }
 }

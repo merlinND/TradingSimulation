@@ -17,6 +17,7 @@ import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.GetTraderParameters
 import ch.epfl.ts.engine.TraderIdentity
+import ch.epfl.ts.data.TheTimeIs
 
 case class RequiredParameterMissingException(message: String) extends RuntimeException(message)
 
@@ -57,6 +58,10 @@ abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: Stra
     case GetTraderParameters => {
       println("Got a GetTraderParameters")
       sender ! TraderIdentity(self.path.name, uid, companion, parameters)
+    }
+    
+    case TheTimeIs(t) => {
+      currentTimeMillis = t
     }
   }
   

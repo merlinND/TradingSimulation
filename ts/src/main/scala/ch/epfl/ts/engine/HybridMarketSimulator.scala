@@ -1,8 +1,13 @@
 package ch.epfl.ts.engine
 
+import scala.language.postfixOps
+import scala.concurrent.duration.DurationInt
 import ch.epfl.ts.data.{Quote, Order, Streamable}
 import ch.epfl.ts.engine.rules.{FxMarketRulesWrapper, MarketRulesWrapper}
 import akka.actor.ActorLogging
+import ch.epfl.ts.component.utils.Timekeeper
+import akka.actor.Props
+import ch.epfl.ts.data.TheTimeIs
 
 /**
  * Market simulator, where first the data is being received from fetcher and market behaves in a way that traders' orders
@@ -14,21 +19,42 @@ import akka.actor.ActorLogging
  */
 class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2: MarketRulesWrapper)
     extends MarketSimulator(marketId, rules1.getRules) with ActorLogging {
-  /** information whether the market is now in simulation mode (traders trade only among themselves) or in replay mode
+  /** Information whether the market is now in simulation mode (traders trade only among themselves) or in replay mode
    * (with high liquidity assumption = all market orders are executed immediately at the market price)
    */
-  var isSimulating = false
+  private var isSimulating = false
+  
+  /** Most recent time read from historical data (in milliseconds) */
+  private var lastHistoricalTime = 0L;
+  /** Time period at which to emit  */
+  private val timekeeperPeriod = (500 milliseconds)
+  
   override def receiver: PartialFunction[Any, Unit] = {
-    case o: Order =>
+    case o: Order => {
       getCurrentRules.processOrder(o, marketId, book, tradingPrices, this.send[Streamable])
-    case 'ChangeMarketRules =>
+    }
+    
+    case 'ChangeMarketRules => {
       log.info("Hybrid market: changing rules")
       changeRules
-    case q: Quote if (!isSimulating) =>
+      
+      // We now enter full simulation mode, and we need an actor
+      // to take care of the keeping of the time
+      val timekeeper = context.actorOf(Props(classOf[Timekeeper], self, lastHistoricalTime, timekeeperPeriod), "SimulationTimekeeper")
+    }
+    
+    case t: TheTimeIs =>
+      send(t)
+    
+    case q: Quote if (!isSimulating) => {
+    	log.debug("HybridMarket: got quote: " + q)
+
+      lastHistoricalTime = q.timestamp
       rules1.checkPendingOrders(marketId, book, tradingPrices, this.send[Streamable])
-      log.debug("HybridMarket: got quote: " + q)
       tradingPrices((q.withC, q.whatC)) = (q.bid, q.ask)
       send(q)
+    }
+     
     case q: Quote if (isSimulating) =>
       log.warning("HybridMarket received a quote when in simulation mode")
   }
