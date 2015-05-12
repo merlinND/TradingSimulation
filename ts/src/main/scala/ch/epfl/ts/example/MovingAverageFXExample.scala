@@ -89,7 +89,7 @@ object MovingAverageFXExample {
     // Evaluation
     val evaluationPeriod = 2 seconds
     val referenceCurrency = symbol._2
-    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, referenceCurrency, evaluationPeriod), "Evaluator")
+    val evaluator = builder.createRef(Props(classOf[Evaluator], trader.ar, traderId, trader.name, referenceCurrency, evaluationPeriod), "Evaluator")
 
     // Broker
     val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")

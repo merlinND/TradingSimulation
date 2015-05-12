@@ -107,7 +107,7 @@ trait StrategyFactory {
       // TODO: factor these out
       val period = 10 seconds
       val referenceCurrency = Currency.CHF
-      val evaluatorProps = Props(classOf[Evaluator], trader, traderId, referenceCurrency, period)
+      val evaluatorProps = Props(classOf[Evaluator], trader.ar, traderId, trader.name, referenceCurrency, period)
       val evaluator = host.createRemotely(evaluatorProps, name + "-Evaluator")
       
       evaluator

@@ -51,7 +51,7 @@ object EvaluationRunner {
     // Evaluator
     val period = 10 seconds
     val referenceCurrency = symbol._2
-    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, referenceCurrency, period), "evaluator")
+    val evaluator = builder.createRef(Props(classOf[Evaluator], trader.ar, traderId, trader.name, referenceCurrency, period), "evaluator")
 
     // Printer
     val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")

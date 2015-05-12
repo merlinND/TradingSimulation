@@ -55,10 +55,11 @@ case class EvaluationReport(traderId: Long, traderName: String, wallet: Map[Curr
   *
   * @param trader the reference to the trader component
   * @param traderId the id of the trader
+  * @param traderName the name of the trader
   * @param currency the reference currency for reporting and calculation
   * @param period the time period to send evaluation report
   */
-class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period: FiniteDuration) extends Component {
+class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: Currency, period: FiniteDuration) extends Component {
   // For usage of Scheduler
   import context._
 
@@ -85,7 +86,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
     if (ct.equals(classOf[EvaluationReport]))
       super.connect(ar, ct, name)
     else
-      trader.ar ! ComponentRegistration(ar, ct, name)
+      trader ! ComponentRegistration(ar, ct, name)
   }
 
   /**
@@ -98,7 +99,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
       sell(t)
     case q: Quote =>
       updatePrice(q)
-      trader.ar ! q
+      trader ! q
     case 'Report =>
       if (canReport) report
     case TraderIdentity(_, _, companion, parameters) =>
@@ -110,7 +111,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
       if(canReport) {
         lastValue = Some(valueOfWallet(wallet.toMap))
       }
-    case m => trader.ar ! m
+    case m => trader ! m
   }
 
   /**
@@ -189,7 +190,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
     val drawdown = maxLoss / initial
     val sharpeRatio = (totalReturns - riskFreeRate) / volatility
 
-    send(EvaluationReport(traderId, trader.name, wallet.toMap, currency, initial, curVal, totalReturns, volatility, drawdown, sharpeRatio))
+    send(EvaluationReport(traderId, traderName, wallet.toMap, currency, initial, curVal, totalReturns, volatility, drawdown, sharpeRatio))
   }
 
   /**
@@ -210,7 +211,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
 
     // Query trader for the initial wallet
     implicit val timeout = Timeout(2 seconds)
-    (trader.ar ? GetTraderParameters).mapTo[TraderIdentity] pipeTo self
+    (trader ? GetTraderParameters).mapTo[TraderIdentity] pipeTo self
  }
 
   /**
