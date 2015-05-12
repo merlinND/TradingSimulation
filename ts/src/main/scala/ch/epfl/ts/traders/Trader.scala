@@ -33,7 +33,7 @@ case class RequiredParameterMissingException(message: String) extends RuntimeExc
  *  This could be useful if the trader wants to receive indicators from various markets.
  */
 
-abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: StrategyParameters) extends Component {
+abstract class Trader(val uid: Long, marketIds: List[Long], val parameters: StrategyParameters) extends Component {
   /** Gives a handle to the companion object */
   def companion: TraderCompanion
   

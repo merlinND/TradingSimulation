@@ -1,0 +1,82 @@
+package ch.epfl.ts.test.data
+
+import scala.concurrent.duration.DurationLong
+import scala.language.postfixOps
+import scala.util.Try
+import org.junit.runner.RunWith
+import org.scalatest.WordSpec
+import org.scalatest.junit.JUnitRunner
+import ch.epfl.ts.data.BooleanParameter
+import ch.epfl.ts.data.ParameterTrait
+import ch.epfl.ts.data.StrategyParameters
+import ch.epfl.ts.engine.ForexMarketRules
+import ch.epfl.ts.test.ActorTestSuite
+import ch.epfl.ts.traders.Trader
+import ch.epfl.ts.traders.TraderCompanion
+import ch.epfl.ts.remoting.StrategyOptimizer
+import scala.util.Failure
+import scala.util.Success
+
+@RunWith(classOf[JUnitRunner])
+class StrategyOptimizerTestSuite extends WordSpec {
+
+  private object MyEasyTrader extends TraderCompanion {
+    type ConcreteTrader = MyEasyTrader
+    override protected val concreteTraderTag = scala.reflect.classTag[MyEasyTrader]
+    
+    val FLAG_TO_OPTIMIZE_1 = "FlagToOptimize1"
+    val FLAG_TO_OPTIMIZE_2 = "FlagToOptimize2"
+    val DUMMY_FLAG = "DummyFlag"
+  
+    override def strategyRequiredParameters: Map[Key, ParameterTrait] = Map(
+        DUMMY_FLAG -> BooleanParameter,
+        FLAG_TO_OPTIMIZE_1 -> BooleanParameter,
+        FLAG_TO_OPTIMIZE_2 -> BooleanParameter
+      )
+  }
+  
+  private class MyEasyTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters)
+      extends Trader(uid, marketIds, parameters) {
+    def companion = MyEasyTrader
+    
+    def receiver = PartialFunction.empty
+  }
+  
+  "A StrategyOptimizer" should {
+    val strategyToOptimize = MyEasyTrader
+    val parametersToOptimize = Set(MyEasyTrader.FLAG_TO_OPTIMIZE_1, MyEasyTrader.FLAG_TO_OPTIMIZE_2)
+    val otherParameterValues = Map(MyEasyTrader.DUMMY_FLAG -> BooleanParameter(true))
+    
+    def make(maxInstances: Int = 50) =
+      StrategyOptimizer.generateParameterizations(strategyToOptimize, parametersToOptimize, otherParameterValues, maxInstances)
+    
+    "generate valid parametizations" in {
+      val attempt = Try(make())
+      assert(attempt.isSuccess)
+      attempt match {
+        case Failure(e) => fail(e)
+        case Success(parameterizations) => parameterizations.foreach(p => {
+          val verification = Try(strategyToOptimize.verifyParameters(p))
+          assert(verification.isSuccess)
+        })
+      }
+    }
+    
+    "generate the right number of parameterizations (even if we allow for more)" in {
+      val parameterizations = make(50)
+      assert(parameterizations.size === 4)
+    }
+    
+    "generate all combinations of parameters to optimize" in {
+      def combination(b1: Boolean, b2: Boolean) = new StrategyParameters(
+        strategyToOptimize.FLAG_TO_OPTIMIZE_1 -> BooleanParameter(b1),
+        strategyToOptimize.FLAG_TO_OPTIMIZE_1 -> BooleanParameter(b1),
+        strategyToOptimize.DUMMY_FLAG         -> BooleanParameter(true))
+      
+      val parameterizations = make().toSet
+      val expected = Set(combination(true, true), combination(true, false),
+                         combination(false, true), combination(false, false))
+    }
+    
+  }
+}
