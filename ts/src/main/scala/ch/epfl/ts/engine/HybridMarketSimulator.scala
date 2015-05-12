@@ -69,14 +69,18 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
     val bidsEmpty = if (book.bids.isEmpty) 1 else 0
     if (asksEmpty + bidsEmpty >= 1){
       val msg = if (asksEmpty == 1){
+//      if (asksEmpty == 1){
         val topBid = book.bids.head
+//        send[MarketAsksEmpty](MarketAsksEmpty(topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price))
         MarketAsksEmpty(topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price)
       } else {
         val topAsk = book.asks.head
-        MarketBidsEmpty(topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price) ///
+//        send[MarketBidsEmpty](MarketBidsEmpty(topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price))
+        MarketBidsEmpty(topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price)
       }
       // TODO add third extreme case
-      send[MarketMakerNotification](msg)
+//      log.debug("sending " + msg.toString())
+      send(msg)
     }
   }
 

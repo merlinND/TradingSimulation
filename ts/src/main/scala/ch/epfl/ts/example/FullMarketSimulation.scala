@@ -25,6 +25,7 @@ import ch.epfl.ts.engine.MarketMakerNotification
 import java.util.Timer
 import ch.epfl.ts.engine.rules.{SimulationMarketRulesWrapper, FxMarketRulesWrapper}
 import ch.epfl.ts.traders.MarketMakerTrader
+import ch.epfl.ts.component.utils.Printer
 
 /**
  * Market simulation with first reading historical data and then running simulation on its own.
@@ -69,15 +70,13 @@ object FullMarketSimulation {
 
     val tId2 = 100L
 
-    val trader2 = MarketMakerTrader.getInstance(tId, List(marketId), parameters, "OneMarketMakerTrader")
-//    addConsument(classOf[Quote], trader2)
-    addConsument(classOf[MarketMakerNotification], trader2)
-//    val broker2 = builder.createRef(Props(classOf[StandardBroker]), "Broker")
-//    addConsument(classOf[Quote], broker2)
+    val marketMaker = MarketMakerTrader.getInstance(tId2, List(marketId), parameters2, "OneMarketMakerTrader")
+//    addConsument(classOf[Quote], marketMaker)
+//    addConsument(classOf[MarketMakerNotification], marketMaker)
 
-    trader2->(broker, classOf[Register])
-    trader2->(broker, classOf[FundWallet])
-    connectAllOrders(trader2, broker)
+//    marketMaker->(broker, classOf[Register])
+//    marketMaker->(broker, classOf[FundWallet])
+//    connectAllOrders(marketMaker, broker)
     
 
     // Fetcher
@@ -92,12 +91,23 @@ object FullMarketSimulation {
     addProducer(classOf[Quote], market)
     addProducer(classOf[TheTimeIs], market)
     addConsument(classOf[TheTimeIs], trader)
+//    addProducer(classOf[MarketMakerNotification], market)
     connectAllOrders(broker, market)
     market->(broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
-    market->(trader2, classOf[MarketMakerNotification]); //
+    
+    // for the market maker
+    connectAllOrders(marketMaker, market) // TODO use broker inbetween
+    market->(marketMaker, classOf[MarketBidsEmpty], classOf[MarketAsksEmpty])
 
     connectProducersWithConsuments()
 
+    
+//    // build printer
+//    val printer = builder.createRef(Props(classOf[Printer], "Printer"), "Printer")
+//
+//    // Create the connection
+//    market->(printer, classOf[MarketBidsEmpty], classOf[MarketAsksEmpty])
+    
     builder.start
     val delay = 2 * 1000 //in ms
     scheduleChange(fetcher, market, delay)

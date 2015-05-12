@@ -28,8 +28,10 @@ import scala.concurrent.duration.FiniteDuration
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.engine.MarketAsksEmpty
 import ch.epfl.ts.engine.MarketBidsEmpty
+import ch.epfl.ts.engine.MarketMakerNotification
 import ch.epfl.ts.data.LimitAskOrder
 import ch.epfl.ts.data.LimitBidOrder
+import ch.epfl.ts.engine.MarketMakerNotification
 
 /**
  * MarketMakerTrader companion object
@@ -98,6 +100,9 @@ class MarketMakerTrader(uid: Long, marketIds: List[Long], parameters: StrategyPa
 
 
   override def receiver = {
+//    case a: MarketMakerNotification => {
+//      log.debug("finally got mm note")
+//    }
     case topBid: MarketAsksEmpty => {
       log.debug("MarketMaker is asked to sell " + topBid.volume + " " + topBid.whatC.toString() + " for a price of " + topBid.price + " " + topBid.withC.toString() )
       val order = LimitAskOrder(oid, uid, topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price * (1 + spread))

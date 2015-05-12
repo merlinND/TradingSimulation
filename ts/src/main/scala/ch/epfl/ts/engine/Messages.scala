@@ -5,6 +5,7 @@ import ch.epfl.ts.data.Order
 import akka.actor.ActorRef
 import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.traders.TraderCompanion
+import ch.epfl.ts.data.Streamable
 
 /*
  * Definition of the Simulator's internal messages.
@@ -45,18 +46,22 @@ object ExecutedAskOrder {
 /* *****************************
  * Market maker notifications
  */
-abstract class MarketMakerNotification
+abstract class MarketMakerNotification extends Streamable {
+}
 
 case class MarketAsksEmpty(val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
   extends MarketMakerNotification{
+  override def toString() = "empt asks: " + whatC.toString().toUpperCase() + " with " + withC.toString().toUpperCase() + "; vol: " + volume + "; price " + price
 }
 
 case class MarketBidsEmpty(val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
   extends MarketMakerNotification{
+  override def toString() = "empt bids: " + whatC.toString().toUpperCase() + " with " + withC.toString().toUpperCase() + "; vol: " + volume + "; price " + price
 }
 
 case class MarketEmpty(val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
   extends MarketMakerNotification {
+  override def toString() = "nothing at all" + whatC.toString().toUpperCase() + " with " + withC.toString().toUpperCase() + "; vol: " + volume + "; price " + price
 }
 
 /* *****************************

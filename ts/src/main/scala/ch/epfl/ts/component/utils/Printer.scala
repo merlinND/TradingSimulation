@@ -4,6 +4,9 @@ import ch.epfl.ts.component.Component
 import ch.epfl.ts.data.{ DelOrder, LimitAskOrder, LimitBidOrder, LimitOrder, OHLC, Transaction, Tweet, Quote }
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.data.EndOfFetching
+import ch.epfl.ts.engine.MarketMakerNotification
+
+
 /**
  * Simple printer component. Prints what it receives
  * @param name The name of the printer.
@@ -19,6 +22,7 @@ class Printer(val name: String) extends Component {
     case quote: Quote                 => println("Printer " + name + ": Quote\t" + System.currentTimeMillis() + "\t" + quote.toString)
     case evalReport: EvaluationReport => println("Printer " + name + ": EvalReport\t" + System.currentTimeMillis() + "\t" + evalReport.toString)
     case end: EndOfFetching => println("Printer " + name + ": EndOfFetching\t" + System.currentTimeMillis() + "\t" + end.toString)
+    case msg: MarketMakerNotification => println("Printer " + name + ": " + msg.toString())
     case _                            => println("Printer " + name + ": received unknown")
   }
 }
