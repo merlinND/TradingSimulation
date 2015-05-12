@@ -21,14 +21,24 @@ class TimekeeperTestSuite extends ActorTestSuite("TimekeeperTestSuite") {
     val offset = now
     
     "Send out a first timestamp right away, using the given base" in {
-     within(5 milliseconds) {
-       expectMsg(TheTimeIs(base + 1L))
-     } 
+      val timeout = (50 milliseconds)
+      within(timeout) {
+        val received = expectMsgType[TheTimeIs]
+        assert(received.now >= base, "Timestamps should never be smaller than the base timestamp")
+        assert(received.now <= base + timeout.toMillis, "Timestamps should never be larger than base + physical time")
+      } 
     }
     
 	  "Send messages periodically" in {
-		  within(2100 milliseconds) {
-        receiveN(8)
+      val timeout = (2100 milliseconds)
+		  within(timeout) {
+        val received = receiveN(8).toList
+        assert(received.forall { m => m.isInstanceOf[TheTimeIs] })
+        val times = received.map { m => m.asInstanceOf[TheTimeIs].now }
+        assert(times.sorted === times, "Timestamps should be increasing")
+        assert(times.forall { t => t >= base}, "Timestamps should never be smaller than the base timestamp")
+        assert(times.forall { t => t <= base + timeout.toMillis }, "Timestamps should never be larger than base + physical time")
+        
 		  }
 	  }
     
