@@ -16,6 +16,7 @@ import ch.epfl.ts.traders.TraderCompanion
 import ch.epfl.ts.remoting.StrategyOptimizer
 import scala.util.Failure
 import scala.util.Success
+import ch.epfl.ts.data.WalletParameter
 
 @RunWith(classOf[JUnitRunner])
 class StrategyOptimizerTestSuite extends WordSpec {
@@ -44,8 +45,12 @@ class StrategyOptimizerTestSuite extends WordSpec {
   
   "A StrategyOptimizer" should {
     val strategyToOptimize = MyEasyTrader
-    val parametersToOptimize = Set(MyEasyTrader.FLAG_TO_OPTIMIZE_1, MyEasyTrader.FLAG_TO_OPTIMIZE_2)
-    val otherParameterValues = Map(MyEasyTrader.DUMMY_FLAG -> BooleanParameter(true))
+    val parametersToOptimize = Set(
+        MyEasyTrader.FLAG_TO_OPTIMIZE_1,
+        MyEasyTrader.FLAG_TO_OPTIMIZE_2)
+    val otherParameterValues = Map(
+        MyEasyTrader.INITIAL_FUNDS -> WalletParameter(WalletParameter.defaultValue),
+        MyEasyTrader.DUMMY_FLAG -> BooleanParameter(true))
     
     def make(maxInstances: Int = 50) =
       StrategyOptimizer.generateParameterizations(strategyToOptimize, parametersToOptimize, otherParameterValues, maxInstances)
@@ -73,9 +78,11 @@ class StrategyOptimizerTestSuite extends WordSpec {
         strategyToOptimize.FLAG_TO_OPTIMIZE_1 -> BooleanParameter(b1),
         strategyToOptimize.DUMMY_FLAG         -> BooleanParameter(true))
       
-      val parameterizations = make().toSet
+      val parameterizations = make()
       val expected = Set(combination(true, true), combination(true, false),
                          combination(false, true), combination(false, false))
+                         
+      assert(expected === parameterizations.toSet)
     }
     
   }

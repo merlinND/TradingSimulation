@@ -53,6 +53,9 @@ object StrategyOptimizer {
   // Generate all points of our `dimensions`-dimensional grid
   private def subgrid(l: List[(String, Set[Parameter])]): List[GridPoint]= {
     if(l.isEmpty) List()
+    else if(l.length == 1) {
+      l.head._2.toList.map(v => Map(l.head._1 -> v))
+    }
     else {
       // Enumerate all subgrids from one axis
       val key = l.head._1
