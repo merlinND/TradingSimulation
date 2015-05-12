@@ -28,7 +28,7 @@ case class Transaction(mid: Long, price: Double, volume: Double, timestamp: Long
 trait Chargeable {
   /**
    * The currency with which we pay (withC in a bidOrder , whatC in an Ask order)
-   * 
+   *
    */
   def costCurrency(): Currency
   def chargedTraderId(): Long
@@ -92,6 +92,16 @@ case class LimitAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val 
   extends LimitOrder {
   override def costCurrency() = whatC
 }
+/**
+ * @param whatC Which currency we are buying
+ * @param withC The currency with which we are buying
+ * Allow shorting of whatC
+ * @see LimitOrder
+ */
+case class LimitShortOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+  extends LimitOrder {
+  override def costCurrency() = whatC
+}
 abstract class MarketOrder extends Order
 
 /**
@@ -101,7 +111,7 @@ abstract class MarketOrder extends Order
  * @see LimitOrder
  */
 case class MarketBidOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
-  extends MarketOrder{
+  extends MarketOrder {
 }
 
 /**
@@ -111,7 +121,17 @@ case class MarketBidOrder(val oid: Long, val uid: Long, val timestamp: Long, val
  * @see LimitOrder
  */
 case class MarketAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
-  extends MarketOrder{
+  extends MarketOrder {
+  override def costCurrency() = whatC
+}
+/**
+ * @param whatC Which currency we are buying
+ * @param withC The currency with which we are buying
+ * Allow shorting of whatC
+ * @see LimitOrder
+ */
+case class MarketShortOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+  extends MarketOrder {
   override def costCurrency() = whatC
 }
 
@@ -122,7 +142,7 @@ case class MarketAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val
  * @see LimitOrder
  */
 case class DelOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
-  extends Order{
+  extends Order {
 }
 
 /**
@@ -147,6 +167,13 @@ case class OHLC(marketId: Long, open: Double, high: Double, low: Double, close: 
 case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Currency, bid: Double, ask: Double) {
   override def toString() = "(" + whatC.toString().toUpperCase() + "/" + withC.toString().toUpperCase() + ") = (" + bid + ", " + ask + ")";
 }
+
+/**
+ * Signals that the Fetcher component will not send any more messages
+ * @example In the case of historical data, this message is sent out when
+ *          there are no more quotes to be sent sent.
+ */
+case class EndOfFetching() extends Streamable
 
 /**
  * Data Transfer Object representing a Tweet
