@@ -1,6 +1,11 @@
 package ch.epfl.ts.traders
 
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
+import scala.util.Failure
+import scala.util.Success
 import scala.util.Try
 import akka.actor.ActorLogging
 import akka.actor.ActorRef
@@ -14,23 +19,23 @@ import ch.epfl.ts.data.Currency._
 import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
+import ch.epfl.ts.data.MarketOrder
 import ch.epfl.ts.data.OHLC
+import ch.epfl.ts.data.Order
 import ch.epfl.ts.data.Quote
 import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.data.StrategyParameters
-import ch.epfl.ts.engine.GetWalletFunds
-import ch.epfl.ts.engine.WalletFunds
-import ch.epfl.ts.indicators.OhlcIndicator
-import ch.epfl.ts.indicators.RangeIndicator
-import scala.util.Failure
-import scala.util.Success
+import ch.epfl.ts.engine.AcceptedOrder
 import ch.epfl.ts.engine.ExecutedAskOrder
 import ch.epfl.ts.engine.ExecutedBidOrder
-import ch.epfl.ts.engine.AcceptedOrder
-import ch.epfl.ts.data.MarketOrder
+import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.RejectedOrder
-import ch.epfl.ts.data.Order
+import ch.epfl.ts.engine.WalletFunds
+import ch.epfl.ts.indicators.OhlcIndicator
 import ch.epfl.ts.indicators.RANGE
+import ch.epfl.ts.indicators.RangeIndicator
+
+
 
 /**
  * RangeTrader companion object
@@ -61,8 +66,8 @@ object RangeTrader extends TraderCompanion {
  * support then we liquidate our position. We avoid the risk that prices will crash.
  * @param volume the volume that we want to buy
  */
-class RangeTrader(uid : Long, parameters: StrategyParameters)
-    extends Trader(uid, parameters) {
+class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParameters)
+    extends Trader(uid, marketIds, parameters) with ActorLogging{
 
   override def companion = RangeTrader
 
@@ -81,7 +86,7 @@ class RangeTrader(uid : Long, parameters: StrategyParameters)
   var rangeSize : Double = 0.0
 
   val marketId = MarketNames.FOREX_ID
-  val oneMinute : Long = 1000*60
+  val oneMinute : FiniteDuration = 60000 milliseconds
   val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), oneMinute),"ohlcIndicator")
   println(ohlcIndicator.path)
   
@@ -119,7 +124,7 @@ class RangeTrader(uid : Long, parameters: StrategyParameters)
         volume = Math.floor(cashWith / askPrice)
         decideOrder
       }
-      case Failure(e) => 
+      case Failure(e) => log.error("Range trader was supposed to receive wallet funds but received "+e+ " instead")
     }
     
     case ConfirmRegistration => {

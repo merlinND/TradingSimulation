@@ -71,7 +71,7 @@ object RangeExample {
       RangeTrader.VOLUME -> RealNumberParameter(10.0),
       RangeTrader.ORDER_WINDOW -> CoefficientParameter(0.15)
     )
-    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, parameters), "RangeTrader")
+    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, List(marketForexId),parameters), "RangeTrader")
    
     // Indicator
     // specify period over which we build the OHLC (from quotes)
