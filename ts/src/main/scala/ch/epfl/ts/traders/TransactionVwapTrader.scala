@@ -32,8 +32,6 @@ object TransactionVwapTrader extends TraderCompanion {
 class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   import context._
   override def companion = TransactionVwapTrader
-  
-  case object Tick
 
   val timeFrame = parameters.get[FiniteDuration](TransactionVwapTrader.TIME_FRAME)
   val volumeToTrade = parameters.get[Int](TransactionVwapTrader.VOLUME)
@@ -58,7 +56,7 @@ class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: Strate
   
   def receiver = {
     case t: Transaction => transactions = t :: transactions
-    case Tick => {
+    case 'Tick => {
       computeVWAP
       if (tradingPrice > vwap) {
         // sell
@@ -91,6 +89,6 @@ class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: Strate
 
   override def init = {
     println("TransactionVwapTrader: Started")
-    system.scheduler.schedule(0 milliseconds, timeFrame, self, Tick)
+    system.scheduler.schedule(0 milliseconds, timeFrame, self, 'Tick)
   }
 }

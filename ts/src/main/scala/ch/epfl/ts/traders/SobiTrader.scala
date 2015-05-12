@@ -61,7 +61,6 @@ object SobiTrader extends TraderCompanion {
  */
 class SobiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   import context._
-  case object PossibleOrder
 
   override def companion = SobiTrader
   
@@ -85,7 +84,7 @@ class SobiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameter
     case delete: DelOrder         => removeOrder(delete)
     case transaction: Transaction => tradingPrice = transaction.price
 
-    case PossibleOrder => {
+    case 'PossibleOrder => {
       bi = computeBiOrSi(book.bids.book)
       si = computeBiOrSi(book.asks.book)
       if ((si - bi) > theta) {
@@ -106,7 +105,7 @@ class SobiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameter
   }
 
   override def init = {
-    system.scheduler.schedule(0 milliseconds, interval, self, PossibleOrder)
+    system.scheduler.schedule(0 milliseconds, interval, self, 'PossibleOrder)
   }
 
   def removeOrder(order: Order): Unit = book delete order

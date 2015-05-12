@@ -70,7 +70,7 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   var price = 1.0
   override def receiver = {
     
-    case q : Quote => {
+    case q: Quote => {
       currentTimeMillis = q.timestamp
       price = q.bid
     }

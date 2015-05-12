@@ -175,7 +175,7 @@ object ForexStrategyFactory extends StrategyFactory {
 		val printer = commonProps.printer.map(p => host.createRemotely(p, "Printer"))
 
     // ----- Traders (possibly many) to be run in parallel on this host
-    val evaluators = Set[ComponentRef]()// createRemoteTraders(host, strategyToOptimize, parameterizations)
+    val evaluators = createRemoteTraders(host, strategyToOptimize, parameterizations)
     
     new SystemDeployment(fetcher, market, broker, evaluators, printer)
   }

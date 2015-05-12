@@ -19,7 +19,8 @@ import ch.epfl.ts.data.Currency._
  */
 case class EvaluationReport(traderId: Long, traderName: String, wallet: Map[Currency, Double],
                             currency: Currency, initial: Double, current: Double, totalReturns: Double,
-                            volatility: Double, drawdown: Double, sharpeRatio: Double) extends Ordered[EvaluationReport] {
+                            volatility: Double, drawdown: Double, sharpeRatio: Double)
+                           extends Ordered[EvaluationReport] with Serializable {
 
   /** Compares two evaluation reports by total returns
     *
