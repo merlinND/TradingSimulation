@@ -22,11 +22,11 @@ import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.ForexMarketRules
 import ch.epfl.ts.engine.Wallet
-import ch.epfl.ts.indicators.SMA
 import ch.epfl.ts.test.ActorTestSuite
 import ch.epfl.ts.test.FxMarketWrapped
 import ch.epfl.ts.test.SimpleBrokerWrapped
 import ch.epfl.ts.traders.MovingAverageTrader
+import ch.epfl.ts.data.NaturalNumberParameter
 import ch.epfl.ts.indicators.SMA
 
 /**
@@ -45,8 +45,9 @@ class MovingAverageShortTest
   val parameters = new StrategyParameters(
     MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
     MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
-    MovingAverageTrader.SHORT_PERIOD -> new TimeParameter(periods(0)),
-    MovingAverageTrader.LONG_PERIOD -> new TimeParameter(periods(1)),
+     MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 minute),
+    MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
+    MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
     MovingAverageTrader.TOLERANCE -> RealNumberParameter(tolerance),
     MovingAverageTrader.WITH_SHORT -> BooleanParameter(true),
     MovingAverageTrader.SHORT_PERCENT -> RealNumberParameter(0.2))
@@ -54,7 +55,7 @@ class MovingAverageShortTest
   val marketID = 1L
   val market = builder.createRef(Props(classOf[FxMarketWrapped], marketID, new ForexMarketRules()), MarketNames.FOREX_NAME)
   val broker = builder.createRef(Props(classOf[SimpleBrokerWrapped], market.ar), "Broker")
-  val trader = builder.createRef(Props(classOf[MovingAverageTraderWrapped], traderId, parameters, broker.ar), "Trader")
+  val trader = builder.createRef(Props(classOf[MovingAverageTraderWrapped], traderId, List(marketID), parameters, broker.ar), "Trader")
 
   market.ar ! StartSignal
   broker.ar ! StartSignal
@@ -83,7 +84,7 @@ class MovingAverageShortTest
     "buy (20,3)" in {
       within(1 second) {
         EventFilter.debug(message = "executed bid volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5 -> 20.0, 30 -> 3.0))
+          trader.ar ! SMA(Map(5L -> 20.0, 30L -> 3.0))
         }
       }
       cash -= volume * askPrice
@@ -93,7 +94,7 @@ class MovingAverageShortTest
     "sell(2.99999,3)" in {
       within(1 second) {
         EventFilter.debug(message = "executed ask volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5 -> 2.999999, 30 -> 3))
+          trader.ar ! SMA(Map(5L -> 2.999999, 30L -> 3))
         }
       }
       cash += volume * bidPrice
@@ -105,7 +106,7 @@ class MovingAverageShortTest
     "short(2,3)" in {
       within(1 second) {
         EventFilter.debug(message = "executed ask volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5 -> 2, 30 -> 3))
+          trader.ar ! SMA(Map(5L -> 2, 30L -> 3))
         }
       }
       cash += volume * bidPrice
@@ -117,7 +118,7 @@ class MovingAverageShortTest
     "recover and buy (20,3)" in {
       within(1 second) {
         EventFilter.debug(message = "executed bid volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5 -> 20.0, 30 -> 3.0))
+          trader.ar ! SMA(Map(5L -> 20.0, 30L -> 3.0))
         }
       }
       holdings = volume - shortings
@@ -126,7 +127,7 @@ class MovingAverageShortTest
     "nothing (20,3)" in {
       within(1 second) {
         EventFilter.debug(message = "An order is placed", occurrences = 0) intercept {
-          trader.ar ! SMA(Map(5 -> 20.0, 30 -> 3.0))
+          trader.ar ! SMA(Map(5L -> 20.0, 30L -> 3.0))
         }
       }
       //going to sell and go short
@@ -136,7 +137,7 @@ class MovingAverageShortTest
     "sell and go short (3,20)" in {
       within(1 second) {
         EventFilter.debug(message = "executed ask volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5 -> 3, 30 -> 20))
+          trader.ar ! SMA(Map(5L -> 3, 30L -> 20))
         }
       }
       shortings = volume - holdings
@@ -145,7 +146,7 @@ class MovingAverageShortTest
     "recover short only (3,2.9999999999)" in {
       within(1 second) {
         EventFilter.debug(message = "executed bid volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5 -> 3, 30 -> 2.9999999999))
+          trader.ar ! SMA(Map(5L -> 3, 30L -> 2.9999999999))
         }
       }
     }
@@ -159,8 +160,8 @@ class MovingAverageShortTest
  * @param StrategyParameters parameters
  * @param broker ActorRef
  */
-class MovingAverageTraderWrapped(uid: Long, parameters: StrategyParameters, broker: ActorRef)
-  extends MovingAverageTrader(uid, parameters) {
+class MovingAverageTraderWrapped(uid: Long, marketIds: List[Long], parameters: StrategyParameters, broker: ActorRef)
+  extends MovingAverageTrader(uid, marketIds, parameters) {
   override def send[T: ClassTag](t: T) {
     broker ! t
   }

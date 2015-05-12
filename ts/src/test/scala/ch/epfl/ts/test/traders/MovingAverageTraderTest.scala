@@ -55,7 +55,7 @@ class MovingAverageTraderTest
   val marketID = 1L
   val market = builder.createRef(Props(classOf[FxMarketWrapped], marketID, new ForexMarketRules()), MarketNames.FOREX_NAME)
   val broker = builder.createRef(Props(classOf[SimpleBrokerWrapped], market.ar), "Broker")
-  val trader = builder.createRef(Props(classOf[MovingAverageTraderWrapped], traderId, parameters, broker.ar), "Trader")
+  val trader = builder.createRef(Props(classOf[MovingAverageTraderWrapped], traderId,List(marketID),parameters, broker.ar), "Trader")
 
   market.ar ! StartSignal
   broker.ar ! StartSignal
