@@ -29,7 +29,7 @@ object TransactionVwapTrader extends TraderCompanion {
 /**
  * Transaction VWAP trader.
  */
-class TransactionVwapTrader(uid: Long, parameters: StrategyParameters) extends Trader(uid, parameters) {
+class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   import context._
   override def companion = TransactionVwapTrader
   
@@ -63,12 +63,12 @@ class TransactionVwapTrader(uid: Long, parameters: StrategyParameters) extends T
       if (tradingPrice > vwap) {
         // sell
         println("TransactionVWAPTrader: sending market ask order")
-        send(MarketAskOrder(oid, uid, System.currentTimeMillis(), USD, USD, volumeToTrade, 0))
+        send(MarketAskOrder(oid, uid, currentTimeMillis, USD, USD, volumeToTrade, 0))
         oid = oid + 1
       } else {
         // buy
         println("TransactionVWAPTrader: sending market bid order")
-        send(MarketBidOrder(oid, uid, System.currentTimeMillis(), USD, USD, volumeToTrade, 0))
+        send(MarketBidOrder(oid, uid, currentTimeMillis, USD, USD, volumeToTrade, 0))
         oid = oid + 1
       }
     }

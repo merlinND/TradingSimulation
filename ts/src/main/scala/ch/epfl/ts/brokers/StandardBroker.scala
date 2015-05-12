@@ -113,6 +113,11 @@ class StandardBroker extends Component with ActorLogging {
       log.debug("Broker: received order")
       val replyTo = sender
       val uid = o.chargedTraderId()
+      if (!ableToProceed(o)){
+        log.warning("Broker: Unable to proceed MarketBid request before getting first quote")
+        replyTo ! RejectedOrder.apply(o)
+        return dummyReturn
+      }
       val placementCost = o match {
         case _: MarketBidOrder => o.volume * tradingPrices(o.whatC, o.withC)._2 // we buy at ask price
         case _: MarketAskOrder => o.volume
@@ -141,6 +146,14 @@ class StandardBroker extends Component with ActorLogging {
     case p => log.debug("Broker: received unknown " + p)
   }
 
+  def ableToProceed(o: Order): Boolean = {
+    o match {
+      case _: MarketBidOrder =>
+        tradingPrices.contains((o.whatC, o.withC))
+      case _ => true
+    }
+  }
+
   //TODO(sygi) - implement it
   //def addToWallet(uid: Long, currency: Currency, amount: Double, messageOnSuccess: Option[Any], messageOnFailure: Option[Any])
 
@@ -155,6 +168,19 @@ class StandardBroker extends Component with ActorLogging {
         }
       }
       case None => log.debug("Broker: No such wallet")
+    }
+  }
+
+  def finishExecutedOrder(e: Order, currency: Currency, amount: Double){ //TODO(sygi): create a common subclass for ExecutedOrders
+    if (mapping.contains(e.uid)) {
+      val replyTo = mapping.getOrElse(e.uid, null)
+      executeForWallet(e.uid, FundWallet(e.uid, currency, amount), {
+        case WalletConfirm(uid) => {
+          log.debug("Broker: Transaction executed")
+          replyTo ! e
+        }
+        case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
+      })
     }
   }
 }

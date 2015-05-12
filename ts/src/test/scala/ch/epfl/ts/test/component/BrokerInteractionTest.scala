@@ -34,7 +34,7 @@ class BrokerInteractionTest
   
   val tId = 15L
   val parameters = new StrategyParameters(SimpleTraderWithBroker.INITIAL_FUNDS -> WalletParameter(Map()))
-  val trader = system.actorOf(Props(classOf[SimpleTraderWrapped], tId, parameters, broker), "Trader")
+  val trader = system.actorOf(Props(classOf[SimpleTraderWrapped], tId, List(marketID), parameters, broker), "Trader")
 
   market ! StartSignal
   broker ! StartSignal
@@ -114,7 +114,7 @@ class BrokerInteractionTest
   "Wallet " should {
     " block the orders exceeding funds" in {
       within(1 second) {
-        EventFilter.debug(message = "MarketFXSimulator : received a bidOrder", occurrences = 0) intercept {
+        EventFilter.debug(message = "FxMS: received a bidOrder", occurrences = 0) intercept {
           EventFilter.debug(message = "TraderWithB: order failed", occurrences = 1) intercept {
             trader ! 'sendTooBigOrder
           }
@@ -141,8 +141,8 @@ class BrokerInteractionTest
  * @param uid traderID
  * @param broker ActorRef
  */
-class SimpleTraderWrapped(uid: Long, parameters: StrategyParameters, broker: ActorRef)
-    extends SimpleTraderWithBroker(uid, parameters) {
+class SimpleTraderWrapped(uid: Long, marketIds : List[Long], parameters: StrategyParameters, broker: ActorRef)
+    extends SimpleTraderWithBroker(uid, marketIds, parameters) {
   override def send[T: ClassTag](t: T) {
     broker ! t
   }

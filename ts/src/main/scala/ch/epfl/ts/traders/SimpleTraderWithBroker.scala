@@ -33,9 +33,16 @@ object SimpleTraderWithBroker extends TraderCompanion {
 /**
  * Dummy broker-aware trader.
  */
+<<<<<<< HEAD
 class SimpleTraderWithBroker(uid: Long, parameters: StrategyParameters)
     extends Trader(uid, parameters) {
 
+=======
+class SimpleTraderWithBroker(uid: Long, marketIds: List[Long], parameters: StrategyParameters)
+    extends Trader(uid, marketIds, parameters)
+    with ActorLogging {
+  
+>>>>>>> master
   // Allows the usage of ask pattern in an Actor
   import context.dispatcher
 
@@ -73,12 +80,12 @@ class SimpleTraderWithBroker(uid: Long, parameters: StrategyParameters)
     }
 
     case 'sendTooBigOrder => {
-      val order = MarketBidOrder(oid, uid, System.currentTimeMillis(), CHF, USD, 1000.0, 100000.0)
+      val order = MarketBidOrder(oid, uid, currentTimeMillis, CHF, USD, 1000.0, 100000.0)
       placeOrder(order)
       oid = oid + 1
     }
     case 'sendMarketOrder => {
-      val order = MarketBidOrder(oid, uid, System.currentTimeMillis(), CHF, USD, 3.0, 14.0)
+      val order = MarketBidOrder(oid, uid, currentTimeMillis, CHF, USD, 3.0, 14.0)
       placeOrder(order)
       oid = oid + 1
     }
