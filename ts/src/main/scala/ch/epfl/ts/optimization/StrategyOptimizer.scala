@@ -1,4 +1,4 @@
-package ch.epfl.ts.remoting
+package ch.epfl.ts.optimization
 
 import ch.epfl.ts.component.Component
 import ch.epfl.ts.traders.TraderCompanion

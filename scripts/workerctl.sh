@@ -21,7 +21,7 @@ PORTS=(22 22 22 22 58575 22 65530 52640)
 BRANCH="master"
 
 # Which class to run on workers
-CLASS="ch.epfl.ts.remoting.RemotingWorker"
+CLASS="ch.epfl.ts.optimization.RemotingWorker"
 
 # Which logfile to write to on workers
 LOGFILE_ON_WORKER="~/RemotingWorker.log"

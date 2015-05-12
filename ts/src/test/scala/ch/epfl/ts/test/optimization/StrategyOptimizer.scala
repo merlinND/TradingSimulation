@@ -1,4 +1,4 @@
-package ch.epfl.ts.test.data
+package ch.epfl.ts.test.optimization
 
 import scala.concurrent.duration.DurationLong
 import scala.language.postfixOps
@@ -13,7 +13,7 @@ import ch.epfl.ts.engine.ForexMarketRules
 import ch.epfl.ts.test.ActorTestSuite
 import ch.epfl.ts.traders.Trader
 import ch.epfl.ts.traders.TraderCompanion
-import ch.epfl.ts.remoting.StrategyOptimizer
+import ch.epfl.ts.optimization.StrategyOptimizer
 import scala.util.Failure
 import scala.util.Success
 import ch.epfl.ts.data.WalletParameter

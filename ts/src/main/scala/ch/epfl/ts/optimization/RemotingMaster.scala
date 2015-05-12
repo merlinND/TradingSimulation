@@ -1,4 +1,4 @@
-package ch.epfl.ts.remoting
+package ch.epfl.ts.optimization
 
 import scala.collection.mutable.MutableList
 import scala.reflect.ClassTag
