@@ -97,7 +97,7 @@ object RangeExample {
     
    // fetcher -> (Seq(forexMarket, evaluator, ohlcIndicator), classOf[Quote])
     
-    //evaluator -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
+    //evaluator -> (broker, classOf[Register], classOf[FundWallet],classOf[GetWalletFunds], classOf[MarketBidOrder], classOf[MarketAskOrder])
     //evaluator -> (printer, classOf[EvaluationReport])
     
     //fetcher->(Seq(forexMarket, ohlcIndicator), classOf[Quote])
