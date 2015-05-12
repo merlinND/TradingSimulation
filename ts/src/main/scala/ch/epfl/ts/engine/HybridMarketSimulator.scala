@@ -35,6 +35,7 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
   override def receiver: PartialFunction[Any, Unit] = {
     case o: Order => {
       getCurrentRules.processOrder(o, marketId, book, tradingPrices, this.send[Streamable])
+      
       if (isSimulating)
         playMarketMaker()
     }
@@ -68,18 +69,17 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
     val asksEmpty = if (book.asks.isEmpty) 1 else 0
     val bidsEmpty = if (book.bids.isEmpty) 1 else 0
     if (asksEmpty + bidsEmpty >= 1){
-      val msg = if (asksEmpty == 1){
-//      if (asksEmpty == 1){
+      val msg = if (asksEmpty == 1 && bidsEmpty == 0){
         val topBid = book.bids.head
-//        send[MarketAsksEmpty](MarketAsksEmpty(topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price))
         MarketAsksEmpty(topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price)
-      } else {
+      } else if (bidsEmpty == 1 && asksEmpty == 0){
         val topAsk = book.asks.head
-//        send[MarketBidsEmpty](MarketBidsEmpty(topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price))
         MarketBidsEmpty(topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price)
+      } else {
+        // TODO (Jakob) test if this case occurs (I believe it doesn't because also market orders are put down in the order book, right?)
+        //MarketEmpty(topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price)
+        log.error("Yes it does")
       }
-      // TODO add third extreme case
-//      log.debug("sending " + msg.toString())
       send(msg)
     }
   }

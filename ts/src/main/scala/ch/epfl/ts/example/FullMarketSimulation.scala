@@ -91,22 +91,14 @@ object FullMarketSimulation {
     addProducer(classOf[Quote], market)
     addProducer(classOf[TheTimeIs], market)
     addConsument(classOf[TheTimeIs], trader)
-//    addProducer(classOf[MarketMakerNotification], market)
     connectAllOrders(broker, market)
     market->(broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
     
     // for the market maker
     connectAllOrders(marketMaker, market) // TODO use broker inbetween
-    market->(marketMaker, classOf[MarketBidsEmpty], classOf[MarketAsksEmpty])
+    market->(marketMaker, classOf[MarketBidsEmpty], classOf[MarketAsksEmpty], classOf[MarketEmpty])
 
     connectProducersWithConsuments()
-
-    
-//    // build printer
-//    val printer = builder.createRef(Props(classOf[Printer], "Printer"), "Printer")
-//
-//    // Create the connection
-//    market->(printer, classOf[MarketBidsEmpty], classOf[MarketAsksEmpty])
     
     builder.start
     val delay = 2 * 1000 //in ms
