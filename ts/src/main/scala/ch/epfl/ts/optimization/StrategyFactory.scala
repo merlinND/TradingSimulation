@@ -42,29 +42,12 @@ trait StrategyFactory {
     def printer: Option[Props] = None
   }
   
-  /**
-   * @param namingPrefix Prefix that will precede the name of each actor on this remote
-   * @param systemName Name of the actor system being run on this remote
-   */
-  class RemoteHost(val hostname: String, val port: Int, val namingPrefix: String, val systemName: String = "remote") {
-    val address = Address("akka.tcp", systemName, hostname, port)
-    val deploy = Deploy(scope = RemoteScope(address))
-    
-    def createRemotely(props: Props, name: String)(implicit builder: ComponentBuilder): ComponentRef = {
-      // TODO: use `log.debug`
-      val actualName = namingPrefix + '-' + name
-		  println("Creating remotely component " + actualName + " at host " + hostname)
-    	builder.createRef(props.withDeploy(deploy), actualName)
-    }
-  }
-  
   
   /**
    * Define a set of props (used to create components) that will be created identically on
    * all actor systems (i.e. every worker will run these actors):
    */
-  def commonProps: CommonProps
-  
+  protected def commonProps: CommonProps
   
   
   /**
@@ -163,10 +146,6 @@ object ForexStrategyFactory extends StrategyFactory {
     
     // ----- Connections
     // TODO
-    
-    // ----- Registration to the supervisor
-    // Register this new trader to the master
-    for(e <- evaluators) master.ar ! e.ar
     
     evaluators
   }

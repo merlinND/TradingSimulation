@@ -1,5 +1,7 @@
 package ch.epfl.ts.optimization
 
+import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
 import scala.collection.mutable.MutableList
 import scala.reflect.ClassTag
 import com.typesafe.config.ConfigFactory
@@ -24,8 +26,30 @@ import ch.epfl.ts.component.ComponentRef
 import ch.epfl.ts.data.Transaction
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
+import ch.epfl.ts.traders.MadTrader
+import ch.epfl.ts.data.CurrencyPairParameter
+import ch.epfl.ts.data.Currency
+import ch.epfl.ts.data.WalletParameter
+import ch.epfl.ts.engine.Wallet
 
 case object WorkerIsLive
+
+/**
+ * @param namingPrefix Prefix that will precede the name of each actor on this remote
+ * @param systemName Name of the actor system being run on this remote
+ */
+class RemoteHost(val hostname: String, val port: Int, val namingPrefix: String, val systemName: String = "remote") {
+  val address = Address("akka.tcp", systemName, hostname, port)
+  val deploy = Deploy(scope = RemoteScope(address))
+  
+  def createRemotely(props: Props, name: String)(implicit builder: ComponentBuilder): ComponentRef = {
+    // TODO: use `log.debug`
+    val actualName = namingPrefix + '-' + name
+    println("Creating remotely component " + actualName + " at host " + hostname)
+    builder.createRef(props.withDeploy(deploy), actualName)
+  }
+}
+
 
 /**
  * Responsible for overseeing actors instantiated at worker nodes. That means it listens
@@ -66,31 +90,65 @@ class MasterActor extends Actor {
  */
 object RemotingHost {
 
-  val availableWorkers = List(
-    "ts-1-021qv44y.cloudapp.net",
-    "ts-2.cloudapp.net"
-    //"ts-3.cloudapp.net",
-    //"ts-4.cloudapp.net",
-    //"ts-5.cloudapp.net",
-    //"ts-6.cloudapp.net",
-    //"ts-7.cloudapp.net",
-    //"ts-8.cloudapp.net"
-  )
-  val workerPort = 3333
-  // TODO: lookup in configuration
-  val workerSystemName = "remote"
+  val availableHosts = {
+    val availableWorkers = List(
+      "ts-1-021qv44y.cloudapp.net",
+      "ts-2.cloudapp.net"
+      //"ts-3.cloudapp.net",
+      //"ts-4.cloudapp.net",
+      //"ts-5.cloudapp.net",
+      //"ts-6.cloudapp.net",
+      //"ts-7.cloudapp.net",
+      //"ts-8.cloudapp.net"
+    )
+    val port = 3333
+    // TODO: lookup in configuration
+    val systemName = "remote"
+    
+    availableWorkers.map(hostname => {
+      val prefix = hostname.substring(0, 4)
+      new RemoteHost(hostname, port, prefix, systemName)
+    })
+  }
 
   def main(args: Array[String]): Unit = {
 
-    // Build the supervisor actor
+    // ----- Build the supervisor actor
     implicit val builder = new ComponentBuilder()
     val master = builder.createRef(Props(classOf[MasterActor]), "MasterActor")
+    
+    // ----- Generate candidate parameterizations
+    val strategyToOptimize = MadTrader
+    val parametersToOptimize = Set(
+      MadTrader.INTERVAL,
+      MadTrader.ORDER_VOLUME
+    )
+    val initialWallet: Wallet.Type = Map(Currency.EUR -> 1000.0, Currency.CHF -> 1000.0)
+    val otherParameterValues = Map(
+      MadTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
+      MadTrader.CURRENCY_PAIR -> CurrencyPairParameter(Currency.EUR, Currency.CHF)
+    )
+    
+    val maxInstances = (10 * availableHosts.size)
+    val parameterizations = StrategyOptimizer.generateParameterizations(strategyToOptimize, parametersToOptimize,
+                                                                        otherParameterValues, maxInstances).toSet
 
-    // TODO: generate parameterizations
-    // TODO: create actors on each host
-
-    builder.start
+    // TODO: use log.info
+    println("Going to distributed " + parameterizations.size + " traders over " + availableHosts.size + " worker machines.")
+                                                                        
+    // ----- Instantiate the all components on each available worker
+    val evaluators = availableHosts.flatMap(host => {
+      ForexStrategyFactory.createRemoteActors(master, host, strategyToOptimize, parameterizations)
+    })
+                                                                        
+    // ----- Registration to the supervisor
+    // Register this new trader to the master
+    for(e <- evaluators) master.ar ! e.ar
+    
+    //builder.start
     // TODO: handle evaluator reports on stop
     // TODO: select the best strategy
+    
+    builder.shutdownManagedActors(3 seconds)
   }
 }
