@@ -30,7 +30,6 @@ import ch.epfl.ts.data.LimitBidOrder
 import ch.epfl.ts.data.LimitAskOrder
 
 /**
- * Created by sygi on 03.04.15.
  */
 class StandardBroker extends Component with ActorLogging {
   import context.dispatcher

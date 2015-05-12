@@ -61,6 +61,8 @@ class MasterActor extends Actor {
  * by calling createRemoteActors() for every availableWorker. It assumes
  * that there is a RemotingWorker class running and listening on port 3333
  * on every availableWorker.
+ * 
+ * @see {@link ch.epfl.ts.optimization.RemotingWorker}
  */
 object RemotingHost {
 
@@ -80,17 +82,8 @@ object RemotingHost {
 
   def main(args: Array[String]): Unit = {
 
-    // `akka.remote.netty.tcp.hostname` is specified on a per-machine basis in the `application.conf` file
-    val remotingConfig = ConfigFactory.parseString(
-"""
-akka.actor.provider = "akka.remote.RemoteActorRefProvider"
-akka.remote.enabled-transports = ["akka.remote.netty.tcp"]
-akka.remote.netty.tcp.port = 3333
-akka.actor.serialize-creators = on
-""").withFallback(ConfigFactory.load());
-
     // Build the supervisor actor
-    implicit val builder = new ComponentBuilder("host", remotingConfig)
+    implicit val builder = new ComponentBuilder()
     val master = builder.createRef(Props(classOf[MasterActor]), "MasterActor")
 
     // TODO: generate parameterizations
