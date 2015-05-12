@@ -42,7 +42,7 @@ The market simulator generates transactions based on received orders, and sends 
 
 \subsection{Evaluating the Performance of Traders}
 
-This example demonstrates how to evaluate the performance of a trader. For this purpose, we have to use the component \emph{Evaluator}. The \emph{Evaluator} encapsulates a trader component -- that means if you want to connect an upstream component to the trader, you can connect it to the \emph{Evaluator}. And if you want to connect the trader to a downstream component, you connect the \emph{Evaluator} to the downstream component. The wirings inside \emph{Evaluator} will ensure that everything works correctly.
+This example demonstrates how to evaluate the performance of a trader. For this purpose, we have to use the component \emph{Evaluator}. The \emph{Evaluator} encapsulates a trader component -- that means if you want to connect an upstream component to the trader, you can connect it to the \emph{Evaluator}. And if you want to connect the trader to a downstream component, you connect the \emph{Evaluator} to the downstream component. The wirings inside \emph{Evaluator} will ensure that everything works correctly just like you wire the two components separately.
 
 The component graph is as follows:
 
