@@ -84,7 +84,7 @@ simulation.
 \subsubsection{Balanced Demand and Offer}
 In general, ask and bid price are determined by limit orders. In the case where there
 exist limit orders on both sides (ask and bid) the current ask price is defined by the
-lowest sell offer and the current bid price is defined by the highest bid offer.
+lowest sell offer and the current bid price is defined by the highest buy offer.
 
 \subsubsection{Extreme Situations}
 It might occur that there are no limit orders and traders still want to trade at the 
@@ -116,9 +116,9 @@ If there are no limit orders at all:
     or a lower ask price
 \end{itemize}
 
-In any case where the prices are defined but there is not enough capacity to buy the
-volume some trader wishes to sell or there is not enough offer to fulfill the demands
-of a buying trader the market maker buys or sells the remaining volume. Thereby the
+In any case where the prices are defined, but there is not enough capacity to buy the
+volume some trader wishes to sell (or there is not enough offer to fulfill the demands
+of a buying trader), the market maker buys (or sells) the remaining volume. Thereby the
 assumption of permanent liquidity at the current market price is given as long as the
 market maker has enough funds (which can be controlled through the scale parameter $c$
 at init time.
