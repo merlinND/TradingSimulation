@@ -74,7 +74,6 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
   val (whatC, withC) = parameters.get[(Currency, Currency)](RangeTrader.SYMBOL)
   //val volume = parameters.get[Double](RangeTrader.VOLUME)
   val orderWindow = parameters.get[Double](RangeTrader.ORDER_WINDOW)
-  
   var recomputeRange : Boolean = true 
   var resistance : Double = Double.MaxValue
   var support : Double = Double.MinValue
@@ -135,6 +134,7 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
     }
     
     case quote : Quote => {
+      currentTimeMillis = quote.timestamp
       askPrice = quote.ask
       bidPrice = quote.bid
       ohlcIndicator ! quote
@@ -177,7 +177,7 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
     if(currentPrice >= resistance - (rangeSize * orderWindow) && holdings > 0.0) {
       oid += 1
       recomputeRange = true
-      placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings, -1))
+      placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
       log.debug("sell")
     }
     
@@ -185,7 +185,7 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
     else if(currentPrice < support - (rangeSize * orderWindow) && holdings > 0) {
       oid += 1
       recomputeRange = true
-      placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings, -1))
+      placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
       log.debug("panic sell")
     }
     
@@ -194,7 +194,7 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
      else if(currentPrice <= support + (rangeSize * orderWindow) && currentPrice > support && holdings == 0.0) {
        oid += 1
        recomputeRange = false
-       placeOrder(MarketBidOrder(oid, uid, System.currentTimeMillis(), whatC, withC, volume, -1))
+       placeOrder(MarketBidOrder(oid, uid, currentTimeMillis, whatC, withC, volume, -1))
        println("we just buy : "+volume+" to price "+currentPrice+" and support "+support + " sellingwindow "+(support + (rangeSize * orderWindow)))
        log.debug("buy")
     }
