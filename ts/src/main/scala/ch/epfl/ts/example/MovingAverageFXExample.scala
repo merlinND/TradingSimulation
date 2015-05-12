@@ -39,7 +39,6 @@ import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.component.utils.Printer
-import com.sun.javafx.scene.control.behavior.OptionalBoolean
 import ch.epfl.ts.data.BooleanParameter
 import ch.epfl.ts.evaluation.EvaluationReport
 
