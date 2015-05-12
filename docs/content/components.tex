@@ -32,7 +32,7 @@ The framework defines three standard methods for every concrete component class:
 \item{receiver}: concrete components override this method to receive and handle messages.
 \end{itemize}
 
-The data transer between different components is in the form of Akka messages. Concrete component classes have to override the method \emph{receiver} in order to handle the messages they are interested in.
+The data transfer between different components is in the form of Akka messages. Concrete component classes have to override the method \emph{receiver} in order to handle the messages they are interested in.
 
 To send a message, a concrete component class can call one of the two \emph{send} methods defined in \emph{Receiver}. The two \emph{send} methods have default implementation in \emph{Component}, a concrete component class should not override them.
 
