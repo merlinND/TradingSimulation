@@ -190,6 +190,7 @@ object RemotingHostRunner {
     // ----- Connections
     deployments.foreach(d => {
       // TODO
+      d.fetcher -> (d.market, classOf[Quote])
       d.market -> (d.printer, classOf[Quote])
     })
                                                                         

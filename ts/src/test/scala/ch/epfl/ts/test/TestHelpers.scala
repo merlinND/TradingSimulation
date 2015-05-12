@@ -1,7 +1,7 @@
 package ch.epfl.ts.test
 
-import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
+import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
 
 import org.scalatest.BeforeAndAfterAll
@@ -17,11 +17,10 @@ import akka.testkit.TestKit
 import akka.util.Timeout
 import ch.epfl.ts.brokers.StandardBroker
 import ch.epfl.ts.component.ComponentBuilder
-import ch.epfl.ts.engine.ForexMarketRules
-import ch.epfl.ts.engine.MarketFXSimulator
+import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
+import ch.epfl.ts.engine.{MarketFXSimulator, ForexMarketRules}
 
 object TestHelpers {
-
   def makeTestActorSystem(name: String = "TestActorSystem") =
     ActorSystem(name, ConfigFactory.parseString(
       """
@@ -29,7 +28,6 @@ object TestHelpers {
       akka.loggers = ["akka.testkit.TestEventListener"]
       """
     ).withFallback(ConfigFactory.load()))
-  
 }
 
 /**
@@ -67,7 +65,7 @@ class SimpleBrokerWrapped(market: ActorRef) extends StandardBroker {
 /**
  * A bit dirty hack to allow ComponentRef-like communication between components, while having them in Test ActorSystem
  */
-class FxMarketWrapped(uid: Long, rules: ForexMarketRules) extends MarketFXSimulator(uid, rules) {
+class FxMarketWrapped(uid: Long, rules: ForexMarketRules) extends MarketFXSimulator(uid, new FxMarketRulesWrapper(rules)) {
   import context.dispatcher
   override def send[T: ClassTag](t: T) {
     val broker = context.actorSelection("../Broker")

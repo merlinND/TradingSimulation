@@ -5,6 +5,7 @@ import scala.reflect
 import scala.reflect.ClassTag
 import scala.concurrent.duration.DurationInt
 import akka.actor.Props
+import akka.actor.Deploy
 import ch.epfl.ts.component.Component
 import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.component.ComponentRef
@@ -17,7 +18,7 @@ import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.GetTraderParameters
 import ch.epfl.ts.engine.TraderIdentity
-import akka.actor.Deploy
+import ch.epfl.ts.data.TheTimeIs
 
 case class RequiredParameterMissingException(message: String) extends RuntimeException(message)
 
@@ -44,7 +45,7 @@ abstract class Trader(val uid: Long, marketIds: List[Long], val parameters: Stra
   
   /** Default timeout to use when Asking another component asynchronously */
   val askTimeout = 500 milliseconds
-  var currentTimeMillis : Long = 0L
+  var currentTimeMillis: Long = 0L
   
   val initialFunds = parameters.get[Map[Currency.Currency, Double]]("InitialFunds")
   
@@ -57,6 +58,10 @@ abstract class Trader(val uid: Long, marketIds: List[Long], val parameters: Stra
   final def traderReceive: PartialFunction[Any, Unit] = {
     case GetTraderParameters => {
       sender ! TraderIdentity(self.path.name, uid, companion, parameters)
+    }
+    
+    case TheTimeIs(t) => {
+      currentTimeMillis = t
     }
   }
   

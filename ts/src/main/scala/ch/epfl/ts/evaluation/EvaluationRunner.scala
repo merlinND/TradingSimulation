@@ -20,6 +20,7 @@ import ch.epfl.ts.engine.ExecutedAskOrder
 import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.FundWallet
 import ch.epfl.ts.engine.ExecutedBidOrder
+import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 
 /**
  * Evaluates the performance of trading strategies
@@ -35,14 +36,14 @@ object EvaluationRunner {
     // variables for the fetcher
   	val speed = 500.0
     val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-    val startDate = dateFormat.parse("201304");
-    val endDate = dateFormat.parse("201305");
-    val workingDir = "./data";
-    val currencyPair = symbol._1.toString() + symbol._2.toString();
+    val startDate = dateFormat.parse("201304")
+    val endDate = dateFormat.parse("201305")
+    val workingDir = "./data"
+    val currencyPair = symbol._1.toString() + symbol._2.toString()
     val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, speed), "HistFetcher")
 
     // Market
-    val rules = new ForexMarketRules()
+    val rules = new FxMarketRulesWrapper()
     val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
 
     // Broker
@@ -57,7 +58,8 @@ object EvaluationRunner {
     val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")
 
     // ----- Connecting actors
-    fetcher -> (Seq(forexMarket, broker, evaluator), classOf[Quote])
+    fetcher -> (forexMarket, classOf[Quote])
+    forexMarket -> (Seq(broker, evaluator), classOf[Quote])
     evaluator -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
     evaluator -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
     evaluator -> (printer, classOf[EvaluationReport])
