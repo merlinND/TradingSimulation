@@ -80,7 +80,6 @@ class StandardBroker extends Component with ActorLogging {
       })
     }
 
-    //TODO(sygi): refactor
     case e: ExecutedBidOrder =>
       finishExecutedOrder(e, e.whatC, e.volume)
 

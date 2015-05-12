@@ -2,7 +2,7 @@ package ch.epfl.ts.engine
 
 import scala.language.postfixOps
 import scala.concurrent.duration.DurationInt
-import ch.epfl.ts.data.{Quote, Order, Streamable}
+import ch.epfl.ts.data._
 import ch.epfl.ts.engine.rules.{FxMarketRulesWrapper, MarketRulesWrapper}
 import akka.actor.ActorLogging
 import ch.epfl.ts.component.utils.Timekeeper
@@ -25,13 +25,15 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
   private var isSimulating = false
   
   /** Most recent time read from historical data (in milliseconds) */
-  private var lastHistoricalTime = 0L;
+  private var lastHistoricalTime = 0L
   /** Time period at which to emit  */
   private val timekeeperPeriod = (500 milliseconds)
   
   override def receiver: PartialFunction[Any, Unit] = {
     case o: Order => {
       getCurrentRules.processOrder(o, marketId, book, tradingPrices, this.send[Streamable])
+      if (isSimulating)
+        playMarketMaker()
     }
     
     case 'ChangeMarketRules => {
@@ -40,7 +42,7 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
       
       // We now enter full simulation mode, and we need an actor
       // to take care of the keeping of the time
-      val timekeeper = context.actorOf(Props(classOf[Timekeeper], self, lastHistoricalTime, timekeeperPeriod), "SimulationTimekeeper")
+      context.actorOf(Props(classOf[Timekeeper], self, lastHistoricalTime, timekeeperPeriod), "SimulationTimekeeper")
     }
     
     case t: TheTimeIs =>
@@ -57,6 +59,22 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
      
     case q: Quote if (isSimulating) =>
       log.warning("HybridMarket received a quote when in simulation mode")
+  }
+
+  val spread = 0.1
+  def playMarketMaker() = {
+    val asksEmpty = if (book.asks.isEmpty) 1 else 0
+    val bidsEmpty = if (book.asks.isEmpty) 1 else 0
+    if (asksEmpty + bidsEmpty == 1){
+      val order = if (asksEmpty == 1){
+        val topBid = book.bids.head
+        LimitAskOrder(1, -1, topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price * (1 + spread))
+      } else {
+        val topAsk = book.bids.head
+        LimitBidOrder(1, -1, topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price * (1 - spread))
+      }
+      receiver(order)
+    }
   }
 
   def getCurrentRules = {
