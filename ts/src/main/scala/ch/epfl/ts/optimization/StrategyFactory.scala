@@ -22,14 +22,17 @@ import ch.epfl.ts.brokers.StandardBroker
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.evaluation.Evaluator
 
+/**
+ * Need this concrete class to help serialization.
+ * @note It should not be an inner class, otherwise it would implicitly try
+ *       to send the whole container as a closure along with the QuoteTag.
+ */
+class QuoteTag extends ClassTag[Quote] with Serializable {
+  override def runtimeClass = classOf[Quote]
+}
 
 trait StrategyFactory {
-  
-  /* Need this concrete class to help serialization */
-  class QuoteTag extends ClassTag[Quote] with Serializable {
-    override def runtimeClass = classOf[Quote]
-  }
-  
+ 
   abstract class CommonProps {
     // Required components for a system to work
     def fetcher: Props
@@ -94,10 +97,10 @@ trait StrategyFactory {
       strategyToOptimize.verifyParameters(parameterization)
       
       // TODO: user of this class could give a list of names
-      val name = host.hostname +  "-Trader-" + i
+      val name = "Trader-" + i
 
       // Trader
-      val traderId = i
+      val traderId = i.toLong
       val traderProps = strategyToOptimize.getProps(traderId, commonProps.marketIds, parameterization)
       val trader = host.createRemotely(traderProps, name)
       // Evaluator monitoring the performance of this trader
@@ -105,7 +108,7 @@ trait StrategyFactory {
       val period = 10 seconds
       val referenceCurrency = Currency.CHF
       val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, referenceCurrency, period), name + "-Evaluator")
-    
+      
       evaluator
     }
   }

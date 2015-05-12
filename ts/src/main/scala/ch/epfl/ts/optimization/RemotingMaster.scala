@@ -94,7 +94,7 @@ object RemotingHostRunner {
 
   val availableHosts = {
     val availableWorkers = List(
-      "127.0.0.1"
+      "localhost"
       //"ts-1-021qv44y.cloudapp.net",
       //"ts-2.cloudapp.net"
       //"ts-3.cloudapp.net",
