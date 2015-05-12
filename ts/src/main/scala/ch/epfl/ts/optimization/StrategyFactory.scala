@@ -86,7 +86,7 @@ trait StrategyFactory {
 
       // Trader
       val traderId = i
-      val traderProps = Props(strategyToOptimize.ConcreteTrader, traderId, commonProps.marketIds, parameterization)
+      val traderProps = strategyToOptimize.getProps(traderId, commonProps.marketIds, parameterization)
       val trader = host.createRemotely(traderProps, name)
       // Evaluator monitoring the performance of this trader
       // TODO: factor these out
@@ -108,7 +108,7 @@ object ForexStrategyFactory extends StrategyFactory {
   
   def commonProps = new CommonProps {
     // Fetcher
-    def fetcherActor = {
+    def fetcher = {
       val fetcher = new TrueFxFetcher
       Props(classOf[PullFetchComponent[Quote]], fetcher, new QuoteTag)
     }

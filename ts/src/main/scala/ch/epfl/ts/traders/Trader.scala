@@ -17,6 +17,7 @@ import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.GetTraderParameters
 import ch.epfl.ts.engine.TraderIdentity
+import akka.actor.Deploy
 
 case class RequiredParameterMissingException(message: String) extends RuntimeException(message)
 
@@ -123,21 +124,24 @@ trait TraderCompanion {
    * 
    * This is the preferred method to instantiate a Trader, as it will perform parameter checking first. 
    */
-  final def getInstance(uid: Long, marketIds : List[Long], parameters: StrategyParameters, name: String)(implicit builder: ComponentBuilder): ComponentRef = {
+  final def getInstance(uid: Long, marketIds : List[Long], parameters: StrategyParameters,
+                        name: String, deploy: Option[Deploy] = None)
+                       (implicit builder: ComponentBuilder): ComponentRef = {
     verifyParameters(parameters)
-    getConcreteInstance(builder, uid, marketIds, parameters, name)
+    val props = deploy match { 
+      case Some(d) => getProps(uid, marketIds, parameters).withDeploy(d)
+      case None => getProps(uid, marketIds, parameters)
+    }
+    
+    builder.createRef(props, name)
   }
   
   /**
-   * Provide a new instance of the concrete trading strategy using these parameters.
+   * Provide props in order to build a new instance of the concrete trading strategy using these parameters.
    * Can be overriden by concrete TraderCompanion, but the generic implementation should be sufficient.
    */
-  protected def getConcreteInstance(builder: ComponentBuilder,
-                                    uid: Long, 
-                                    marketIds : List[Long],
-                                    parameters: StrategyParameters,
-                                    name: String) = {
-    builder.createRef(Props(concreteTraderTag.runtimeClass, uid, marketIds, parameters), name)
+  def getProps(uid: Long, marketIds : List[Long], parameters: StrategyParameters) = {
+    Props(concreteTraderTag.runtimeClass, uid, marketIds, parameters)
   }
   
   /**
