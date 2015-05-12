@@ -4,23 +4,22 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import ch.epfl.ts.data.Currency
+import ch.epfl.ts.data.CurrencyWrapper
 
 @RunWith(classOf[JUnitRunner]) 
 class CurrencyTestSuite extends FunSuite {
   
   test("toString and fromString are inverting each other") {
     val currencies = Currency.values;
-    assert(currencies.forall { c => Currency.fromString(c.toString) == c })
+    assert(currencies.forall { c => Currency.fromString(c.toString) == CurrencyWrapper(c.toString()) })
   }
 
   test("pairFromString handles different case input") {
     val lowercase = "eurchf"
     val uppercase = "EURCHF"
     val mixedcase = "EurChf"
-    assert(
-        Currency.pairFromString(lowercase) == (Currency.EUR, Currency.CHF) &&
-        Currency.pairFromString(uppercase) == (Currency.EUR, Currency.CHF) &&
-        Currency.pairFromString(mixedcase) == (Currency.EUR, Currency.CHF)
-        )
+    assert(Currency.pairFromString(lowercase) == (Currency.EUR, Currency.CHF), "Lower case")
+    assert(Currency.pairFromString(uppercase) == (Currency.EUR, Currency.CHF), "Upper case")
+    assert(Currency.pairFromString(mixedcase) == (Currency.EUR, Currency.CHF), "Mixed case")
   }
 }
