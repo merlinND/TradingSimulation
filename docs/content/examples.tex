@@ -1,7 +1,7 @@
 \section{Usage Scenarios}
 \label{sec:3}
 
-This section introduces in detail how to use the framework for common usage scenarios.
+This section introduces how to use the framework for common usage scenarios. The examples are at the high level, no code is provided. If you want to refer to concrete examples in code, please refer to the package \emph{ch.epfl.ts.example} or check it out on \href{https://github.com/merlinND/TradingSimulation/tree/master/ts/src/main/scala/ch/epfl/ts/example}{Github}.
 
 \subsection{Bitcoin Trading}
 
@@ -25,12 +25,21 @@ The trader makes sell and buy decisions based on the quotes received from the fe
 
 The broker receives orders from the trader, and forward them into the market simulator on behalf of the trader. Note that the usage of broker is optional, it's used here only for illustrating purpose.
 
-The market simulator generates transactions based on the orders from traders.
+The market simulator generates transactions based on the orders received from brokers, and sends the transaction result back to the broker.
 
 \subsection{Replay}
 
-Forex or Bitcoin trading with a single trader from history data
+In this example, we demonstrate how to use the framework to experiment Forex trading with the \emph{MovingAverageTrader} on history Forex data.
 
-\subsection{Simulation with Multiple Traders}
+\noindent
+\includegraphics[width=\textwidth]{img/examples/forex-replay}
 
-Multiple trader simulation in a virtual market.
+In the component graph above, the \emph{HistDataCSVFetcher} reads history quotes from CSV files, and send them to the market simulator and trader.
+
+The trader produces ask or bid orders based on the quotes data, and sends them to the market simulator. The market simulator generates transactions based on the orders received from the trader.
+
+The market simulator generates transactions based on received orders, and sends the transactions to the printer, which in turn prints them in the console.
+
+%% \subsection{Simulation with Multiple Traders}
+
+%% Multiple trader simulation in a virtual market.
