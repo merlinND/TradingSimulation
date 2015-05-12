@@ -33,16 +33,11 @@ object SimpleTraderWithBroker extends TraderCompanion {
 /**
  * Dummy broker-aware trader.
  */
-<<<<<<< HEAD
-class SimpleTraderWithBroker(uid: Long, parameters: StrategyParameters)
-    extends Trader(uid, parameters) {
 
-=======
 class SimpleTraderWithBroker(uid: Long, marketIds: List[Long], parameters: StrategyParameters)
     extends Trader(uid, marketIds, parameters)
     with ActorLogging {
   
->>>>>>> master
   // Allows the usage of ask pattern in an Actor
   import context.dispatcher
 
