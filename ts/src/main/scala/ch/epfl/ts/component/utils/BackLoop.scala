@@ -2,7 +2,12 @@ package ch.epfl.ts.component.utils
 
 import ch.epfl.ts.component.Component
 import ch.epfl.ts.component.persist.Persistance
-import ch.epfl.ts.data.{DelOrder, LimitAskOrder, LimitBidOrder, Transaction}
+import ch.epfl.ts.data._
+import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Transaction
+import ch.epfl.ts.data.LimitBidOrder
+import ch.epfl.ts.data.DelOrder
+import ch.epfl.ts.data.LimitAskOrder
 
 /**
  * Backloop component, plugged as Market Simulator's output. Saves the transactions in a persistor.
@@ -15,7 +20,7 @@ class BackLoop(marketId: Long, p: Persistance[Transaction]) extends Component {
       send(t)
       p.save(t)
     }
-    case la: LimitAskOrder => send(la)
+    case la: LimitAskOrder => send(la) //WhereTF is this being used?
     case lb: LimitBidOrder => send(lb)
     case d: DelOrder => send(d)
     case _ => println("Looper: received unknown")
