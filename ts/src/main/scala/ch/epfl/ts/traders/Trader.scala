@@ -56,7 +56,6 @@ abstract class Trader(val uid: Long, marketIds: List[Long], val parameters: Stra
   // TODO: move all common Trader behaviors to this receiver
   final def traderReceive: PartialFunction[Any, Unit] = {
     case GetTraderParameters => {
-      println("Got a GetTraderParameters")
       sender ! TraderIdentity(self.path.name, uid, companion, parameters)
     }
   }

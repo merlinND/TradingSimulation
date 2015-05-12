@@ -2,8 +2,10 @@ package ch.epfl.ts.optimization
 
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
-import scala.collection.mutable.MutableList
+import scala.collection.mutable.{ Map => MutableMap, MutableList }
 import scala.reflect.ClassTag
+import scala.concurrent.Promise
+import scala.concurrent.ExecutionContext.Implicits.global
 import com.typesafe.config.ConfigFactory
 import akka.actor.Actor
 import akka.actor.ActorRef
@@ -13,6 +15,7 @@ import akka.actor.Deploy
 import akka.actor.Props
 import akka.actor.actorRef2Scala
 import akka.remote.RemoteScope
+import akka.actor.ActorLogging
 import ch.epfl.ts.engine.MarketRules
 import ch.epfl.ts.engine.MarketFXSimulator
 import ch.epfl.ts.engine.ForexMarketRules
@@ -31,8 +34,16 @@ import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.Wallet
-
-case object WorkerIsLive
+import ch.epfl.ts.component.Component
+import ch.epfl.ts.evaluation.EvaluationReport
+import ch.epfl.ts.evaluation.EvaluationReport
+import ch.epfl.ts.engine.GetTraderParameters
+import ch.epfl.ts.engine.TraderIdentity
+import ch.epfl.ts.data.EndOfFetching
+import ch.epfl.ts.evaluation.EvaluationReport
+import ch.epfl.ts.engine.TraderIdentity
+import ch.epfl.ts.data.EndOfFetching
+import ch.epfl.ts.evaluation.EvaluationReport
 
 /**
  * @param namingPrefix Prefix that will precede the name of each actor on this remote
@@ -56,30 +67,58 @@ class RemoteHost(val hostname: String, val port: Int, val namingPrefix: String, 
 /**
  * Responsible for overseeing actors instantiated at worker nodes. That means it listens
  * to them (i.e. it doesn't send any commands or similar, so far, except for being able to ping them).
+ * 
+ * @param onEnd Callback to call when optimization has completed and the best trader was picked
  */
-class MasterActor extends Actor {
+class OptimizationSupervisor(onEnd: (TraderIdentity, EvaluationReport) => Unit) extends Component with ActorLogging {
 
-  var workers: MutableList[ActorRef] = MutableList()
-  var nAlive = 0
+  /**
+   * Collection of evaluations for registered traders being tested
+   * The set of registered actors can be deduces from this map's keys.
+   */
+  // TODO: only keep the most N recent to avoid unnecessary build-up
+  val evaluations: MutableMap[ActorRef, MutableList[EvaluationReport]] = MutableMap.empty
 
-  override def receive = {
+  def lastEvaluations = evaluations.map({ case (t, l) => t -> l.head })
+  def bestTraderPerformance = lastEvaluations.toList.sortBy(p => p._2).head
+  
+  var bestEvaluation: Option[EvaluationReport] = None
+  def askBestTraderIdentity = {
+    bestEvaluation = Some(bestTraderPerformance._2)
+    bestTraderPerformance._1 ! GetTraderParameters
+  }
+  
+  override def receiver = {
     case w: ActorRef => {
-      workers += w
+      evaluations += (w -> MutableList.empty)
     }
-    case WorkerIsLive => {
-      nAlive += 1
-      println("Master sees " + nAlive + " workers available.")
-    }
-    case s: String => {
-      println("MasterActor received string: " + s)
-    }
-    case m => println("MasterActor received weird: " + m)
-  }
 
+    case e: EvaluationReport if evaluations.contains(sender) => {
+      // Add the report to the collection
+      evaluations.get(sender).foreach { l => l += e }
+    }
+    
+    case e: EvaluationReport => log.error("Received report from unknown sender " + sender + ": " + e)
 
-  def pingAllWorkers = workers.foreach {
-    w => w ! 'Ping
+    // When all data has been replayed, we can determine the best trader
+    case _: EndOfFetching if bestEvaluation.isEmpty => {
+      log.info("Supervisor has received an EndOfFetching signal. Will now try to determine the best fetcher's identity.")
+      askBestTraderIdentity
+    }
+    case _: EndOfFetching =>
+      log.warning("Supervisor has received more than one EndOfFetching signals")
+    
+    case t: TraderIdentity if bestEvaluation.isDefined => {
+      onEnd(t, bestEvaluation.get)
+    }
+    case t: TraderIdentity => {
+      log.warning("Received a TraderIdentity before knowing the best performance, which is weird:" + t)
+    }
+
+    
+    case m => log.warning("MasterActor received weird: " + m)
   }
+  
 }
 
 /**
@@ -113,12 +152,18 @@ object RemotingHostRunner {
       new RemoteHost(hostname, port, prefix, systemName)
     })
   }
+  
+  val optimizationFinished = Promise[(TraderIdentity, EvaluationReport)]
+  def onEnd(t: TraderIdentity, e: EvaluationReport) = {
+    optimizationFinished.success((t, e))
+    Unit
+  }
 
   def main(args: Array[String]): Unit = {
 
     // ----- Build the supervisor actor
     implicit val builder = new ComponentBuilder()
-    val master = builder.createRef(Props(classOf[MasterActor]), "MasterActor")
+    val master = builder.createRef(Props(classOf[OptimizationSupervisor], onEnd _), "MasterActor")
     
     // ----- Generate candidate parameterizations
     val strategyToOptimize = MadTrader
@@ -153,15 +198,23 @@ object RemotingHostRunner {
       d.market -> (d.printer, classOf[Quote])
       
     	// ----- Registration to the supervisor
-    	// Register this new trader to the master
+    	// Register each new trader to the master
     	for(e <- d.evaluators) master.ar ! e.ar
     })
                                                                         
     
-    //builder.start
-    // TODO: handle evaluator reports on stop
-    // TODO: select the best strategy
+    builder.start
     
-    builder.shutdownManagedActors(3 seconds)
+    optimizationFinished.future.onSuccess({
+      case (TraderIdentity(name, uid, companion, parameters), evaluation: EvaluationReport) => {
+        println("---------- Optimization completed ----------")
+        println(s"The best trader was: $name (id $uid) using strategy $companion.")
+        println(s"Its parameters were:\n$parameters")
+        println(s"Its final evaluation was:\n$evaluation")
+        println("--------------------------------------------")
+        
+        builder.shutdownManagedActors(3 seconds)
+      }
+    })
   }
 }
