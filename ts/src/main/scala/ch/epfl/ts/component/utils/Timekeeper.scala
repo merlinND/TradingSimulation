@@ -25,22 +25,20 @@ import akka.actor.ActorRef
  * @param period Delay between two `TimeIsNow` messages.
  *               Note this also defines the granularity of time in the system.
  */
+// TODO: replace the `parent` argument by simply using `context.parent`?
 class Timekeeper(val parent: ActorRef, val timeBase: Long, val period: FiniteDuration) extends Actor {
-
+  
   private val timeOffset: Long = System.currentTimeMillis()
   
   private val timer = new Timer()
   private class SendTheTime extends java.util.TimerTask {
     def run() {
-      // TODO: who to send it to?
       val current = timeBase + (System.currentTimeMillis() - timeOffset)
       parent ! TheTimeIs(current)
     }
   }
   timer.scheduleAtFixedRate(new SendTheTime, 0L, period.toMillis)
   
-  def receive = {
-    case _ => 
-  }
+  def receive = PartialFunction.empty
   
 }
