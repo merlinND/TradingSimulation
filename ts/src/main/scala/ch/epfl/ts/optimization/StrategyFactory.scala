@@ -97,6 +97,19 @@ trait StrategyFactory {
       evaluator
     }
   }
+  
+  /**
+   * Try assigning evenly the strategies to hosts
+   */
+  def distributeOverHosts(hosts: List[RemoteHost], parameterizations: Set[StrategyParameters]): Map[RemoteHost, Set[StrategyParameters]] = {
+    // Prepare parameters for worker actors (there will be one actor per parameter value)
+    val nPerHost = (parameterizations.size / hosts.length.toDouble).ceil.toInt
+    
+    hosts.zipWithIndex.map({ case (host, i) =>
+      val offset = nPerHost * i
+      host -> parameterizations.slice(offset, offset + nPerHost)
+    }).toMap
+  }
 }
 
 
@@ -142,12 +155,10 @@ object ForexStrategyFactory extends StrategyFactory {
 
     // ----- Traders (possibly many) to be run in parallel on this host
     val evaluators = createRemoteTraders(host, strategyToOptimize, parameterizations)
-
     
     // ----- Connections
     // TODO
     
     evaluators
   }
-  
 }
