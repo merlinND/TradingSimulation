@@ -4,6 +4,7 @@ import ch.epfl.ts.component.Component
 import ch.epfl.ts.data.OHLC
 import scala.collection.mutable.MutableList
 import akka.actor.Actor
+import akka.actor.ActorLogging
 
 case class RANGE(val support : Double, val resistance : Double, val period : Int ) 
 /**
@@ -15,7 +16,7 @@ case class RANGE(val support : Double, val resistance : Double, val period : Int
  *
  *  @param tolerance the number of extremum value we discarded set to 1 to have the "classical" range.
  */
-class RangeIndicator(timePeriod : Int, tolerance : Int) extends Actor {
+class RangeIndicator(timePeriod : Int, tolerance : Int) extends Actor with ActorLogging{
   
   // resistance will be the period^th highest prices  
   var support : Double = 0.0
@@ -51,13 +52,12 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Actor {
         pricesInPeriod = pricesInPeriod.tail :+ price
         resistance = getResistance(pricesInPeriod)
         support = getSupport(pricesInPeriod)
-        var ri = RANGE(support, resistance, timePeriod)
-        sender() ! ri
-        println("RangeIndicator : send a RI2")
+        var rangeMessage = RANGE(support, resistance, timePeriod)
+        sender() ! rangeMessage
       }
     }
     
-    case _ => println("RangeIndicator : received unknown ! ")
+    case somethingElse => log.debug("RangeIndicator : received unknown :  "+somethingElse)
   }
   
   /** 

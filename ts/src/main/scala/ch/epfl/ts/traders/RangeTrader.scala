@@ -86,12 +86,12 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
   var rangeSize : Double = 0.0
 
   val marketId = MarketNames.FOREX_ID
-  val oneMinute : FiniteDuration = 60000 milliseconds
-  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), oneMinute),"ohlcIndicator")
+  val oneHour : FiniteDuration = 60*60*1000 milliseconds
+  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), oneHour),"ohlcIndicator")
   println(ohlcIndicator.path)
   
-  //period of time over which we will force the recomputation of our range (expressed in OHLC)
-  val timePeriod = 10
+  //number of past OHLC that we used to compute support and range
+  val timePeriod = 48 
   val tolerance = 1
   val rangeIndicator = context.actorOf(Props(classOf[RangeIndicator], timePeriod, tolerance), "rangeIndicator")
   
@@ -101,8 +101,8 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
    */
   var holdings : Double = 0.0
   var rangeReady : Boolean = false
-  var askPrice = 0.0
-  
+  var askPrice = 0.0  
+  var bidPrice = 0.0
   
   /**
    * Broker information
@@ -119,7 +119,8 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
     case GotWalletFunds(wallet) => wallet match {
       case Success(WalletFunds(id, funds: Map[Currency, Double])) => {
         val cashWith = funds.getOrElse(withC, 0.0)
-        println("we receive the new information from our broker holdings: "+holdings+" and volume: "+volume )
+        println("we receive the new information from our broker holdings: "+holdings+" and volume: "+volume)
+        println("askPrice ="+askPrice)
         holdings = funds.getOrElse(whatC, 0.0)
         volume = Math.floor(cashWith / askPrice)
         decideOrder
@@ -135,13 +136,13 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
     
     case quote : Quote => {
       askPrice = quote.ask
+      bidPrice = quote.bid
       ohlcIndicator ! quote
     }
     
-    case ohlc : OHLC => {
+    case ohlc : OHLC if registered => {
       rangeIndicator ! ohlc
       currentPrice = ohlc.close
-      log.debug("RangeTrader : received an OHLC")
       if(rangeReady) {
         prepareOrder
       }
@@ -181,7 +182,7 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
     }
     
     /** panic sell, the prices breaks the support*/
-    else if(currentPrice < support && holdings > 0) {
+    else if(currentPrice < support - (rangeSize * orderWindow) && holdings > 0) {
       oid += 1
       recomputeRange = true
       placeOrder(MarketAskOrder(oid, uid, System.currentTimeMillis(), whatC, withC, holdings, -1))
@@ -189,7 +190,7 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
     }
     
     
-    /**We are in the buy window*/ 
+    /** We are in the buy window*/ 
      else if(currentPrice <= support + (rangeSize * orderWindow) && currentPrice > support && holdings == 0.0) {
        oid += 1
        recomputeRange = false
@@ -198,12 +199,13 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
        log.debug("buy")
     }
         
-    /**We are breaking the resistance with no holdings recompute the range*/
+    /** We are breaking the resistance with no holdings recompute the range*/
     else if(currentPrice > resistance && holdings == 0.0) {
       recomputeRange = true
       log.debug("resitance broken allow range recomputation")
     }
-        
+     
+    /** panic signal better not buy*/
     else if(currentPrice < support && holdings == 0.0){
       log.debug("we break support with no holdings -> recompute range")
       recomputeRange = true

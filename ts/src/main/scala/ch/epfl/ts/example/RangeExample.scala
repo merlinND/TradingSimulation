@@ -32,6 +32,7 @@ import ch.epfl.ts.evaluation.Evaluator
 import ch.epfl.ts.traders.RangeTrader
 import ch.epfl.ts.engine.ExecutedAskOrder
 import ch.epfl.ts.engine.ExecutedBidOrder
+import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 
 
 object RangeExample {
@@ -42,19 +43,20 @@ object RangeExample {
 
     // ----- Creating actors
     // Fetcher
+   
     //val fetcherFx: TrueFxFetcher = new TrueFxFetcher
     //val fetcher = builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "trueFxFetcher")
     
      val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-     val startDate = dateFormat.parse("201411");
-     val endDate   = dateFormat.parse("201411");
-     val workingDir = "/Users/arnaud/Documents/data";
-     val currencyPair = "USDCHF";
-     val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 100.0),"HistFetcher")
+     val startDate = dateFormat.parse("201411")
+     val endDate   = dateFormat.parse("201411")
+     val workingDir = "./data"
+     val currencyPair = "USDCHF"
+     val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, 4000.0),"HistFetcher")
 
     // Market
-    val rules = new ForexMarketRules()
-    val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
+    val rulesWrapper = new FxMarketRulesWrapper()
+    val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rulesWrapper), MarketNames.FOREX_NAME)
     
     // Persistor
     val dummyPersistor = new DummyPersistor()
@@ -64,12 +66,12 @@ object RangeExample {
     
     // Trader: range trader. 
     val traderId: Long = 123L
-    val initialFunds: Wallet.Type = Map(Currency.USD -> 1000.0)
+    val initialFunds: Wallet.Type = Map(Currency.CHF -> 10000000.0)
     val parameters = new StrategyParameters(
       RangeTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
       RangeTrader.SYMBOL -> CurrencyPairParameter(Currency.USD, Currency.CHF),
       RangeTrader.VOLUME -> RealNumberParameter(10.0),
-      RangeTrader.ORDER_WINDOW -> CoefficientParameter(0.15)
+      RangeTrader.ORDER_WINDOW -> CoefficientParameter(0.20)
     )
     val trader = builder.createRef(Props(classOf[RangeTrader], traderId, List(marketForexId),parameters), "RangeTrader")
    
@@ -80,9 +82,8 @@ object RangeExample {
     
     // Evaluator
     val periodEvaluator : FiniteDuration  = 2000 milliseconds
-    val initial = 1000000.0
     val currency = Currency.CHF
-    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, initial, currency, periodEvaluator), "evaluator")
+    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, currency, periodEvaluator), "evaluator")
     
     
     //printer

@@ -55,7 +55,7 @@ class RangeTraderTest
   )
   
   val symbol = (Currency.USD, Currency.CHF)
-  val (bidPrice, askPrice) = (0.90, 0.95)
+  val (bidPrice, askPrice) = (4.3, 4.8)
   val testQuote = Quote(1L, System.currentTimeMillis(), symbol._1, symbol._2, bidPrice, askPrice)
   val market = builder.createRef(Props(classOf[FxMarketWrapped], marketId, new ForexMarketRules()), MarketNames.FOREX_NAME)
   val broker = builder.createRef(Props(classOf[SimpleBrokerWrapped], market.ar), "Broker")
