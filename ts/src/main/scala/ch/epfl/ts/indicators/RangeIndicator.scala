@@ -5,8 +5,7 @@ import ch.epfl.ts.data.OHLC
 import scala.collection.mutable.MutableList
 import akka.actor.Actor
 
-class RI(val support : Double, val resistance : Double, val period : Int)
-case class RI2( override val support : Double, override val resistance : Double, override val period : Int ) extends RI(support,resistance,period)
+case class RANGE(val support : Double, val resistance : Double, val period : Int ) 
 /**
  * This indicator will define a range that contains most of the prices in the given period.
  * A range is defined by two value a resistance that can be seen as the ceiling and a support which can be seen as a floor.
@@ -52,7 +51,7 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Actor {
         pricesInPeriod = pricesInPeriod.tail :+ price
         resistance = getResistance(pricesInPeriod)
         support = getSupport(pricesInPeriod)
-        var ri = RI2(support, resistance, timePeriod)
+        var ri = RANGE(support, resistance, timePeriod)
         sender() ! ri
         println("RangeIndicator : send a RI2")
       }

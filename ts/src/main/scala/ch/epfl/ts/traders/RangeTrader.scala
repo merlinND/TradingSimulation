@@ -21,7 +21,6 @@ import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.WalletFunds
 import ch.epfl.ts.indicators.OhlcIndicator
-import ch.epfl.ts.indicators.RI2
 import ch.epfl.ts.indicators.RangeIndicator
 import scala.util.Failure
 import scala.util.Success
@@ -31,6 +30,7 @@ import ch.epfl.ts.engine.AcceptedOrder
 import ch.epfl.ts.data.MarketOrder
 import ch.epfl.ts.engine.RejectedOrder
 import ch.epfl.ts.data.Order
+import ch.epfl.ts.indicators.RANGE
 
 /**
  * RangeTrader companion object
@@ -142,7 +142,7 @@ class RangeTrader(uid : Long, parameters: StrategyParameters)
       }
     }
     
-    case range : RI2 => {
+    case range : RANGE => {
       log.debug("received range with support = "+range.support+" and resistance = "+range.resistance)
       if(recomputeRange) {
         support = range.support

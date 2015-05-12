@@ -28,14 +28,13 @@ import ch.epfl.ts.engine.ForexMarketRules
 import ch.epfl.ts.engine.FundWallet
 import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.Wallet
-import ch.epfl.ts.indicators.RI2
 import ch.epfl.ts.test.ActorTestSuite
 import ch.epfl.ts.test.FxMarketWrapped
 import ch.epfl.ts.test.SimpleBrokerWrapped
 import ch.epfl.ts.traders.RangeTrader
 import ch.epfl.ts.data.Quote
-import ch.epfl.ts.indicators.RI2
 import org.scalatest.junit.JUnitRunner
+import ch.epfl.ts.indicators.RANGE
 
 @RunWith(classOf[JUnitRunner])
 class RangeTraderTest
@@ -82,7 +81,7 @@ class RangeTraderTest
     "receive a range and collect support and resistance" in {
       within(1 second) {
         EventFilter.debug(message = "received range with support = 4.0 and resistance = 6.0", occurrences = 1) intercept {
-          trader.ar ! RI2(4, 6, 100)
+          trader.ar ! RANGE(4, 6, 100)
         }
       }
     }
@@ -98,7 +97,7 @@ class RangeTraderTest
     "replace the range when received a new one " in {
       within(1 second) {
         EventFilter.debug(message = "range is updated", occurrences = 1) intercept {
-          trader.ar ! RI2(4, 6, 100)
+          trader.ar ! RANGE(4, 6, 100)
         }
       }
     } 
@@ -143,8 +142,8 @@ class RangeTraderTest
         }
       within(1 second) {
         EventFilter.debug(message = "range is updated", occurrences = 1) intercept {
-          trader.ar ! RI2(5, 10, 100)
-          trader.ar ! RI2(0.954, 0.964, 100)
+          trader.ar ! RANGE(5, 10, 100)
+          trader.ar ! RANGE(0.954, 0.964, 100)
         }
       }
     }
