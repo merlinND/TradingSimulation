@@ -21,6 +21,7 @@ import ch.epfl.ts.traders.TraderCompanion
 import ch.epfl.ts.brokers.StandardBroker
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.evaluation.Evaluator
+import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 
 /**
  * Need this concrete class to help serialization.
@@ -146,7 +147,7 @@ object ForexStrategyFactory extends StrategyFactory {
 
     // Market
     def market = {
-      val rules = new ForexMarketRules()
+      val rules = new FxMarketRulesWrapper()
       Props(classOf[MarketFXSimulator], marketIds(0), rules)
     }
     

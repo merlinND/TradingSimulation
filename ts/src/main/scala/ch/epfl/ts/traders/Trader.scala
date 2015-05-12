@@ -107,7 +107,7 @@ abstract class Trader(val uid: Long, marketIds: List[Long], val parameters: Stra
  * The user should not have to specify the parameter names as strings, but rather
  * be able to use the keys exposed by the strategy's companion object.
  */
-trait TraderCompanion {
+trait TraderCompanion extends Serializable {
   type Key = String
   
   /**

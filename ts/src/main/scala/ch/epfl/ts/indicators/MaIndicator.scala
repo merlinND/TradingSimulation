@@ -7,11 +7,12 @@ import scala.collection.mutable.MutableList
 import akka.actor.Actor
 import akka.event.Logging
 import akka.actor.ActorLogging
+import ch.epfl.ts.data.Streamable
 
 /**
  * Moving Average value data
  */
-abstract class MovingAverage(val value: Map[Long, Double])
+abstract class MovingAverage(val value: Map[Long, Double]) extends Streamable
 
 /**
  * Moving average superclass. To implement a moving average indicator,

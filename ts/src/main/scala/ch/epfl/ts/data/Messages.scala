@@ -5,7 +5,7 @@ import ch.epfl.ts.data.Currency._
 /**
  * Definition of the System's internal messages.
  */
-trait Streamable
+trait Streamable extends Serializable
  
 /**
  * Message sent out by an actor which takes authority on the system's time.

@@ -5,6 +5,7 @@ import ch.epfl.ts.data.Order
 import akka.actor.ActorRef
 import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.traders.TraderCompanion
+import ch.epfl.ts.data.Streamable
 
 /*
  * Definition of the Simulator's internal messages.
@@ -45,7 +46,7 @@ object ExecutedAskOrder {
 /* *****************************
  * Traders
  */
-abstract class TraderMessage
+abstract class TraderMessage extends Streamable
 /**
  * Send this message when needing to retrieve a trader's strategy parameters
  */
@@ -55,7 +56,7 @@ case class TraderIdentity(name: String, uid: Long, strategy: TraderCompanion, pa
 /* *****************************
  * Wallet
  */
-abstract class WalletState(val uid: Long)
+abstract class WalletState(val uid: Long) extends Streamable
 
 /* Getter */
 
@@ -94,7 +95,7 @@ case class FundWallet(override val uid: Long, c: Currency, q: Double) extends Wa
 /* *****************************
  * Matcher
  */
-abstract class MatcherState()
+abstract class MatcherState() extends Streamable
 
 /* Getter */
 case class GetMatcherOrderBook(count: Int) extends MatcherState
