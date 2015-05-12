@@ -73,10 +73,13 @@ class StrategyOptimizerTestSuite extends WordSpec {
     }
     
     "generate all combinations of parameters to optimize" in {
-      def combination(b1: Boolean, b2: Boolean) = new StrategyParameters(
+      def combination(b1: Boolean, b2: Boolean) = {
+        val parameters = Map(
         strategyToOptimize.FLAG_TO_OPTIMIZE_1 -> BooleanParameter(b1),
-        strategyToOptimize.FLAG_TO_OPTIMIZE_1 -> BooleanParameter(b1),
-        strategyToOptimize.DUMMY_FLAG         -> BooleanParameter(true))
+        strategyToOptimize.FLAG_TO_OPTIMIZE_2 -> BooleanParameter(b2)) ++ otherParameterValues
+        
+        new StrategyParameters(parameters.toList: _*)
+      }
       
       val parameterizations = make()
       val expected = Set(combination(true, true), combination(true, false),
