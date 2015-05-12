@@ -83,8 +83,8 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
         println("MadTrader: sending limit ask order")
         send[Order](LimitAskOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       } else {
-        println("MadTrader: sending limit bid order")
-        send[Order](LimitBidOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
+//        println("MadTrader: sending limit bid order")
+//        send[Order](LimitBidOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       }
       alternate = alternate + 1
       orderId = orderId + 1

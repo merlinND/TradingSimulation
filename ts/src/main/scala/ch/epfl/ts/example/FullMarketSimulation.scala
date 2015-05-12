@@ -18,8 +18,13 @@ import ch.epfl.ts.engine.FundWallet
 import ch.epfl.ts.data.Quote
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.MarketAskOrder
+import ch.epfl.ts.engine.MarketAsksEmpty
+import ch.epfl.ts.engine.MarketBidsEmpty
+import ch.epfl.ts.engine.MarketEmpty
+import ch.epfl.ts.engine.MarketMakerNotification
 import java.util.Timer
 import ch.epfl.ts.engine.rules.{SimulationMarketRulesWrapper, FxMarketRulesWrapper}
+import ch.epfl.ts.traders.MarketMakerTrader
 
 /**
  * Market simulation with first reading historical data and then running simulation on its own.
@@ -54,6 +59,26 @@ object FullMarketSimulation {
     trader->(broker, classOf[Register])
     trader->(broker, classOf[FundWallet])
     connectAllOrders(trader, broker)
+    
+    // MarketMaker
+    val parameters2 = new StrategyParameters(
+      MarketMakerTrader.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
+      MarketMakerTrader.INTERVAL -> new TimeParameter(1 seconds),
+      MarketMakerTrader.ORDER_VOLUME -> NaturalNumberParameter(10),
+      MarketMakerTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.EUR, Currency.CHF))
+
+    val tId2 = 100L
+
+    val trader2 = MarketMakerTrader.getInstance(tId, List(marketId), parameters, "OneMarketMakerTrader")
+//    addConsument(classOf[Quote], trader2)
+    addConsument(classOf[MarketMakerNotification], trader2)
+//    val broker2 = builder.createRef(Props(classOf[StandardBroker]), "Broker")
+//    addConsument(classOf[Quote], broker2)
+
+    trader2->(broker, classOf[Register])
+    trader2->(broker, classOf[FundWallet])
+    connectAllOrders(trader2, broker)
+    
 
     // Fetcher
     val fetcher = createFetcher(useLiveData, builder, symbol)
@@ -69,11 +94,12 @@ object FullMarketSimulation {
     addConsument(classOf[TheTimeIs], trader)
     connectAllOrders(broker, market)
     market->(broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
+    market->(trader2, classOf[MarketMakerNotification]); //
 
     connectProducersWithConsuments()
 
     builder.start
-    val delay = 20 * 1000 //in ms
+    val delay = 2 * 1000 //in ms
     scheduleChange(fetcher, market, delay)
   }
 

@@ -43,6 +43,23 @@ object ExecutedAskOrder {
 }
 
 /* *****************************
+ * Market maker notifications
+ */
+abstract class MarketMakerNotification
+
+case class MarketAsksEmpty(val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+  extends MarketMakerNotification{
+}
+
+case class MarketBidsEmpty(val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+  extends MarketMakerNotification{
+}
+
+case class MarketEmpty(val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+  extends MarketMakerNotification {
+}
+
+/* *****************************
  * Traders
  */
 abstract class TraderMessage

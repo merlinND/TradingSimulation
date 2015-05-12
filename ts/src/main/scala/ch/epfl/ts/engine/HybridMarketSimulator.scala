@@ -8,6 +8,9 @@ import akka.actor.ActorLogging
 import ch.epfl.ts.component.utils.Timekeeper
 import akka.actor.Props
 import ch.epfl.ts.data.TheTimeIs
+import ch.epfl.ts.engine.MarketAsksEmpty
+import ch.epfl.ts.engine.MarketBidsEmpty
+import ch.epfl.ts.engine.MarketMakerNotification
 
 /**
  * Market simulator, where first the data is being received from fetcher and market behaves in a way that traders' orders
@@ -61,19 +64,19 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
       log.warning("HybridMarket received a quote when in simulation mode")
   }
 
-  val spread = 0.1
   def playMarketMaker() = {
     val asksEmpty = if (book.asks.isEmpty) 1 else 0
-    val bidsEmpty = if (book.asks.isEmpty) 1 else 0
-    if (asksEmpty + bidsEmpty == 1){
-      val order = if (asksEmpty == 1){
+    val bidsEmpty = if (book.bids.isEmpty) 1 else 0
+    if (asksEmpty + bidsEmpty >= 1){
+      val msg = if (asksEmpty == 1){
         val topBid = book.bids.head
-        LimitAskOrder(1, -1, topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price * (1 + spread))
+        MarketAsksEmpty(topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price)
       } else {
-        val topAsk = book.bids.head
-        LimitBidOrder(1, -1, topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price * (1 - spread))
+        val topAsk = book.asks.head
+        MarketBidsEmpty(topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price) ///
       }
-      receiver(order)
+      // TODO add third extreme case
+      send[MarketMakerNotification](msg)
     }
   }
 
