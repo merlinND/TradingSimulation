@@ -8,9 +8,11 @@ GET   /                      controllers.Application.index
 GET   /fetchers/quote        controllers.Application.quote
 
 GET   /market/ohlc           controllers.Application.ohlc
+GET   /market/globalOhlc     controllers.Application.ohlc
 GET   /market/transaction    controllers.Application.transaction
 
 GET   /trader/registration   controllers.Application.traderRegistration
+GET   /trader/parameters     controllers.Application.traderParameters
 
 # Static
 # ~~~~
