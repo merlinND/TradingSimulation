@@ -224,5 +224,4 @@ class MovingAverageTrader(uid: Long, parameters: StrategyParameters)
   override def init = {
     log.debug("MovingAverageTrader received startSignal")
   }
-
 }

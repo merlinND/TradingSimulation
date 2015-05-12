@@ -156,4 +156,3 @@ class MovingAverageTraderWrapped(uid: Long, parameters: StrategyParameters, brok
   }
   override def send[T: ClassTag](t: List[T]) = t.map(broker ! _)
 }
-

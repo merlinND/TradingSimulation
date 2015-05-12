@@ -86,6 +86,7 @@ class StandardBroker extends Component with ActorLogging {
         executeForWallet(e.uid, FundWallet(e.uid, e.whatC, e.volume), {
           case WalletConfirm(uid) => {
             log.debug("Broker: Transaction executed")
+            println("going to send execut bid to : "+replyTo)
             replyTo ! e
           }
           case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
@@ -98,6 +99,8 @@ class StandardBroker extends Component with ActorLogging {
         executeForWallet(e.uid, FundWallet(e.uid, e.withC, e.volume * e.price), {
           case WalletConfirm(uid) => {
             log.debug("Broker: Transaction executed")
+            println("going to send execut ask to : "+replyTo)
+
             replyTo ! e
           }
           case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
