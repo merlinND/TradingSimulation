@@ -29,7 +29,7 @@ The market simulator generates transactions based on the orders received from br
 
 \subsection{Replay}
 
-In this example, we demonstrate how to use the framework to experiment Forex trading with the \emph{MovingAverageTrader} on history Forex data.
+In this example, we demonstrate how to use the framework to experiment Forex trading with the \emph{MovingAverageTrader} on history Forex data. The component graph is as follows:
 
 \noindent
 \includegraphics[width=\textwidth]{img/examples/forex-replay}
@@ -40,6 +40,19 @@ The trader produces ask or bid orders based on the quotes data, and sends them t
 
 The market simulator generates transactions based on received orders, and sends the transactions to the printer, which in turn prints them in the console.
 
-%% \subsection{Simulation with Multiple Traders}
+\subsection{Evaluating the Performance of Traders}
 
-%% Multiple trader simulation in a virtual market.
+This example demonstrates how to evaluate the performance of a trader. For this purpose, we have to use the component \emph{Evaluator}. The \emph{Evaluator} encapsulates a trader component -- that means if you want to connect an upstream component to the trader, you can connect it to the \emph{Evaluator}. And if you want to connect the trader to a downstream component, you connect the \emph{Evaluator} to the downstream component. The wirings inside \emph{Evaluator} will ensure that everything works correctly.
+
+The component graph is as follows:
+
+\noindent
+\includegraphics[width=\textwidth]{img/examples/evaluation}
+
+As it's show in the graph above, the evaluator encapsulates an instance of the \emph{MovingAverageTrader}. They should be considered as a single component, instead of two. It receives transaction and quote data from the market simulator. It sends evaluation report to the printer, and orders to the broker.
+
+The market simulator receives orders from the broker and quotes from the fetcher. It sends the transaction result back to the broker.
+
+The fetcher reads history quotes from file system and sends them to the market simulator. Which fetcher or dataset to use for the evaluation is up to the designer of the experiment.
+
+If you're interested in a code example, you can checkout out at \href{https://github.com/merlinND/TradingSimulation/blob/master/ts/src/main/scala/ch/epfl/ts/evaluation/EvaluationRunner.scala}{Github}.
