@@ -49,7 +49,7 @@ object MovingAverageFXExample {
     val marketForexId = MarketNames.FOREX_ID
 
     val useLiveData = false
-    val symbol = (Currency.EUR, Currency.CHF)
+    val symbol = (Currency.USD, Currency.CHF)
 
     // ----- Creating actors
     // Fetcher
@@ -61,8 +61,8 @@ object MovingAverageFXExample {
         val replaySpeed = 40000.0
 
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-        val startDate = dateFormat.parse("201304");
-        val endDate = dateFormat.parse("201305");
+        val startDate = dateFormat.parse("201301");
+        val endDate = dateFormat.parse("201312");
         val workingDir = "./data";
         val currencyPair = symbol._1.toString() + symbol._2.toString();
 
@@ -82,7 +82,7 @@ object MovingAverageFXExample {
       MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
       MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
 
-      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 minute),
+      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 day),
       MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
       MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
       MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002),

@@ -163,16 +163,16 @@ class MovingAverageTrader(uid: Long, marketIds: List[Long], parameters: Strategy
     case whatever                => println("MATrader: received unknown : " + whatever)
   }
   def decideOrder = {
-    var volume = 0.0
-    var holdings = 0.0
-    var shortings = 0.0
-    var toShortAmount = 0.0
-
     implicit val timeout = new Timeout(askTimeout)
 
     val future = (broker ? GetWalletFunds(uid, this.self)).mapTo[WalletFunds]
     future onSuccess {
       case WalletFunds(id, funds: Map[Currency, Double]) => {
+        var volume = 0.0
+        var holdings = 0.0
+        var shortings = 0.0
+        var toShortAmount = 0.0
+        
         val cashWith = funds.getOrElse(withC, 0.0)
         holdings = funds.getOrElse(whatC, 0.0)
         log.debug("cash " + cashWith + " holdings" + holdings)
