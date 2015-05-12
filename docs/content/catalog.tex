@@ -6,7 +6,9 @@ After reading this section, you should able to select appropriate components for
 
 \subsection{Market Simulators}
 
-Market simulators are core components of TradingSimulation, which simulate virtual markets. Currently TradingSimulation provides two market simulators:
+Market simulators are core components of TradingSimulation, which simulate virtual markets. Market simulators accept ask and bid orders and generate transactions based on \emph{market rules}. In the implementation, market rules are extracted into separate modules to make it possible to define custom market rules and use it in the framework.
+
+Currently TradingSimulation provides two market simulators:
 
 \begin{itemize}
 \item OrderBookMarketSimulator
@@ -55,7 +57,15 @@ Market simulators are core components of TradingSimulation, which simulate virtu
   \hline
   DelOrder  & the delete order to inform traders or brokers \\
   \hline
-\end{tabularx}
+\end{tabularx}\\[0.4cm]
+
+To create an instance of \emph{OrderBookMarketSimulator}, following code snippet can be used:
+
+\begin{lstlisting}[language=Scala]
+val rules = new MarketRules()
+val btceMarket = builder.createRef(Props(classOf[OrderBookMarketSimulator], MarketNames.BTCE_ID, rules), MarketNames.BTCE_NAME)
+\end{lstlisting}
+
 
 \subsubsection{MarketFxSimulator}
 
@@ -95,8 +105,14 @@ Market simulators are core components of TradingSimulation, which simulate virtu
   \hline
   Quote  & the quote to inform traders or brokers \\
   \hline
-\end{tabularx}
+\end{tabularx}\\[0.4cm]
 
+To create an instance of \emph{MarketFxSimulator}, following code snippet can be used:
+
+\begin{lstlisting}[language=Scala]
+val rules = new ForexMarketRules()
+val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], MarketNames.FOREX_ID, rules), MarketNames.FOREX_NAME)
+\end{lstlisting}
 
 \subsection{Indicators}
 
