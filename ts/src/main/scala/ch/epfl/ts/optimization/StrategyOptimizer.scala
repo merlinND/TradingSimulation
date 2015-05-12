@@ -16,7 +16,8 @@ object StrategyOptimizer {
    * @param strategyToOptimize
    * @param parametersToOptimize Set of parameter names (as defined in the TraderCompanion) to optimize on
    * @param otherParameterValues Values for each parameter we are not optimizing on
-   * @param maxInstances Maximum number of traders to instantiate
+   * @param maxInstances Maximum number of traders to instantiate. It might not be perfectly respected
+   *                     depending on the number of parameters to optimize for.
    */
   def generateParameterizations(strategyToOptimize: TraderCompanion,
                                 parametersToOptimize: Set[String],
@@ -28,8 +29,15 @@ object StrategyOptimizer {
       key => assert(strategyToOptimize.parameters.contains(key), "Strategy " + strategyToOptimize + " doesn't have a parameter " + key)
     }
     
-    val dimensions = parametersToOptimize.size    
-    val grid = generateGrid(strategyToOptimize, parametersToOptimize, (maxInstances / dimensions.toDouble).floor.toInt)
+    val dimensions = parametersToOptimize.size
+    val maxPerAxis = Math.pow(maxInstances.toDouble, 1.0 / dimensions.toDouble).ceil.toInt
+    
+    if(maxInstances < dimensions) {
+      throw new IllegalArgumentException("Given " + maxInstances + " instances, we cannot optimize for " + parametersToOptimize.size + " parameters")
+    }
+    
+
+    val grid = generateGrid(strategyToOptimize, parametersToOptimize, maxPerAxis)
     val parameterizations = generateParametersWith(grid, otherParameterValues)
     parameterizations.foreach(p => strategyToOptimize.verifyParameters(p))
 

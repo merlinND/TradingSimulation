@@ -72,6 +72,17 @@ class StrategyOptimizerTestSuite extends WordSpec {
       assert(parameterizations.size === 4)
     }
     
+    "allow itself to round up the number of allowed instances if it makes sense" in {
+      val parameterizations = make(2)
+      assert(parameterizations.size === 4)
+    }
+    
+    "throw an exception if we do not give the right to enough instances" in {
+      // Cannot optimize 2 dimensions with a single instance
+      val attempt = Try(make(1))
+      assert(attempt.isFailure, attempt + " should have failed")
+    }
+    
     "generate all combinations of parameters to optimize" in {
       def combination(b1: Boolean, b2: Boolean) = {
         val parameters = Map(
