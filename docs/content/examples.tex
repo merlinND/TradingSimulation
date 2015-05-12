@@ -56,3 +56,29 @@ The market simulator receives orders from the broker and quotes from the fetcher
 The fetcher reads history quotes from file system and sends them to the market simulator. Which fetcher or dataset to use for the evaluation is up to the designer of the experiment.
 
 If you're interested in a code example, you can checkout out at \href{https://github.com/merlinND/TradingSimulation/blob/master/ts/src/main/scala/ch/epfl/ts/evaluation/EvaluationRunner.scala}{Github}.
+
+\subsection{Full Market Simulation}
+
+TradingSimulation provides the possibility to experiment with full market simulation. In ideal full market simulation, all market data are generated from the transactions of traders, it's a closed world. However, there's a problem on how to start the market initially. The approach we choose is to seed the market with history data, and cut the data source once the market gets activated. The two different modes of the market require different market rules in order for the market to function normally.
+
+Due to this special requirement to disconnect components and change market rules at runtime, we defined a special market simulator \emph{HybridMarketSimulator} for full market simulation. The component graph is as follows:
+
+\noindent
+\includegraphics[width=\textwidth]{img/examples/full-simulation}
+
+In the graph above, there're only two traders, but you can add as many traders as you need. The traders are encapsulated in evaluators, so that the printer can print the performance of traders in the console.
+
+In the full simulation, it's important to cut off the data source once the market get activated. This can be achieved using following code snippet:
+
+\begin{lstlisting}[language=Scala]
+  val timer = new Timer()
+  class StopFetcher extends java.util.TimerTask {
+    def run() {
+      quoteFetcher.ar ! StopSignal
+      market.ar ! 'ChangeMarketRules
+    }
+  }
+  timer.schedule(new StopFetcher, delay)
+\end{lstlisting}
+
+For a complete example of full market simulation in code, please refer to the example \emph{FullMarketSimulation} in the code base. You can check it out at \href{https://github.com/merlinND/TradingSimulation/blob/master/ts/src/main/scala/ch/epfl/ts/example/FullMarketSimulation.scala}{Github}.
