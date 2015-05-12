@@ -85,33 +85,11 @@ class StandardBroker extends Component with ActorLogging {
       })
     }
 
-    case e: ExecutedBidOrder => {
-      if (mapping.contains(e.uid)) {
-        val replyTo = mapping.getOrElse(e.uid, null)
-        executeForWallet(e.uid, FundWallet(e.uid, e.whatC, e.volume), {
-          case WalletConfirm(uid) => {
-            log.debug("Broker: Transaction executed")
-            println("going to send execut bid to : "+replyTo)
-            replyTo ! e
-          }
-          case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
-        })
-      }
-    }
-    case e: ExecutedAskOrder => {
-      if (mapping.contains(e.uid)) {
-        val replyTo = mapping.getOrElse(e.uid, null)
-        executeForWallet(e.uid, FundWallet(e.uid, e.withC, e.volume * e.price), {
-          case WalletConfirm(uid) => {
-            log.debug("Broker: Transaction executed")
-            println("going to send execut ask to : "+replyTo)
+    case e: ExecutedBidOrder =>
+      finishExecutedOrder(e, e.whatC, e.volume)
 
-            replyTo ! e
-          }
-          case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
-        })
-      }
-    }
+    case e: ExecutedAskOrder =>
+      finishExecutedOrder(e, e.withC, e.volume * e.price)
 
     //TODO(sygi): refactor charging the wallet/placing an order
     case o: Order => {
