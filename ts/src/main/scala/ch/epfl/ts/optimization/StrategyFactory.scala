@@ -42,6 +42,18 @@ trait StrategyFactory {
     def printer: Option[Props] = None
   }
   
+  /**
+   * Concrete references to instances created remotely.
+   * An instance of this class contains references to all components
+   * that were instantiated on a host.
+   * 
+   * @param evaluators Can be used just as a reference to a Trader (messages will be forwarded)
+   */
+  class SystemDeployment(val fetcher: ComponentRef,
+                         val market: ComponentRef, broker: ComponentRef,
+                         val evaluators: Set[ComponentRef],
+                         val printer: Option[ComponentRef] = None)
+  
   
   /**
    * Define a set of props (used to create components) that will be created identically on
@@ -63,7 +75,7 @@ trait StrategyFactory {
   // TODO: connect components smartly
   def createRemoteActors(master: ComponentRef, host: RemoteHost,
                          strategyToOptimize: TraderCompanion, parameterizations: Set[StrategyParameters])
-                        (implicit builder: ComponentBuilder): List[ComponentRef]
+                        (implicit builder: ComponentBuilder): SystemDeployment
   
 
   /**
@@ -74,9 +86,9 @@ trait StrategyFactory {
    */
   protected def createRemoteTraders(host: RemoteHost, strategyToOptimize: TraderCompanion,
                                   parameterizations: Set[StrategyParameters])
-                                 (implicit builder: ComponentBuilder): List[ComponentRef] = {
+                                 (implicit builder: ComponentBuilder): Set[ComponentRef] = {
     // One trader for each parameterization
-    for((parameterization, i) <- parameterizations.toList.zipWithIndex) yield {
+    for((parameterization, i) <- parameterizations.zipWithIndex) yield {
       
       // Assert that parameterization is valid for this strategy (will throw if it is not the case)
       strategyToOptimize.verifyParameters(parameterization)
@@ -142,10 +154,14 @@ object ForexStrategyFactory extends StrategyFactory {
     override def printer = Some(Props(classOf[Printer], "MyPrinter"))
   }
   
-  
+  /**
+   * Create one actor for each of the `commonProps`
+   * and one Trader instance for each of the `parameterizations`.
+   * @warning You are responsible for making the connections between the created components
+   */
   def createRemoteActors(master: ComponentRef, host: RemoteHost,
                          strategyToOptimize: TraderCompanion, parameterizations: Set[StrategyParameters])
-                        (implicit builder: ComponentBuilder): List[ComponentRef] = {
+                        (implicit builder: ComponentBuilder): SystemDeployment = {
 
     // ----- Common props (need one instance per host, used by all the traders)
     val fetcher = host.createRemotely(commonProps.fetcher, "Fetcher")
@@ -156,9 +172,6 @@ object ForexStrategyFactory extends StrategyFactory {
     // ----- Traders (possibly many) to be run in parallel on this host
     val evaluators = createRemoteTraders(host, strategyToOptimize, parameterizations)
     
-    // ----- Connections
-    // TODO
-    
-    evaluators
+    new SystemDeployment(fetcher, market, broker, evaluators, printer)
   }
 }

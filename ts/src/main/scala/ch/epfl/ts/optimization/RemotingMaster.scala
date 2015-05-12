@@ -48,6 +48,8 @@ class RemoteHost(val hostname: String, val port: Int, val namingPrefix: String, 
     println("Creating remotely component " + actualName + " at host " + hostname)
     builder.createRef(props.withDeploy(deploy), actualName)
   }
+  
+  override def toString(): String = systemName + "@" + hostname + ":" + port
 }
 
 
@@ -88,12 +90,13 @@ class MasterActor extends Actor {
  * 
  * @see {@link ch.epfl.ts.optimization.RemotingWorker}
  */
-object RemotingHost {
+object RemotingHostRunner {
 
   val availableHosts = {
     val availableWorkers = List(
-      "ts-1-021qv44y.cloudapp.net",
-      "ts-2.cloudapp.net"
+      "127.0.0.1"
+      //"ts-1-021qv44y.cloudapp.net",
+      //"ts-2.cloudapp.net"
       //"ts-3.cloudapp.net",
       //"ts-4.cloudapp.net",
       //"ts-5.cloudapp.net",
@@ -129,21 +132,31 @@ object RemotingHost {
       MadTrader.CURRENCY_PAIR -> CurrencyPairParameter(Currency.EUR, Currency.CHF)
     )
     
-    val maxInstances = (10 * availableHosts.size)
+    val maxInstances = (5 * availableHosts.size)
     val parameterizations = StrategyOptimizer.generateParameterizations(strategyToOptimize, parametersToOptimize,
                                                                         otherParameterValues, maxInstances).toSet
 
     // TODO: use log.info
-    println("Going to distributed " + parameterizations.size + " traders over " + availableHosts.size + " worker machines.")
+    println("Going to distribute " + parameterizations.size + " traders over " + availableHosts.size + " worker machines.")
                                                                         
     // ----- Instantiate the all components on each available worker
-    val evaluators = availableHosts.flatMap(host => {
+    val distributed = ForexStrategyFactory.distributeOverHosts(availableHosts, parameterizations)
+    val deployments = distributed.map({ case (host, parameters) =>
+      println("Creating " + parameters.size + " instances of " + strategyToOptimize.getClass.getSimpleName + " on host " + host)
       ForexStrategyFactory.createRemoteActors(master, host, strategyToOptimize, parameterizations)
     })
+    
+    
+    // ----- Connections
+    deployments.foreach(d => {
+      // TODO
+      d.market -> (d.printer, classOf[Quote])
+      
+    	// ----- Registration to the supervisor
+    	// Register this new trader to the master
+    	for(e <- d.evaluators) master.ar ! e.ar
+    })
                                                                         
-    // ----- Registration to the supervisor
-    // Register this new trader to the master
-    for(e <- evaluators) master.ar ! e.ar
     
     //builder.start
     // TODO: handle evaluator reports on stop
