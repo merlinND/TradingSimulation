@@ -54,8 +54,6 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   import context._
   override def companion = MadTrader
 
-  private case object SendMarketOrder
-
   // TODO: this initial order ID should be unique in the system
   var orderId = 4567
 
@@ -75,7 +73,7 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
      currentTimeMillis = q.timestamp
     }
     
-    case SendMarketOrder => {
+    case 'SendMarketOrder => {
       // Randomize volume and price
       val variation = volumeVariation * (r.nextDouble() - 0.5) * 2.0
       val theVolume = ((1 + variation) * volume).toInt
@@ -99,6 +97,6 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
    * When simulation is started, plan ahead the next random trade
    */
   override def init = {
-    system.scheduler.schedule(initialDelay, interval, self, SendMarketOrder)
+    system.scheduler.schedule(initialDelay, interval, self, 'SendMarketOrder)
   }
 }

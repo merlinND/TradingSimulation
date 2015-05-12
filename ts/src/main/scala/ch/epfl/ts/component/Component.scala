@@ -21,6 +21,39 @@ case object StartSignal
 case object StopSignal
 case class ComponentRegistration(ar: ActorRef, ct: Class[_], name: String)
 
+/**
+ * Supervising actor that waits for Actors termination
+ * @see http://letitcrash.com/post/30165507578/shutdown-patterns-in-akka-2
+ */
+private class Reaper extends Actor {
+  var watched = ArrayBuffer.empty[ActorRef]
+  var cb: () => Any = () => Unit
+  
+  override def receive = {
+    case StartKilling(bodies, onAllDead) => {
+      cb = onAllDead
+      bodies.foreach(c => {
+        context.watch(c.ar)
+        c.ar ! PoisonPill
+        
+        watched += c.ar
+      })
+      
+      if(bodies.isEmpty) cb()
+    }
+    
+    case Terminated(ref) => {
+      watched -= ref
+      if(watched.isEmpty) cb()
+    }
+  }
+}
+/**
+ * @param references List of components that need to be watched
+ * @param onAllDead Callback function to call when all watched actors have been terminated
+ */
+private case class StartKilling(references: List[ComponentRef], onAllDead: () => Any)
+
 final class ComponentBuilder(val system: ActorSystem) {
   /** Alternative construcors */
   def this() {
@@ -36,46 +69,13 @@ final class ComponentBuilder(val system: ActorSystem) {
   }
 
   
-  
   type ComponentProps = akka.actor.Props
   var graph = Map[ComponentRef, List[(ComponentRef, Class[_])]]()
   var instances = List[ComponentRef]()
   
+  private val reaper = system.actorOf(Props(classOf[Reaper]), "Reaper")
+    
   
-  /**
-   * Supervising actor that waits for Actors termination
-   * @see http://letitcrash.com/post/30165507578/shutdown-patterns-in-akka-2
-   */
-  private class Reaper extends Actor {
-    var watched = ArrayBuffer.empty[ActorRef]
-    var cb: () => Any = () => Unit
-    
-    override def receive = {
-      case StartKilling(l, onAllDead) => {
-        cb = onAllDead
-        instances.foreach(c => {
-          context.watch(c.ar)
-          c.ar ! PoisonPill
-          
-          watched += c.ar
-        })
-        
-        if(instances.isEmpty) cb()
-      }
-      
-      case Terminated(ref) => {
-        watched -= ref
-        if(watched.isEmpty) cb()
-      }
-    }
-  }
-  /**
-   * @param references List of components that need to be watched
-   * @param onAllDead Callback function to call when all watched actors have been terminated
-   */
-  private case class StartKilling(references: List[ComponentRef], onAllDead: () => Any)
-  private val reaper = system.actorOf(Props(classOf[Reaper], this), "Reaper")
-    
   def add(src: ComponentRef, dest: ComponentRef, data: Class[_]) {
     println("Connecting " + src.ar + " to " + dest.ar + " for type " + data.getSimpleName)
     graph = graph + (src -> ((dest, data) :: graph.getOrElse(src, List[(ComponentRef, Class[_])]())))

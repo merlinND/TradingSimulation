@@ -99,7 +99,7 @@ class StrategyParameters(params: (String, Parameter)*) extends Serializable {
  * Strategies can declare required and optional parameters.
  * Each parameter has a "range" of valid values.
  */
-abstract class Parameter(val name: String) { self =>
+abstract class Parameter(val name: String) extends Serializable { self =>
   /** Type of the value this parameter holds */
   type T
 

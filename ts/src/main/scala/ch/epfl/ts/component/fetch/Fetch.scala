@@ -24,12 +24,12 @@ abstract class PushFetch[T] extends Fetch[T] {
 /* Actor implementation */
 class PullFetchComponent[T: ClassTag](f: PullFetch[T]) extends Component {
   import context._
-  case object Fetch
-  system.scheduler.schedule(10 milliseconds, f.interval() milliseconds, self, Fetch)
+  
+  system.scheduler.schedule(10 milliseconds, f.interval() milliseconds, self, 'DoFetchNow)
 
   override def receiver = {
     // pull and send to each listener
-    case Fetch =>
+    case 'DoFetchNow =>
       println("PullFetchComponent Fetch " + System.currentTimeMillis())
       f.fetch().map(t => send[T](t))
     case _ =>

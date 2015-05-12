@@ -36,14 +36,9 @@ import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.component.Component
 import ch.epfl.ts.evaluation.EvaluationReport
-import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.engine.GetTraderParameters
 import ch.epfl.ts.engine.TraderIdentity
 import ch.epfl.ts.data.EndOfFetching
-import ch.epfl.ts.evaluation.EvaluationReport
-import ch.epfl.ts.engine.TraderIdentity
-import ch.epfl.ts.data.EndOfFetching
-import ch.epfl.ts.evaluation.EvaluationReport
 
 /**
  * @param namingPrefix Prefix that will precede the name of each actor on this remote
@@ -196,14 +191,15 @@ object RemotingHostRunner {
     deployments.foreach(d => {
       // TODO
       d.market -> (d.printer, classOf[Quote])
-      
-    	// ----- Registration to the supervisor
-    	// Register each new trader to the master
-    	for(e <- d.evaluators) master.ar ! e.ar
     })
                                                                         
     
     builder.start
+    // ----- Registration to the supervisor
+    // Register each new trader to the master
+    for(d <- deployments; e <- d.evaluators) {
+      master.ar ! e.ar
+    }
     
     optimizationFinished.future.onSuccess({
       case (TraderIdentity(name, uid, companion, parameters), evaluation: EvaluationReport) => {
