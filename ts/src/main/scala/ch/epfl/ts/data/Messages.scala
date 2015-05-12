@@ -169,6 +169,13 @@ case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Curren
 }
 
 /**
+ * Signals that the Fetcher component will not send any more messages
+ * @example In the case of historical data, this message is sent out when
+ *          there are no more quotes to be sent sent.
+ */
+case class EndOfFetching() extends Streamable
+
+/**
  * Data Transfer Object representing a Tweet
  * @param timestamp
  * @param content

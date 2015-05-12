@@ -7,6 +7,7 @@ import ch.epfl.ts.data.Currency._
 import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.data.NaturalNumberParameter
 import ch.epfl.ts.data.RealNumberParameter
+import ch.epfl.ts.data.Quote
 
 /**
  * Arbitrageur companion object
@@ -34,7 +35,7 @@ object Arbitrageur extends TraderCompanion {
  * Arbitrageur trader: receives Transactions from multiple markets and sends market orders
  * to the exchanges when a certain delta price difference is reached.
  */
-class Arbitrageur(uid: Long, parameters: StrategyParameters) extends Trader(uid, parameters) {
+class Arbitrageur(uid: Long, marketIds : List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   override def companion = Arbitrageur
   
   var oid = 40000000L
@@ -48,6 +49,10 @@ class Arbitrageur(uid: Long, parameters: StrategyParameters) extends Trader(uid,
   var marketPriceDifferences = Map[(Long, Long), Double]()
 
   def receiver = {
+    case q : Quote => {
+      currentTimeMillis = q.timestamp
+    }
+    
     case t: Transaction => {
       marketPrices += (t.mid -> t.price)
       computePriceDifferences(t.mid, t.price)
@@ -71,17 +76,17 @@ class Arbitrageur(uid: Long, parameters: StrategyParameters) extends Trader(uid,
           // trading price of market with id=mId > trading price of market with id=a._1
           // sell mId shares, buy a._1 shares
           println("Arbitrageur: sending sell to " + marketIdToName(mId) + " and buy to " + marketIdToName(a._1))
-          send(marketIdToName(mId), MarketAskOrder(oid, uid, System.currentTimeMillis(), BTC, USD, volume, 0.0))
+          send(marketIdToName(mId), MarketAskOrder(oid, uid, currentTimeMillis, BTC, USD, volume, 0.0))
           oid = oid + 1
-          send(marketIdToName(a._1), MarketBidOrder(oid, uid, System.currentTimeMillis(), BTC, USD, volume, 0.0))
+          send(marketIdToName(a._1), MarketBidOrder(oid, uid, currentTimeMillis, BTC, USD, volume, 0.0))
           oid = oid + 1
         } else if (-difference > priceDelta) {
           // trading price of market with id=a._1 > trading price of market with id=mId
           // sell a._1 shares, buy mId shares
           println("Arbitrageur: sending sell to " + marketIdToName(a._1) + " and buy to " + marketIdToName(mId))
-          send(marketIdToName(a._1), MarketAskOrder(oid, uid, System.currentTimeMillis(), BTC, USD, volume, 0.0))
+          send(marketIdToName(a._1), MarketAskOrder(oid, uid, currentTimeMillis, BTC, USD, volume, 0.0))
           oid = oid + 1
-          send(marketIdToName(mId), MarketBidOrder(oid, uid, System.currentTimeMillis(), BTC, USD, volume, 0.0))
+          send(marketIdToName(mId), MarketBidOrder(oid, uid, currentTimeMillis, BTC, USD, volume, 0.0))
           oid = oid + 1
         }
 

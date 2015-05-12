@@ -3,6 +3,8 @@ package ch.epfl.ts.engine
 import ch.epfl.ts.data.Currency._
 import ch.epfl.ts.data.Order
 import akka.actor.ActorRef
+import ch.epfl.ts.data.StrategyParameters
+import ch.epfl.ts.traders.TraderCompanion
 
 /*
  * Definition of the Simulator's internal messages.
@@ -39,6 +41,16 @@ object ExecutedAskOrder {
   def apply(o: Order, price: Double): ExecutedAskOrder = ExecutedAskOrder(o.oid, o.uid, o.timestamp, o.whatC, o.withC, o.volume, price)
 }
 //TODO(sygi): change this messages and actually use them to communicate broker -> trader
+
+/* *****************************
+ * Traders
+ */
+abstract class TraderMessage
+/**
+ * Send this message when needing to retrieve a trader's strategy parameters
+ */
+case object GetTraderParameters extends TraderMessage
+case class TraderIdentity(name: String, uid: Long, strategy: TraderCompanion, parameters: StrategyParameters) extends TraderMessage
 
 /* *****************************
  * Wallet

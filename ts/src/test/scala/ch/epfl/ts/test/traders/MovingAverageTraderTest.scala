@@ -27,8 +27,8 @@ import ch.epfl.ts.test.ActorTestSuite
 import ch.epfl.ts.test.FxMarketWrapped
 import ch.epfl.ts.test.SimpleBrokerWrapped
 import ch.epfl.ts.traders.MovingAverageTrader
-import ch.epfl.ts.data.Quote
-import ch.epfl.ts.indicators.SMA
+import ch.epfl.ts.data.OHLC
+import ch.epfl.ts.data.NaturalNumberParameter
 
 /**
  * @warning Some of the following tests are dependent and should be executed in the specified order.
@@ -46,8 +46,9 @@ class MovingAverageTraderTest
   val parameters = new StrategyParameters(
     MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
     MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
-    MovingAverageTrader.SHORT_PERIOD -> new TimeParameter(periods(0)),
-    MovingAverageTrader.LONG_PERIOD -> new TimeParameter(periods(1)),
+    MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 minute),
+    MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
+    MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
     MovingAverageTrader.TOLERANCE -> RealNumberParameter(tolerance),
     MovingAverageTrader.WITH_SHORT -> BooleanParameter(false))
 
@@ -78,11 +79,29 @@ class MovingAverageTraderTest
         }
       }
     }
+    
+    "notify its ohlcIndicator when he receives a quote" in {
+      within(1 second) {
+        EventFilter.debug(message = "olhc just received a quote", occurrences = 1) intercept {
+          trader.ar ! testQuote
+        }
+      }
+    }
+    
+    "notify its movingAverageIndicator when he receives an OHLC" in {
+      within(1 second) {
+        val ohlc = OHLC(1L, 0.0, 0.0,0.0,0.0,0.0,0L,0L)
+        EventFilter.debug(message = "Moving Average Indicator received an OHLC: " + ohlc, occurrences = 1) intercept {
+          trader.ar ! ohlc
+        }
+      }
+    }
 
     "buy (20,3)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5 -> 20.0, 30 -> 3.0))
+
+          trader.ar ! SMA(Map(5L -> 20.0, 30L -> 3.0))
         }
       }
       cash -= volume * askPrice
@@ -91,7 +110,8 @@ class MovingAverageTraderTest
     "sell(3,20)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5 -> 3.0, 30 -> 20.0))
+
+          trader.ar ! SMA(Map(5L -> 3.0, 30L -> 20.0))
         }
       }
       cash += volume * bidPrice
@@ -101,7 +121,8 @@ class MovingAverageTraderTest
     "not buy(10.001,10)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 0) intercept {
-          trader.ar ! SMA(Map(5 -> 10.001, 30 -> 10.0))
+
+          trader.ar ! SMA(Map(5L -> 10.001, 30L -> 10.0))
         }
       }
     }
@@ -110,7 +131,8 @@ class MovingAverageTraderTest
     "buy(10.002,10)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5 -> 10.002, 30 -> 10))
+          trader.ar ! SMA(Map(5L -> 10.002, 30L -> 10))
+
         }
       }
       cash -= volume * askPrice
@@ -119,7 +141,8 @@ class MovingAverageTraderTest
     "not buy(10.003,10) (already hold a position)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 0) intercept {
-          trader.ar ! SMA(Map(5 -> 10.003, 30 -> 10))
+
+          trader.ar ! SMA(Map(5L -> 10.003, 30L -> 10))
         }
       }
     }
@@ -127,7 +150,8 @@ class MovingAverageTraderTest
     "sell(9.9999,10)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5 -> 9.9999, 30 -> 10))
+
+          trader.ar ! SMA(Map(5L -> 9.9999, 30L -> 10))
         }
       }
       cash += volume * bidPrice
@@ -137,7 +161,8 @@ class MovingAverageTraderTest
     "not sell(9.9999,10) (no holding)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 0) intercept {
-          trader.ar ! SMA(Map(5 -> 9.9999, 30 -> 10))
+
+          trader.ar ! SMA(Map(5L -> 9.9999, 30L -> 10))
         }
       }
     }
