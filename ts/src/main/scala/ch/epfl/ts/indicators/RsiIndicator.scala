@@ -17,9 +17,10 @@ class RsiIndicator(period : Long) extends Actor with ActorLogging {
   
   override def receive = {
     case ohlc : OHLC => { 
+      log.debug("receive OHLC")
+      println("previousPrice "+previousPrice)
       currentPrice = ohlc.close 
       if(previousPrice != 0.0) {
-        
         if(countPeriod == 0){
           U = U.tail
           D = D.tail
@@ -28,30 +29,30 @@ class RsiIndicator(period : Long) extends Actor with ActorLogging {
             D += 0.0
           }
           else{
-            D += (currentPrice - previousPrice)
+            D += -(currentPrice - previousPrice)
             U += 0.0
-          }
+          } 
+        log.debug("send RSI")
+        println("rsi : "+computeRsi)
         sender() ! RSI(computeRsi)  
         }
           else{
+            log.debug("building datas")
             if(currentPrice - previousPrice >= 0) {
               U += currentPrice -previousPrice
               D += 0.0
             }
             else {
-              D += currentPrice-previousPrice 
+              D += -(currentPrice-previousPrice) 
               U += 0.0
             }
             countPeriod = countPeriod - 1
          } 
       }
-      
       previousPrice = currentPrice
     }
-    
     case somethingElse => log.debug("RSI indicator receive the following unknow message "+somethingElse)
   }
-
   
   def computeRsi: Double  = {
     100 - 100/(1 + (computeSma(U) / computeSma(D) ))
@@ -62,5 +63,4 @@ class RsiIndicator(period : Long) extends Actor with ActorLogging {
       data.map { o => sma = sma + o }
       sma / period  
   }
-
 }
