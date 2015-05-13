@@ -23,6 +23,8 @@ import ch.epfl.ts.brokers.StandardBroker
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.evaluation.Evaluator
 import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
+import ch.epfl.ts.component.fetch.HistDataCSVFetcher
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * Need this concrete class to help serialization.
@@ -47,6 +49,32 @@ trait StrategyFactory {
     def printer: Option[Props] = None
   }
   
+  trait LiveFetcher {
+    def fetcher: Props = {
+      val fetcher = new TrueFxFetcher
+      Props(classOf[PullFetchComponent[Quote]], fetcher, new QuoteTag)
+    }
+  }
+  
+  trait HistoricalFetcher {
+	  val symbol: (Currency, Currency)
+    val speed: Double
+    val workingDirectory = "./data"
+    /** @example "201304" */
+    val start: String
+    val end: String
+    
+    def fetcher: Props = {
+      val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
+      val startDate = dateFormat.parse(start)
+      val endDate = dateFormat.parse(end)
+      val currencyPair = symbol._1.toString() + symbol._2.toString();
+
+      Props(classOf[HistDataCSVFetcher], workingDirectory, currencyPair, startDate, endDate, speed)
+    }
+  }
+  
+  
   /**
    * Concrete references to instances created remotely.
    * An instance of this class contains references to all components
@@ -61,9 +89,19 @@ trait StrategyFactory {
   
   /**
    * Define a set of props (used to create components) that will be created identically on
-   * all actor systems (i.e. every worker will run these actors):
+   * all actor systems (i.e. every worker will run these actors).
    */
   protected def commonProps: CommonProps
+  
+  /**
+   * TimePeriod between two `EvaluationReports`
+   */
+  val evaluationPeriod: FiniteDuration
+  /**
+   * Reference currency used to compute the value of the traders' wallets
+   * at any given point in time.
+   */
+  val referenceCurrency: Currency
   
   
   /**
@@ -76,10 +114,21 @@ trait StrategyFactory {
    * 
    * @return A list of references to all the instances of the strategy being optimized
    */
-  // TODO: connect components smartly
   def createRemoteActors(master: ComponentRef, host: RemoteHost,
                          strategyToOptimize: TraderCompanion, parameterizations: Set[StrategyParameters])
-                        (implicit builder: ComponentBuilder): SystemDeployment
+                        (implicit builder: ComponentBuilder): SystemDeployment = {
+
+    // ----- Common props (need one instance per host, used by all the traders)
+    val fetcher = host.createRemotely(commonProps.fetcher, "Fetcher")
+    val market = host.createRemotely(commonProps.market, "Market")
+    val broker = host.createRemotely(commonProps.broker, "Broker")
+    val printer = commonProps.printer.map(p => host.createRemotely(p, "Printer"))
+
+    // ----- Traders (possibly many) to be run in parallel on this host
+    val evaluators = createRemoteTraders(host, strategyToOptimize, parameterizations)
+    
+    new SystemDeployment(fetcher, market, broker, evaluators, printer)
+  }
   
 
   /**
@@ -106,11 +155,8 @@ trait StrategyFactory {
       val trader = host.createRemotely(traderProps, name)
       
       // Evaluator monitoring the performance of this trader
-      // TODO: factor these out
-      val period = 10 seconds
-      val referenceCurrency = Currency.CHF
       
-      val evaluatorProps = Props(classOf[Evaluator], trader.ar, traderId, trader.name, referenceCurrency, period)
+      val evaluatorProps = Props(classOf[Evaluator], trader.ar, traderId, trader.name, referenceCurrency, evaluationPeriod)
       val evaluator = host.createRemotely(evaluatorProps, name + "-Evaluator")
       
       evaluator
@@ -128,57 +174,5 @@ trait StrategyFactory {
       val offset = nPerHost * i
       host -> parameterizations.slice(offset, offset + nPerHost)
     }).toMap
-  }
-}
-
-
-/**
- * Concrete StrategyFactory allowing to test Forex traders.
- */
-object ForexStrategyFactory extends StrategyFactory {
-
-  
-  def commonProps = new CommonProps {
-    // Fetcher
-    def fetcher = {
-      val fetcher = new TrueFxFetcher
-      Props(classOf[PullFetchComponent[Quote]], fetcher, new QuoteTag)
-    }
-    
-    def marketIds = List(MarketNames.FOREX_ID)
-
-    // Market
-    def market = {
-      val rules = new FxMarketRulesWrapper()
-      Props(classOf[MarketFXSimulator], marketIds(0), rules)
-    }
-    
-    def broker = {
-      Props(classOf[StandardBroker])
-    }
-    
-    // Printer
-    override def printer = Some(Props(classOf[Printer], "MyPrinter"))
-  }
-  
-  /**
-   * Create one actor for each of the `commonProps`
-   * and one Trader instance for each of the `parameterizations`.
-   * @warning You are responsible for making the connections between the created components
-   */
-  def createRemoteActors(master: ComponentRef, host: RemoteHost,
-                         strategyToOptimize: TraderCompanion, parameterizations: Set[StrategyParameters])
-                        (implicit builder: ComponentBuilder): SystemDeployment = {
-
-    // ----- Common props (need one instance per host, used by all the traders)
-    val fetcher = host.createRemotely(commonProps.fetcher, "Fetcher")
-		val market = host.createRemotely(commonProps.market, "Market")
-		val broker = host.createRemotely(commonProps.broker, "Broker")
-		val printer = commonProps.printer.map(p => host.createRemotely(p, "Printer"))
-
-    // ----- Traders (possibly many) to be run in parallel on this host
-    val evaluators = createRemoteTraders(host, strategyToOptimize, parameterizations)
-    
-    new SystemDeployment(fetcher, market, broker, evaluators, printer)
   }
 }

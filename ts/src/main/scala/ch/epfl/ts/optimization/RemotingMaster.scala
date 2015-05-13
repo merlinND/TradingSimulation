@@ -155,6 +155,8 @@ object RemotingHostRunner {
     // ----- Build the supervisor actor
     implicit val builder = new ComponentBuilder()
     val master = builder.createRef(Props(classOf[OptimizationSupervisor], onEnd _), "MasterActor")
+    val factory = new ForexLiveStrategyFactory(10 seconds, Currency.CHF)
+    
     
     // ----- Generate candidate parameterizations
     val strategyToOptimize = MadTrader
@@ -176,10 +178,10 @@ object RemotingHostRunner {
     println("Going to distribute " + parameterizations.size + " traders over " + availableHosts.size + " worker machines.")
                                                              
     // ----- Instantiate the all components on each available worker
-    val distributed = ForexStrategyFactory.distributeOverHosts(availableHosts, parameterizations)
+    val distributed = factory.distributeOverHosts(availableHosts, parameterizations)
     val deployments = distributed.map({ case (host, parameters) =>
       println("Creating " + parameters.size + " instances of " + strategyToOptimize.getClass.getSimpleName + " on host " + host)
-      ForexStrategyFactory.createRemoteActors(master, host, strategyToOptimize, parameterizations)
+      factory.createRemoteActors(master, host, strategyToOptimize, parameterizations)
     })
     
     
@@ -196,11 +198,11 @@ object RemotingHostRunner {
         d.market -> (e, classOf[Transaction])
         
         e -> (master, classOf[EvaluationReport])
-        for(printer <- d.printer) e -> (printer, classOf[EvaluationReport])
       }
       
       for(printer <- d.printer) {
         d.market -> (printer, classOf[Transaction])
+        for(e <- d.evaluators) e -> (printer, classOf[EvaluationReport])
       }
     })                                                              
     
