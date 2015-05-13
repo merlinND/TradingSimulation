@@ -106,9 +106,12 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
         // If there are more quotes to send, move forward
         currentQuote = nextQuote
         nextQuote = allQuotes.next
+        
+        // TODO: remove this
+        send(EndOfFetching)
       } else if (currentQuote == nextQuote) {
         // Or maybe we already sent the last quote
-        send(new EndOfFetching())
+        send(EndOfFetching)
         timer.cancel()
       } else {
         // Next scheduled call will send the last quote

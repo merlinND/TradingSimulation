@@ -46,11 +46,11 @@ class OptimizationSupervisor(onEnd: (TraderIdentity, EvaluationReport) => Unit) 
     case e: EvaluationReport => log.error("Received report from unknown sender " + sender + ": " + e)
 
     // When all data has been replayed, we can determine the best trader
-    case _: EndOfFetching if bestEvaluation.isEmpty => {
+    case EndOfFetching if bestEvaluation.isEmpty => {
       log.info("Supervisor has received an EndOfFetching signal. Will now try to determine the best fetcher's identity.")
       askBestTraderIdentity
     }
-    case _: EndOfFetching =>
+    case EndOfFetching =>
       log.warning("Supervisor has received more than one EndOfFetching signals")
     
     case t: TraderIdentity if bestEvaluation.isDefined => {

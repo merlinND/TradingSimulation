@@ -31,7 +31,7 @@ object HistDataFetcherExample {
     val printer = builder.createRef(Props(classOf[Printer], "Printer"), "Printer")
 
     // Create the connection
-    fetcher->(printer, classOf[Quote], classOf[EndOfFetching])
+    fetcher->(printer, classOf[Quote], EndOfFetching)
 
     // Start the system
     builder.start

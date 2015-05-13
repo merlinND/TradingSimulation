@@ -18,7 +18,7 @@ class Printer(val name: String) extends Component {
     case ohlc: OHLC                   => println("Printer " + name + ": OHLC\t" + System.currentTimeMillis() + "\t" + ohlc.toString)
     case quote: Quote                 => println("Printer " + name + ": Quote\t" + System.currentTimeMillis() + "\t" + quote.toString)
     case evalReport: EvaluationReport => println("Printer " + name + ": EvalReport\t" + System.currentTimeMillis() + "\t" + evalReport.toString)
-    case end: EndOfFetching => println("Printer " + name + ": EndOfFetching\t" + System.currentTimeMillis() + "\t" + end.toString)
+    case EndOfFetching                => println("Printer " + name + ": EndOfFetching\t" + System.currentTimeMillis() + "\t" + EndOfFetching)
     case _                            => println("Printer " + name + ": received unknown")
   }
 }

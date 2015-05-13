@@ -159,7 +159,7 @@ case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Curren
  * @example In the case of historical data, this message is sent out when
  *          there are no more quotes to be sent sent.
  */
-case class EndOfFetching() extends Streamable
+case object EndOfFetching extends Streamable
 
 /**
  * Data Transfer Object representing a Tweet
