@@ -83,10 +83,8 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
       val dummyPrice = price * (1 + 1e-3 * variation)
 
       if (alternate % 2 == 0) {
-        println("MadTrader: sending limit ask order")
         send[Order](LimitAskOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       } else {
-        println("MadTrader: sending limit bid order")
         send[Order](LimitBidOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       }
       alternate = alternate + 1

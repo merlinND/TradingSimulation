@@ -30,7 +30,6 @@ class PullFetchComponent[T: ClassTag](f: PullFetch[T]) extends Component {
   override def receiver = {
     // pull and send to each listener
     case 'DoFetchNow =>
-      println("PullFetchComponent Fetch " + System.currentTimeMillis())
       f.fetch().map(t => send[T](t))
     case _ =>
   }
@@ -45,7 +44,6 @@ class PullFetchListComponent[T: ClassTag](f: PullFetch[T]) extends Component {
   override def receiver = {
     // pull and send to each listener
     case 'DoFetchNow =>
-      println("PullFetchListComponent Fetch " + System.currentTimeMillis())
       send(f.fetch())
     case _ =>
   }
