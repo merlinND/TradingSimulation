@@ -82,8 +82,8 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
       val dummyBidPrice = bidPrice * (1 + 1e-3 * variation)
 
       if (alternate % 2 == 0) {
-        println("MadTrader: sending limit ask order")
-        send[Order](LimitAskOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyAskPrice))
+//        println("MadTrader: sending limit ask order")
+//        send[Order](LimitAskOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyAskPrice))
       } else {
         println("MadTrader: sending limit bid order")
         send[Order](LimitBidOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyBidPrice))
@@ -95,6 +95,9 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
       currentTimeMillis = q.timestamp
       askPrice = q.ask
       bidPrice = q.bid
+    }
+    case t: TheTimeIs => {
+      currentTimeMillis = t.now
     }
     case t => println("MadTrader: received unknown " + t)
   }

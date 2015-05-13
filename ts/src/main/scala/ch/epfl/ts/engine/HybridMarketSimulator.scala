@@ -43,6 +43,7 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
     case 'ChangeMarketRules => {
       log.info("Hybrid market: changing rules")
       changeRules
+      // TODO make sure that market prices are defined when simulating!
       
       // We now enter full simulation mode, and we need an actor
       // to take care of the keeping of the time
@@ -79,6 +80,7 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
         // TODO (Jakob) test if this case occurs (I believe it doesn't because also market orders are put down in the order book, right?)
         //MarketEmpty(topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price)
         log.error("Yes it does")
+//        MarketBidsEmpty()
       }
       send(msg)
     }

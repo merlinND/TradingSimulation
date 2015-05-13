@@ -26,6 +26,7 @@ import java.util.Timer
 import ch.epfl.ts.engine.rules.{SimulationMarketRulesWrapper, FxMarketRulesWrapper}
 import ch.epfl.ts.traders.MarketMakerTrader
 import ch.epfl.ts.component.utils.Printer
+import ch.epfl.ts.traders.MMwithWallet
 
 /**
  * Market simulation with first reading historical data and then running simulation on its own.
@@ -54,6 +55,7 @@ object FullMarketSimulation {
 
     val trader = MadTrader.getInstance(tId, List(marketId), parameters, "OneMadTrader")
     addConsument(classOf[Quote], trader)
+    addConsument(classOf[TheTimeIs], trader)
     val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
     addConsument(classOf[Quote], broker)
 
@@ -67,17 +69,21 @@ object FullMarketSimulation {
       MarketMakerTrader.INTERVAL -> new TimeParameter(1 seconds),
       MarketMakerTrader.ORDER_VOLUME -> NaturalNumberParameter(10),
       MarketMakerTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.EUR, Currency.CHF))
+    
+    val parameters3 = new StrategyParameters(
+        MMwithWallet.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
+        MMwithWallet.SYMBOL -> new CurrencyPairParameter(Currency.EUR, Currency.CHF))
 
     val tId2 = 100L
 
-    val marketMaker = MarketMakerTrader.getInstance(tId2, List(marketId), parameters2, "OneMarketMakerTrader")
-//    addConsument(classOf[Quote], marketMaker)
-//    addConsument(classOf[MarketMakerNotification], marketMaker)
+//    val marketMaker = MarketMakerTrader.getInstance(tId2, List(marketId), parameters2, "OneMarketMakerTrader")
+    val marketMaker = MMwithWallet.getInstance(tId2, List(marketId), parameters3, "WalletMarketMakerTrader")
+    addConsument(classOf[Quote], marketMaker)
+    addConsument(classOf[TheTimeIs], marketMaker)
 
-//    marketMaker->(broker, classOf[Register])
-//    marketMaker->(broker, classOf[FundWallet])
-//    connectAllOrders(marketMaker, broker)
-    
+    marketMaker->(broker, classOf[Register])
+    marketMaker->(broker, classOf[FundWallet])
+    connectAllOrders(marketMaker, broker)
 
     // Fetcher
     val fetcher = createFetcher(useLiveData, builder, symbol)
@@ -90,13 +96,12 @@ object FullMarketSimulation {
 
     addProducer(classOf[Quote], market)
     addProducer(classOf[TheTimeIs], market)
-    addConsument(classOf[TheTimeIs], trader)
     connectAllOrders(broker, market)
     market->(broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
     
     // for the market maker
     connectAllOrders(marketMaker, market) // TODO use broker inbetween
-    market->(marketMaker, classOf[MarketBidsEmpty], classOf[MarketAsksEmpty], classOf[MarketEmpty])
+    market->(marketMaker, classOf[MarketBidsEmpty], classOf[MarketAsksEmpty], classOf[MarketEmpty], classOf[ExecutedBidOrder], classOf[ExecutedBidOrder])
 
     connectProducersWithConsuments()
     
