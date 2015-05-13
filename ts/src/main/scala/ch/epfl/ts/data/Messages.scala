@@ -63,6 +63,7 @@ abstract class Order() extends Streamable with Chargeable {
   override def costCurrency() = withC
 }
 
+
 /**
  * Type of orders: You send a bid order if you want to buy a security at a given price.
  *                 You send an ask order if you want to sell a security.
