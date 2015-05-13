@@ -22,6 +22,12 @@ case class Commission(limitOrderFee: Double, marketOrderFee: Double)
  */
 class MarketRules extends Serializable {
   val commission = Commission(0, 0)
+  
+  var lastBidPrice = 1.0
+  var lastAskPrice = 1.0
+  var withC = Currency.DEF
+  var whatC = Currency.DEF
+  
 
   // when used on TreeSet, head() and iterator() provide increasing order
   def asksOrdering = new Ordering[Order] {
@@ -154,10 +160,18 @@ class MarketRules extends Serializable {
         topAsk = topBid
         topBid = tmp
       }
+      lastBidPrice = topBid.price
+      lastAskPrice = topAsk.price
+      whatC = topAsk.whatC
+      withC = topAsk.withC
+      
       val q = Quote(marketId, timestamp, topAsk.whatC, topAsk.withC, topBid.price, topAsk.price)
       println("MR: generating quote " + q)
       send(q)
-    } else
-      println("MR: can't generate quote")
+    } else {
+      val q = Quote(marketId, timestamp, whatC, withC, lastBidPrice, lastAskPrice)
+      println("MR: can't generate new quote but using old one: " + q)
+      send(q)
+    }
   }
 }
