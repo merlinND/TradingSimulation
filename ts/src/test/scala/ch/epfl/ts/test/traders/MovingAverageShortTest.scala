@@ -84,7 +84,7 @@ class MovingAverageShortTest
     "buy (20,3)" in {
       within(1 second) {
         EventFilter.debug(message = "executed bid volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5L -> 20.0, 30L -> 3.0))
+          trader.ar ! SMA(Map(5 -> 20.0, 30 -> 3.0))
         }
       }
       cash -= volume * askPrice
@@ -94,7 +94,7 @@ class MovingAverageShortTest
     "sell(2.99999,3)" in {
       within(1 second) {
         EventFilter.debug(message = "executed ask volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5L -> 2.999999, 30L -> 3))
+          trader.ar ! SMA(Map(5 -> 2.999999, 30 -> 3))
         }
       }
       cash += volume * bidPrice
@@ -106,7 +106,7 @@ class MovingAverageShortTest
     "short(2,3)" in {
       within(1 second) {
         EventFilter.debug(message = "executed ask volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5L -> 2, 30L -> 3))
+          trader.ar ! SMA(Map(5 -> 2, 30 -> 3))
         }
       }
       cash += volume * bidPrice
@@ -118,7 +118,7 @@ class MovingAverageShortTest
     "recover and buy (20,3)" in {
       within(1 second) {
         EventFilter.debug(message = "executed bid volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5L -> 20.0, 30L -> 3.0))
+          trader.ar ! SMA(Map(5 -> 20.0, 30 -> 3.0))
         }
       }
       holdings = volume - shortings
@@ -127,7 +127,7 @@ class MovingAverageShortTest
     "nothing (20,3)" in {
       within(1 second) {
         EventFilter.debug(message = "An order is placed", occurrences = 0) intercept {
-          trader.ar ! SMA(Map(5L -> 20.0, 30L -> 3.0))
+          trader.ar ! SMA(Map(5 -> 20.0, 30 -> 3.0))
         }
       }
       //going to sell and go short
@@ -137,7 +137,7 @@ class MovingAverageShortTest
     "sell and go short (3,20)" in {
       within(1 second) {
         EventFilter.debug(message = "executed ask volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5L -> 3, 30L -> 20))
+          trader.ar ! SMA(Map(5 -> 3, 30 -> 20))
         }
       }
       shortings = volume - holdings
@@ -146,7 +146,7 @@ class MovingAverageShortTest
     "recover short only (3,2.9999999999)" in {
       within(1 second) {
         EventFilter.debug(message = "executed bid volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5L -> 3, 30L -> 2.9999999999))
+          trader.ar ! SMA(Map(5 -> 3, 30 -> 2.9999999999))
         }
       }
     }

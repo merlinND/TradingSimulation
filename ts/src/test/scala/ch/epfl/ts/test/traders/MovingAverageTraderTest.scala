@@ -22,13 +22,13 @@ import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.ForexMarketRules
 import ch.epfl.ts.engine.Wallet
-import ch.epfl.ts.indicators.SMA
 import ch.epfl.ts.test.ActorTestSuite
 import ch.epfl.ts.test.FxMarketWrapped
 import ch.epfl.ts.test.SimpleBrokerWrapped
 import ch.epfl.ts.traders.MovingAverageTrader
 import ch.epfl.ts.data.OHLC
 import ch.epfl.ts.data.NaturalNumberParameter
+import ch.epfl.ts.indicators.SMA
 
 /**
  * @warning Some of the following tests are dependent and should be executed in the specified order.
@@ -85,7 +85,7 @@ class MovingAverageTraderTest
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 1) intercept {
 
-          trader.ar ! SMA(Map(5L -> 20.0, 30L -> 3.0))
+          trader.ar ! SMA(Map(5 -> 20.0, 30 -> 3.0))
         }
       }
       cash -= volume * askPrice
@@ -95,7 +95,7 @@ class MovingAverageTraderTest
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 1) intercept {
 
-          trader.ar ! SMA(Map(5L -> 3.0, 30L -> 20.0))
+          trader.ar ! SMA(Map(5 -> 3.0, 30 -> 20.0))
         }
       }
       cash += volume * bidPrice
@@ -106,7 +106,7 @@ class MovingAverageTraderTest
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 0) intercept {
 
-          trader.ar ! SMA(Map(5L -> 10.001, 30L -> 10.0))
+          trader.ar ! SMA(Map(5 -> 10.001, 30 -> 10.0))
         }
       }
     }
@@ -115,7 +115,7 @@ class MovingAverageTraderTest
     "buy(10.002,10)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 1) intercept {
-          trader.ar ! SMA(Map(5L -> 10.002, 30L -> 10))
+          trader.ar ! SMA(Map(5 -> 10.002, 30 -> 10))
 
         }
       }
@@ -126,7 +126,7 @@ class MovingAverageTraderTest
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 0) intercept {
 
-          trader.ar ! SMA(Map(5L -> 10.003, 30L -> 10))
+          trader.ar ! SMA(Map(5 -> 10.003, 30 -> 10))
         }
       }
     }
@@ -135,7 +135,7 @@ class MovingAverageTraderTest
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 1) intercept {
 
-          trader.ar ! SMA(Map(5L -> 9.9999, 30L -> 10))
+          trader.ar ! SMA(Map(5 -> 9.9999, 30 -> 10))
         }
       }
       cash += volume * bidPrice
@@ -146,7 +146,7 @@ class MovingAverageTraderTest
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 0) intercept {
 
-          trader.ar ! SMA(Map(5L -> 9.9999, 30L -> 10))
+          trader.ar ! SMA(Map(5 -> 9.9999, 30 -> 10))
         }
       }
     }

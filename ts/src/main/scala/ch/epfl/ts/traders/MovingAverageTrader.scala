@@ -89,8 +89,8 @@ class MovingAverageTrader(uid: Long, marketIds: List[Long], parameters: Strategy
   val (whatC, withC) = symbol
 
   val ohlcPeriod = parameters.get[FiniteDuration](MovingAverageTrader.OHLC_PERIOD)
-  val shortPeriods: Long = parameters.get[Int](MovingAverageTrader.SHORT_PERIODS).toLong
-  val longPeriods: Long = parameters.get[Int](MovingAverageTrader.LONG_PERIODS).toLong
+  val shortPeriods = parameters.get[Int](MovingAverageTrader.SHORT_PERIODS)
+  val longPeriods = parameters.get[Int](MovingAverageTrader.LONG_PERIODS)
   val tolerance = parameters.get[Double](MovingAverageTrader.TOLERANCE)
   val withShort = parameters.getOrElse[Boolean](MovingAverageTrader.WITH_SHORT, false)
   val shortPercent = parameters.getOrElse[Double](MovingAverageTrader.SHORT_PERCENT, 0.0)
