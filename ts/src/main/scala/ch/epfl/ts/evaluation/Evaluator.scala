@@ -97,6 +97,10 @@ class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: 
       buy(t)
     case t: Transaction if t.sellerId == traderId =>  // sell
       sell(t)
+      
+    case t: Transaction => // Nothing to do
+       // Let's not forward unrelated transactions to our poor Trader
+      
     case q: Quote =>
       updatePrice(q)
       trader ! q
