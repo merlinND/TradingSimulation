@@ -72,7 +72,8 @@ object FullMarketSimulation {
     
     val parameters3 = new StrategyParameters(
         MMwithWallet.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
-        MMwithWallet.SYMBOL -> new CurrencyPairParameter(Currency.EUR, Currency.CHF))
+        MMwithWallet.SYMBOL -> new CurrencyPairParameter(Currency.EUR, Currency.CHF),
+        MMwithWallet.SPREAD -> new RealNumberParameter(0.1))
 
     val tId2 = 100L
 

@@ -61,7 +61,7 @@ object MMwithWallet extends TraderCompanion {
     SYMBOL -> CurrencyPairParameter)
 
   override def optionalParameters = Map(
-    SPREAD -> CoefficientParameter) //TODO make usable with values > 1
+    SPREAD -> RealNumberParameter)
 }
 
 /**
