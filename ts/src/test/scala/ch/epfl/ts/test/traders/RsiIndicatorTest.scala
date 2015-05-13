@@ -16,7 +16,7 @@ import scala.concurrent.duration.DurationInt
 @RunWith(classOf[JUnitRunner])
 class RsiIndicatorTest extends ActorTestSuite("RsiIndicator") {
     
-  val period = 5L
+  val period = 5
   val rsiIndicator = system.actorOf(Props(classOf[RsiIndicator], period),"RsiIndicator")
 
   
