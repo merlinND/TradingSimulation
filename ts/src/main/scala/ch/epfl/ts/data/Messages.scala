@@ -1,12 +1,10 @@
 package ch.epfl.ts.data
 
-import ch.epfl.ts.data.Currency._
-
 /**
  * Definition of the System's internal messages.
  */
 trait Streamable extends Serializable
- 
+
 /**
  * Message sent out by an actor which takes authority on the system's time.
  * This way, we may override both physical time and historical data time if needed.
@@ -35,7 +33,7 @@ case class Transaction(mid: Long, price: Double, volume: Double, timestamp: Long
 trait Chargeable {
   /**
    * The currency with which we pay (withC in a bidOrder , whatC in an Ask order)
-   * 
+   *
    */
   def costCurrency(): Currency
   def chargedTraderId(): Long

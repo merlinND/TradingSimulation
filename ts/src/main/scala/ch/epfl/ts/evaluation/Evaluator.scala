@@ -12,7 +12,7 @@ import akka.actor.{ActorRef, Cancellable}
 import akka.pattern.{ ask, pipe }
 import ch.epfl.ts.component.{ComponentRegistration, Component, ComponentRef}
 import ch.epfl.ts.data._
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 
 /**
  * Represents metrics of a strategy

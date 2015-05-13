@@ -4,40 +4,37 @@ package ch.epfl.ts.data
  * Enum for Currencies
  */
 object Currency extends Serializable{
-  type Currency = CurrencyWrapper
-  
+  def apply(s: String) = new Currency(s)
+
   // Cryptocurrencies
-  val BTC = CurrencyWrapper("btc")
-  val LTC = CurrencyWrapper("ltc")
+  val BTC = Currency("btc")
+  val LTC = Currency("ltc")
 
   // Real-life currencies
-  val USD = CurrencyWrapper("usd")
-  val CHF = CurrencyWrapper("chf")
-  val RUR = CurrencyWrapper("rur")
-  val EUR = CurrencyWrapper("eur")
-  val JPY = CurrencyWrapper("jpy")
-  val GBP = CurrencyWrapper("gbp")
-  val AUD = CurrencyWrapper("aud")
-  val CAD = CurrencyWrapper("cad")
+  val USD = Currency("usd")
+  val CHF = Currency("chf")
+  val RUR = Currency("rur")
+  val EUR = Currency("eur")
+  val JPY = Currency("jpy")
+  val GBP = Currency("gbp")
+  val AUD = Currency("aud")
+  val CAD = Currency("cad")
 
   // Fallback ("default")
-  val DEF = CurrencyWrapper("def")
+  val DEF = Currency("def")
 
   def values = Seq(BTC, LTC, USD, CHF, RUR, EUR, JPY, GBP, AUD, CAD, DEF)
-  
+  def supportedCurrencies(): Set[Currency] = values.toSet
+
   def fromString(s: String): Currency = {
     this.values.find(v => v.toString().toLowerCase() == s.toLowerCase()) match {
-      case Some(currency) => CurrencyWrapper(currency.toString())
+      case Some(currency) => Currency(currency.toString())
       case None => {
         throw new UnsupportedOperationException("Currency " + s + " is not supported.")
       }
     }
   }
 
-  def supportedCurrencies(): Set[Currency] = Set(
-    BTC, LTC,
-    USD, CHF, RUR, EUR, JPY, GBP, AUD, CAD
-  )
 
   /**
    * Creates a tuple of currencies given a string
@@ -53,9 +50,6 @@ object Currency extends Serializable{
 /**
  * Need this (as a top level class) to help serializability
  */
-class CurrencyWrapper(val s: String) extends AnyVal with Serializable {
+class Currency(val s: String) extends AnyVal with Serializable {
   override def toString() = s
-}
-object CurrencyWrapper {
-  def apply(s: String) = new CurrencyWrapper(s)
 }

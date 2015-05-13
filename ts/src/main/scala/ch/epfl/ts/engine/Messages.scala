@@ -1,6 +1,6 @@
 package ch.epfl.ts.engine
 
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.Order
 import akka.actor.ActorRef
 import ch.epfl.ts.data.StrategyParameters

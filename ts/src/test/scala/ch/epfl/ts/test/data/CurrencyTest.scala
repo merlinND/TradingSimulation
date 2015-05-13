@@ -4,14 +4,13 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import ch.epfl.ts.data.Currency
-import ch.epfl.ts.data.CurrencyWrapper
 
 @RunWith(classOf[JUnitRunner]) 
 class CurrencyTestSuite extends FunSuite {
   
   test("toString and fromString are inverting each other") {
     val currencies = Currency.values;
-    assert(currencies.forall { c => Currency.fromString(c.toString) == CurrencyWrapper(c.toString()) })
+    assert(currencies.forall { c => Currency.fromString(c.toString) == c })
   }
 
   test("pairFromString handles different case input") {

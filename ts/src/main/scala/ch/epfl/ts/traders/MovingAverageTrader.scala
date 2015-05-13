@@ -1,7 +1,7 @@
 package ch.epfl.ts.traders
 
 import ch.epfl.ts.indicators.MovingAverage
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import akka.actor.ActorLogging
 import akka.actor.ActorRef
 import ch.epfl.ts.engine.AcceptedOrder

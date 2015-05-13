@@ -1,6 +1,6 @@
 package ch.epfl.ts.component.persist
 
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.{Currency, DelOrder, LimitAskOrder, LimitBidOrder, MarketAskOrder, MarketBidOrder, Order}
 import scala.slick.driver.SQLiteDriver.simple._
 import scala.slick.jdbc.JdbcBackend.Database
@@ -100,7 +100,7 @@ class OrderPersistor(dbFilename: String) extends Persistance[Order] {
         case LIMIT_ASK  => return LimitAskOrder(r._2, r._3, r._4, Currency.fromString(r._5), Currency.fromString(r._6), r._7, r._8)
         case MARKET_BID => return MarketBidOrder(r._2, r._3, r._4, Currency.fromString(r._5), Currency.fromString(r._6), r._7, 0.0)
         case MARKET_ASK => return MarketAskOrder(r._2, r._3, r._4, Currency.fromString(r._5), Currency.fromString(r._6), r._7, 0.0)
-        case DEL        => return DelOrder(r._2, r._3, r._4, DEF, DEF, 0.0, 0.0)
+        case DEL        => return DelOrder(r._2, r._3, r._4, Currency.DEF, Currency.DEF, 0.0, 0.0)
         case _          => println(dbFilename + " Persistor: loadSingle error"); return null
       }
     }
@@ -118,14 +118,14 @@ class OrderPersistor(dbFilename: String) extends Persistance[Order] {
           case LIMIT_ASK  => res.append(LimitAskOrder(r._2, r._3, r._4, Currency.fromString(r._5), Currency.fromString(r._6), r._7, r._8))
           case MARKET_BID => res.append(MarketBidOrder(r._2, r._3, r._4, Currency.fromString(r._5), Currency.fromString(r._6), r._7, 0.0))
           case MARKET_ASK => res.append(MarketAskOrder(r._2, r._3, r._4, Currency.fromString(r._5), Currency.fromString(r._6), r._7, 0.0))
-          case DEL        => res.append(DelOrder(r._2, r._3, r._4, DEF, DEF, 0.0, 0.0))
+          case DEL        => res.append(DelOrder(r._2, r._3, r._4, Currency.DEF, Currency.DEF, 0.0, 0.0))
           case _          => println(dbFilename + " Persistor: loadBatch error")
         }
       }
     }
     res.toList
   }
-  
+
   /**
    * loads the amount of entries provided in the function
    * argument at most.
@@ -139,7 +139,7 @@ class OrderPersistor(dbFilename: String) extends Persistance[Order] {
           case LIMIT_ASK  => res.append(LimitAskOrder(r._2, r._3, r._4, Currency.fromString(r._5), Currency.fromString(r._6), r._7, r._8))
           case MARKET_BID => res.append(MarketBidOrder(r._2, r._3, r._4, Currency.fromString(r._5), Currency.fromString(r._6), r._7, 0.0))
           case MARKET_ASK => res.append(MarketAskOrder(r._2, r._3, r._4, Currency.fromString(r._5), Currency.fromString(r._6), r._7, 0.0))
-          case DEL        => res.append(DelOrder(r._2, r._3, r._4, DEF, DEF, 0.0, 0.0))
+          case DEL        => res.append(DelOrder(r._2, r._3, r._4, Currency.DEF, Currency.DEF, 0.0, 0.0))
           case _          => println(dbFilename + " Persistor: loadBatch error")
         }
       }

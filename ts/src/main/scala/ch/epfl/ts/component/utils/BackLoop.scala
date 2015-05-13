@@ -3,7 +3,7 @@ package ch.epfl.ts.component.utils
 import ch.epfl.ts.component.Component
 import ch.epfl.ts.component.persist.Persistance
 import ch.epfl.ts.data._
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.Transaction
 import ch.epfl.ts.data.LimitBidOrder
 import ch.epfl.ts.data.DelOrder

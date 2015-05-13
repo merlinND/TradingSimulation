@@ -11,7 +11,7 @@ import ch.epfl.ts.traders.MadTrader
 import ch.epfl.ts.engine._
 import ch.epfl.ts.component.fetch.{HistDataCSVFetcher, PullFetchComponent, TrueFxFetcher, MarketNames}
 import scala.reflect.ClassTag
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.Register
 import ch.epfl.ts.engine.FundWallet
@@ -27,12 +27,12 @@ import ch.epfl.ts.engine.rules.{SimulationMarketRulesWrapper, FxMarketRulesWrapp
 object FullMarketSimulation {
   var producers = Map[Class[_], List[ComponentRef]]()
   var consuments = Map[Class[_], List[ComponentRef]]()
-  
+
   def main(args: Array[String]): Unit = {
     //TODO(sygi): create functions to build multiple components to slim main down
     implicit val builder = new ComponentBuilder
     initProducersAndConsuments()
-    
+
     val useLiveData = false
     val symbol = (Currency.EUR, Currency.CHF)
 
@@ -57,7 +57,7 @@ object FullMarketSimulation {
 
     // Fetcher
     val fetcher = createFetcher(useLiveData, builder, symbol)
-    
+
     // Hybrid market
     val fetcherRules = new FxMarketRulesWrapper
     val simulationRules = new SimulationMarketRulesWrapper

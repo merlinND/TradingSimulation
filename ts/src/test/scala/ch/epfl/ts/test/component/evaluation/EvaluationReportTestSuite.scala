@@ -4,13 +4,13 @@ import ch.epfl.ts.evaluation.EvaluationReport
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 
 
 @RunWith(classOf[JUnitRunner])
 class EvaluationReportTestSuite extends FunSuite {
-  val a = EvaluationReport(100L, "a", Map(), EUR, 10.0, 50.0, 2.4, 0.3, 20, 20)
-  val b = EvaluationReport(101L, "b", Map(), EUR, 10.0, 50.0, 2.5, 0.3, 20, 10)
+  val a = EvaluationReport(100L, "a", Map(), Currency.EUR, 10.0, 50.0, 2.4, 0.3, 20, 20)
+  val b = EvaluationReport(101L, "b", Map(), Currency.EUR, 10.0, 50.0, 2.5, 0.3, 20, 10)
 
   test("compare report a < b") {
     assert(a < b)
@@ -21,8 +21,8 @@ class EvaluationReportTestSuite extends FunSuite {
   }
 
   test("compare report a = b") {
-    val a = EvaluationReport(101L, "b", Map(), EUR, 10.0, 50.0, 2.4, 0.3, 20, 10)
-    val b = EvaluationReport(100L, "a", Map(), EUR, 10.0, 50.0, 2.4, 0.3, 20, 10)
+    val a = EvaluationReport(101L, "b", Map(), Currency.EUR, 10.0, 50.0, 2.4, 0.3, 20, 10)
+    val b = EvaluationReport(100L, "a", Map(), Currency.EUR, 10.0, 50.0, 2.4, 0.3, 20, 10)
     assert(a >= b && a <= b)
   }
 

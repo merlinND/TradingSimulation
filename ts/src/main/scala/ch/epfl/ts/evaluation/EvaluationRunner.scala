@@ -2,7 +2,7 @@ package ch.epfl.ts.evaluation
 
 import ch.epfl.ts.component.fetch.{ HistDataCSVFetcher, MarketNames }
 import ch.epfl.ts.component.{ ComponentBuilder, ComponentRef }
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data._
 import ch.epfl.ts.engine.{Wallet, MarketFXSimulator, ForexMarketRules}
 import ch.epfl.ts.indicators.SMA

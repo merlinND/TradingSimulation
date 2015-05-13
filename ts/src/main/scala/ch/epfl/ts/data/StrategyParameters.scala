@@ -1,6 +1,5 @@
 package ch.epfl.ts.data
 
-import ch.epfl.ts.data.Currency.Currency
 import scala.concurrent.duration.{ TimeUnit, FiniteDuration, DurationLong, MILLISECONDS => MillisecondsUnit }
 import scala.reflect.ClassTag
 import ch.epfl.ts.engine.MarketRules

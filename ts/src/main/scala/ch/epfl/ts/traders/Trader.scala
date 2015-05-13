@@ -47,7 +47,7 @@ abstract class Trader(val uid: Long, marketIds: List[Long], val parameters: Stra
   val askTimeout = 500 milliseconds
   var currentTimeMillis: Long = 0L
   
-  val initialFunds = parameters.get[Map[Currency.Currency, Double]]("InitialFunds")
+  val initialFunds = parameters.get[Map[Currency, Double]]("InitialFunds")
   
   /**
    * @note We *do not* catch everything, we leave this partial function undefined

@@ -1,7 +1,7 @@
 package ch.epfl.ts.engine
 
 import akka.actor.{ActorLogging, Actor}
-import ch.epfl.ts.data.Currency.Currency
+import ch.epfl.ts.data.Currency
 
 /**
  * Wallet actor's companion object

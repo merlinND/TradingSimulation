@@ -1,6 +1,6 @@
 package ch.epfl.ts.benchmark.marketSimulator
 
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.{DelOrder, LimitAskOrder, LimitBidOrder, MarketAskOrder, MarketBidOrder, Order, Streamable, Transaction}
 import ch.epfl.ts.engine.{MarketRules, PartialOrderBook}
 
@@ -24,7 +24,7 @@ class BenchmarkMarketRules extends MarketRules {
       if (matchExists(bestMatch.price, newOrder.price)) {
 
         bestMatchsBook delete bestMatch
-        send(DelOrder(bestMatch.oid, bestMatch.uid, newOrder.timestamp, DEF, DEF, 0.0, 0.0))
+        send(DelOrder(bestMatch.oid, bestMatch.uid, newOrder.timestamp, Currency.DEF, Currency.DEF, 0.0, 0.0))
 
         if (bestMatch.volume == newOrder.volume) {
           bestMatch match {

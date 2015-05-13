@@ -21,7 +21,7 @@ import ch.epfl.ts.engine.{
 }
 import scala.Some
 import ch.epfl.ts.data.{ Register, ConfirmRegistration, Order }
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import scala.collection.mutable.{ HashMap => MHashMap }
 import ch.epfl.ts.data.Quote
 import ch.epfl.ts.data.MarketAskOrder

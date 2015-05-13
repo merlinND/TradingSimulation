@@ -61,7 +61,7 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   val interval = parameters.get[FiniteDuration](MadTrader.INTERVAL)
   val volume = parameters.get[Int](MadTrader.ORDER_VOLUME)
   val volumeVariation = parameters.getOrElse[Double](MadTrader.ORDER_VOLUME_VARIATION, 0.1)
-  val currencies = parameters.get[(Currency.Currency, Currency.Currency)](MadTrader.CURRENCY_PAIR)
+  val currencies = parameters.get[(Currency, Currency)](MadTrader.CURRENCY_PAIR)
 
   var alternate = 0
   val r = new Random

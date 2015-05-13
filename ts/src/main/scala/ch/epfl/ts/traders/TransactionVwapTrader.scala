@@ -4,7 +4,7 @@ import scala.language.postfixOps
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration.DurationInt
 import ch.epfl.ts.component.Component
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.{MarketAskOrder, MarketBidOrder, Transaction}
 import ch.epfl.ts.data.{StrategyParameters, TimeParameter, NaturalNumberParameter, ParameterTrait}
 
@@ -14,12 +14,12 @@ import ch.epfl.ts.data.{StrategyParameters, TimeParameter, NaturalNumberParamete
 object TransactionVwapTrader extends TraderCompanion {
   type ConcreteTrader = TransactionVwapTrader
   override protected val concreteTraderTag = scala.reflect.classTag[TransactionVwapTrader]
-  
+
   /** Time frame */
   val TIME_FRAME = "TimeFrame"
   /** Volume to trade */
   val VOLUME = "Volume"
-  
+
   override def strategyRequiredParameters = Map(
     TIME_FRAME -> TimeParameter,
     VOLUME -> NaturalNumberParameter
@@ -53,7 +53,7 @@ class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: Strate
     def compare(first: Transaction, second: Transaction): Int =
       if (first.timestamp > second.timestamp) 1 else if (first.timestamp < second.timestamp) -1 else 0
   }
-  
+
   def receiver = {
     case t: Transaction => transactions = t :: transactions
     case 'Tick => {
@@ -61,12 +61,12 @@ class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: Strate
       if (tradingPrice > vwap) {
         // sell
         println("TransactionVWAPTrader: sending market ask order")
-        send(MarketAskOrder(oid, uid, currentTimeMillis, USD, USD, volumeToTrade, 0))
+        send(MarketAskOrder(oid, uid, currentTimeMillis, Currency.USD, Currency.USD, volumeToTrade, 0))
         oid = oid + 1
       } else {
         // buy
         println("TransactionVWAPTrader: sending market bid order")
-        send(MarketBidOrder(oid, uid, currentTimeMillis, USD, USD, volumeToTrade, 0))
+        send(MarketBidOrder(oid, uid, currentTimeMillis, Currency.USD, Currency.USD, volumeToTrade, 0))
         oid = oid + 1
       }
     }
