@@ -3,7 +3,7 @@ package ch.epfl.ts.data
 /**
  * Enum for Currencies
  */
-object Currency extends Serializable{
+object Currency extends Serializable {
   def apply(s: String) = new Currency(s)
 
   // Cryptocurrencies
@@ -50,6 +50,6 @@ object Currency extends Serializable{
 /**
  * Need this (as a top level class) to help serializability
  */
-class Currency(val s: String) extends AnyVal with Serializable {
+class Currency(val s: String) extends Serializable {
   override def toString() = s
 }

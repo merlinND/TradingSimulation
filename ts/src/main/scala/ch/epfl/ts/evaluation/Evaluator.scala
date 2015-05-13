@@ -12,7 +12,6 @@ import akka.actor.{ActorRef, Cancellable}
 import akka.pattern.{ ask, pipe }
 import ch.epfl.ts.component.{ComponentRegistration, Component, ComponentRef}
 import ch.epfl.ts.data._
-import ch.epfl.ts.data.Currency
 
 /**
  * Represents metrics of a strategy
@@ -21,7 +20,7 @@ case class EvaluationReport(traderId: Long, traderName: String, wallet: Map[Curr
                             currency: Currency, initial: Double, current: Double, totalReturns: Double,
                             volatility: Double, drawdown: Double, sharpeRatio: Double)
                            extends Ordered[EvaluationReport] with Serializable {
-
+  
   /** Compares two evaluation reports by total returns
     *
     * Returns x where:
@@ -63,7 +62,7 @@ case class EvaluationReport(traderId: Long, traderName: String, wallet: Map[Curr
 class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: Currency, period: FiniteDuration) extends Component {
   // For usage of Scheduler
   import context._
-
+  
   // Initial values
   private var initialValueReceived = false
   private var initialWallet: Map[Currency, Double] = Map.empty
