@@ -139,7 +139,7 @@ class StandardBroker extends Component with ActorLogging {
   def executeForWallet(uid: Long, question: WalletState, cb: PartialFunction[Any, Unit]) = {
     context.child("wallet" + uid) match {
       case Some(walletActor) => {
-        implicit val timeout = new Timeout(100 milliseconds)
+        implicit val timeout = new Timeout(1000 milliseconds)
         val future = (walletActor ? question).mapTo[WalletState]
         future onSuccess cb
         future onFailure {

@@ -26,7 +26,7 @@
 		    </tr>
 		    </thead>
 		    <tbody>
-	        <tr ng-repeat="t in transactions">
+	        <tr data-ng-repeat="t in transactions">
 	            <td>{{ t.timestamp | date:'MM.dd.yyyy HH:mm:ss' }}</td>
 	            <td>{{ t.whatC.name | uppercase }}</td>
 	            <td>{{ t.withC.name | uppercase }}</td>
@@ -38,8 +38,30 @@
 		    </tbody>
 	  	</table>
   	</tab>
-  	<tab heading="Statistics">TODO Statistics</tab>
-  	<tab heading="Traders">TODO Traders</tab>
+  	<tab heading="Traders" data-ng-controller="TraderController">
+	    <table datatable="" class="table table-striped">
+		    <thead>
+		    <tr>
+		        <th>ID</th>
+		        <th>Name</th>
+		        <th>Strategy</th>
+		        <th>Parameters</th>
+		    </tr>
+		    </thead>
+		    <tbody>
+	        <tr data-ng-repeat="trader in traders track by trader.id">
+	            <td>{{ trader.id }}</td>
+	            <td>{{ trader.name }}</td>
+	            <td>{{ trader.strategy }}</td>
+	            <td>
+	            	<ul>
+	            		<li data-ng-repeat="param in trader.parameters">{{ param }}</li>
+	            	</ul>
+	            </td>
+	        </tr>
+		    </tbody>
+	  	</table>
+  	</tab>
 </tabset>
 
 

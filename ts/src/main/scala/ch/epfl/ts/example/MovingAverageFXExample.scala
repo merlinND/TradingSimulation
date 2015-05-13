@@ -56,7 +56,7 @@ object MovingAverageFXExample {
         val fetcherFx: TrueFxFetcher = new TrueFxFetcher
         builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "TrueFxFetcher")
       } else {
-        val replaySpeed = 40000.0
+        val replaySpeed = 4000.0
 
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
         val startDate = dateFormat.parse("201304");

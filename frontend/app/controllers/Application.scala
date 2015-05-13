@@ -16,6 +16,11 @@ import ch.epfl.ts.data.Register
 import actors.TraderParameters
 import actors.GlobalOhlc
 
+import akka.actor.Actor
+import akka.actor.ActorSystem
+import akka.actor.Props
+ 
+
 object Application extends Controller {
 
   def index = Action {
@@ -46,6 +51,8 @@ object Application extends Controller {
       Props(classOf[MessageToJson[Register]], out, implicitly[ClassTag[Register]])
   }
 
-
+  def traderParameters = WebSocket.acceptWithActor[String, String] { request =>
+    out => Props(classOf[TraderParameters], out)
+  }
 
 }

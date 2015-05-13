@@ -44,7 +44,6 @@
                 if ($scope.chartConfig.loading) {
                   $scope.chartConfig.loading = false;
                 }
-                console.log($scope.chartSeries);
               });
             };
 
