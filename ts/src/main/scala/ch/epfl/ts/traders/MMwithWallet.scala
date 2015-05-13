@@ -76,7 +76,7 @@ class MMwithWallet(uid: Long, marketIds: List[Long], parameters: StrategyParamet
 
   val symbol = parameters.get[(Currency, Currency)](MMwithWallet.SYMBOL)
   val (whatC, withC) = symbol
-  val spread = parameters.getOrElse[Double](MMwithWallet.SPREAD, 0.1)
+  val spread = parameters.getOrElse[Double](MMwithWallet.SPREAD, 0.2)
   /**
    * Indicators needed by the Moving Average Trader
    */
