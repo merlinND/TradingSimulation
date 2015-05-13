@@ -32,8 +32,8 @@ import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.RejectedOrder
 import ch.epfl.ts.engine.WalletFunds
 import ch.epfl.ts.indicators.OhlcIndicator
-import ch.epfl.ts.indicators.RANGE
 import ch.epfl.ts.indicators.RangeIndicator
+import ch.epfl.ts.indicators.RangeIndic
 
 
 
@@ -148,7 +148,7 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
       }
     }
     
-    case range : RANGE => {
+    case range : RangeIndic => {
       log.debug("received range with support = "+range.support+" and resistance = "+range.resistance)
       if(recomputeRange) {
         support = range.support

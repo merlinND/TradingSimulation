@@ -6,7 +6,7 @@ import scala.collection.mutable.MutableList
 import akka.actor.Actor
 import akka.actor.ActorLogging
 
-case class RANGE(val support : Double, val resistance : Double, val period : Int ) 
+case class RangeIndic(val support : Double, val resistance : Double, val period : Int ) 
 /**
  * This indicator will define a range that contains most of the prices in the given period.
  * A range is defined by two value a resistance that can be seen as the ceiling and a support which can be seen as a floor.
@@ -52,7 +52,7 @@ class RangeIndicator(timePeriod : Int, tolerance : Int) extends Actor with Actor
         pricesInPeriod = pricesInPeriod.tail :+ price
         resistance = getResistance(pricesInPeriod)
         support = getSupport(pricesInPeriod)
-        var rangeMessage = RANGE(support, resistance, timePeriod)
+        var rangeMessage = RangeIndic(support, resistance, timePeriod)
         sender() ! rangeMessage
       }
     }

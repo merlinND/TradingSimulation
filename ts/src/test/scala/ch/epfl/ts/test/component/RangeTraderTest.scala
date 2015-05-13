@@ -34,7 +34,7 @@ import ch.epfl.ts.test.SimpleBrokerWrapped
 import ch.epfl.ts.traders.RangeTrader
 import ch.epfl.ts.data.Quote
 import org.scalatest.junit.JUnitRunner
-import ch.epfl.ts.indicators.RANGE
+import ch.epfl.ts.indicators.RangeIndic
 
 @RunWith(classOf[JUnitRunner])
 class RangeTraderTest
@@ -82,7 +82,7 @@ class RangeTraderTest
     "receive a range and collect support and resistance" in {
       within(1 second) {
         EventFilter.debug(message = "received range with support = 4.0 and resistance = 6.0", occurrences = 1) intercept {
-          trader.ar ! RANGE(4, 6, 100)
+          trader.ar ! RangeIndic(4, 6, 100)
         }
       }
     }
@@ -98,7 +98,7 @@ class RangeTraderTest
     "replace the range when received a new one " in {
       within(1 second) {
         EventFilter.debug(message = "range is updated", occurrences = 1) intercept {
-          trader.ar ! RANGE(4, 6, 100)
+          trader.ar ! RangeIndic(4, 6, 100)
         }
       }
     } 
@@ -143,8 +143,8 @@ class RangeTraderTest
         }
       within(1 second) {
         EventFilter.debug(message = "range is updated", occurrences = 1) intercept {
-          trader.ar ! RANGE(5, 10, 100)
-          trader.ar ! RANGE(0.954, 0.964, 100)
+          trader.ar ! RangeIndic(5, 10, 100)
+          trader.ar ! RangeIndic(0.954, 0.964, 100)
         }
       }
     }
