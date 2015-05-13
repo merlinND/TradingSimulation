@@ -29,6 +29,8 @@ import ch.epfl.ts.engine.RejectedOrder
 import ch.epfl.ts.data.Order
 import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.MarketAskOrder
+import ch.epfl.ts.engine.ExecutedAskOrder
+import ch.epfl.ts.engine.ExecutedBidOrder
 
 object RsiTrader extends TraderCompanion {
   type ConcreteTrader = RsiTrader
@@ -102,6 +104,10 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
     case rsi: RSI if registered => {
       decideOrder(rsi.value)
     }
+
+    case eb: ExecutedBidOrder     => log.debug("executed bid volume: "+eb.volume)
+    case ea: ExecutedAskOrder     => log.debug("executed ask volume: "+ea.volume)
+
     case whatever if !registered => println("RsiTrader: received while not registered [check that you have a Broker]: " + whatever)
     case whatever                => println("RsiTrader: received unknown : " + whatever)
   }
@@ -133,7 +139,7 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
   }
 
   def placeOrder(order: MarketOrder) = {
-    oid+=1
+    oid += 1
     implicit val timeout = new Timeout(askTimeout)
     val future = (broker ? order).mapTo[Order]
     future onSuccess {
