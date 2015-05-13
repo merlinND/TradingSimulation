@@ -10,7 +10,9 @@ class CurrencyTestSuite extends FunSuite {
   
   test("toString and fromString are inverting each other") {
     val currencies = Currency.values;
-    assert(currencies.forall { c => Currency.fromString(c.toString) == c })
+    currencies.foreach(c => {
+      assert(Currency.fromString(c.toString) == c, c + " fromString(toString) should be the same currency")
+    })
   }
 
   test("pairFromString handles different case input") {

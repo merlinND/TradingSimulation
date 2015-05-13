@@ -1,5 +1,7 @@
 package ch.epfl.ts.data
 
+import akka.util.HashCode
+
 /**
  * Enum for Currencies
  */
@@ -51,5 +53,10 @@ object Currency extends Serializable {
  * Need this (as a top level class) to help serializability
  */
 class Currency(val s: String) extends Serializable {
-  override def toString() = s
+  override def toString() = s.toString()
+  override def equals(other: Any) = other match {
+    case c: Currency => c.s == this.s
+    case _ => false
+  }
+  override def hashCode: Int = s.hashCode()
 }
