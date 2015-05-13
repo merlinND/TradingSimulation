@@ -4,7 +4,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
-
 import akka.actor.Props
 import akka.actor.actorRef2Scala
 import ch.epfl.ts.component.ComponentBuilder
@@ -25,7 +24,9 @@ import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.TraderIdentity
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.evaluation.EvaluationReport
-import ch.epfl.ts.traders.MadTrader
+import ch.epfl.ts.traders.MovingAverageTrader
+import ch.epfl.ts.data.TimeParameter
+import ch.epfl.ts.data.RealNumberParameter
 
 /**
  * Runs a main() method that creates a MasterActor and remote WorkerActors
@@ -72,23 +73,25 @@ object RemotingHostRunner {
     val master = builder.createRef(Props(classOf[OptimizationSupervisor], onEnd _), "MasterActor")
     
     // ----- Factory: class responsible for creating the components
-    val speed = 100.0
+    val speed = 200000.0
     val symbol = (Currency.EUR, Currency.CHF)
     val start = "201304"
-    val end = "201305"
+    val end = "201304"
     val factory = new ForexReplayStrategyFactory(10 seconds, symbol._2, symbol, speed, start, end)
     
     
     // ----- Generate candidate parameterizations
-    val strategyToOptimize = MadTrader
+    val strategyToOptimize = MovingAverageTrader
     val parametersToOptimize = Set(
-      MadTrader.INTERVAL,
-      MadTrader.ORDER_VOLUME
+      MovingAverageTrader.SHORT_PERIODS,
+      MovingAverageTrader.LONG_PERIODS
     )
     val initialWallet: Wallet.Type = Map(Currency.EUR -> 1000.0, Currency.CHF -> 1000.0)
     val otherParameterValues = Map(
-      MadTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
-      MadTrader.CURRENCY_PAIR -> CurrencyPairParameter(Currency.EUR, Currency.CHF)
+      MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
+      MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
+      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 hour),
+      MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002)      
     )
     
     val maxInstances = (5 * availableHosts.size)
@@ -109,23 +112,25 @@ object RemotingHostRunner {
     // ----- Connections
     deployments.foreach(d => {
       d.fetcher -> (d.market, classOf[Quote])
-      d.fetcher -> (master, classOf[EndOfFetching])
+      // TODO: is it being received correctly?
+      d.fetcher -> (Seq(d.market, master), EndOfFetching)
       d.market -> (d.broker, classOf[Quote], classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
       // TODO: make sure to support all order types
       d.broker -> (d.market, classOf[MarketAskOrder], classOf[MarketBidOrder])
       
       for(e <- d.evaluators) {
         e -> (d.broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
+        d.market -> (e, classOf[Quote], classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
         d.market -> (e, classOf[Transaction])
         
         e -> (master, classOf[EvaluationReport])
       }
       
       for(printer <- d.printer) {
-        d.market -> (printer, classOf[Transaction], classOf[Quote])
+        d.market -> (printer, classOf[Transaction])
         for(e <- d.evaluators) e -> (printer, classOf[EvaluationReport])
       }
-    })                                                              
+    })
     
     // Make sure brokers are started before the traders
     for(d <- deployments) d.broker.ar ! StartSignal
