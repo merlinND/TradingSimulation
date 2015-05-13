@@ -40,7 +40,7 @@ object RsiTrader extends TraderCompanion {
   val SYMBOL = "Symbol"
   /** OHLC period (duration) */
   val OHLC_PERIOD = "OhlcPeriod"
-  /** Period for RSI*/
+  /** Period for RSI in number of OHLC*/
   val RSI_PERIOD = "RsiPeriod"
   /** HIGH_RSI : Market is overbought , time to sell  */
   val HIGH_RSI = "highRsi"
