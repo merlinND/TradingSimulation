@@ -7,7 +7,7 @@ name := "TradingSimProject"
 
 version in ThisBuild := "0.1"
 
-scalaVersion in ThisBuild := "2.11.2"
+scalaVersion in ThisBuild := "2.11.5"
 
 scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature")
 
