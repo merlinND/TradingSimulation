@@ -59,9 +59,9 @@ case class MarketBidsEmpty(val timestamp: Long, val whatC: Currency, val withC: 
   override def toString() = "empt bids: " + whatC.toString().toUpperCase() + " with " + withC.toString().toUpperCase() + "; vol: " + volume + "; price " + price
 }
 
-case class MarketEmpty(val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+case class MarketEmpty()
   extends MarketMakerNotification {
-  override def toString() = "nothing at all" + whatC.toString().toUpperCase() + " with " + withC.toString().toUpperCase() + "; vol: " + volume + "; price " + price
+  override def toString() = "nothing at all"
 }
 
 /* *****************************

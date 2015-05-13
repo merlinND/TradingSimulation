@@ -75,6 +75,8 @@ class MarketRules extends Serializable {
                        oldTradingPrice: Double,
                        enqueueOrElse: (Order, PartialOrderBook) => Unit): Double = {
     var result = -1.0
+    if (withC == Currency.DEF) withC = newOrder.withC // make sure these are set
+    if (whatC == Currency.DEF) whatC = newOrder.whatC
 
     if (bestMatchesBook.isEmpty) {
       println("MS: matching orders book empty")
@@ -146,6 +148,30 @@ class MarketRules extends Serializable {
         result = oldTradingPrice
       }
     }
+    
+    // TODO (Jakob) add logic to update price (or can I blindly take each matched order pair as new price?)
+    // OR: we catch quotes during non-simulation to initialize this
+    /*
+     * this part ensures that there quotes can be generated even though the order books are empty
+     * BUT one of the two values is set to the default...
+     * MAYBE: set it very high??
+     * OR: we catch quotes during non-simulation to initialize this
+     */
+    newOrder match {
+      case limitBid: LimitBidOrder => {
+        lastBidPrice = result
+      }
+      case limitAsk: LimitAskOrder => {
+        lastAskPrice = result
+      }
+      case marketBid: MarketBidOrder => {
+        lastBidPrice = result
+      } 
+      case marketAsk: MarketAskOrder => {
+        lastAskPrice = result
+      }
+    }
+    
     generateQuote(marketId, newOrdersBook, bestMatchesBook, newOrder.timestamp, send)
     result
   }

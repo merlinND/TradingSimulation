@@ -100,7 +100,7 @@ object FullMarketSimulation {
     market->(broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
     
     // for the market maker
-    connectAllOrders(marketMaker, market) // TODO use broker inbetween
+//    connectAllOrders(marketMaker, market) // TODO use broker inbetween
     market->(marketMaker, classOf[MarketBidsEmpty], classOf[MarketAsksEmpty], classOf[MarketEmpty], classOf[ExecutedBidOrder], classOf[ExecutedBidOrder])
 
     connectProducersWithConsuments()

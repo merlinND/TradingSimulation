@@ -77,10 +77,12 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
         val topAsk = book.asks.head
         MarketBidsEmpty(topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price)
       } else {
-        // TODO (Jakob) test if this case occurs (I believe it doesn't because also market orders are put down in the order book, right?)
-        //MarketEmpty(topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price)
-        log.error("Yes it does")
-//        MarketBidsEmpty()
+        MarketEmpty()
+        /* Jakob: this case might occur but there is no offer from the market maker needed
+         * BUT: if we want to allow the market maker to influence the market in this state (for its own advantage)
+         * we could notify it
+         */
+        
       }
       send(msg)
     }

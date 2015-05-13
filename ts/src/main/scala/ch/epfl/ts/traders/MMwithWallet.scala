@@ -76,7 +76,7 @@ class MMwithWallet(uid: Long, marketIds: List[Long], parameters: StrategyParamet
 
   val symbol = parameters.get[(Currency, Currency)](MMwithWallet.SYMBOL)
   val (whatC, withC) = symbol
-  val spread = parameters.getOrElse[Double](MMwithWallet.SPREAD, 0.2)
+  val spread = parameters.getOrElse[Double](MMwithWallet.SPREAD, 0.0) // spread = 0 means that the market maker has no interest
   /**
    * Indicators needed by the Moving Average Trader
    */
@@ -121,7 +121,7 @@ class MMwithWallet(uid: Long, marketIds: List[Long], parameters: StrategyParamet
     }
 
     case msg: MarketEmpty => if (registered){
-      log.debug("OUCH nothing is going on")
+      log.debug("OUCH nothing is going on but HEY I could trick the market now :D")
     }
     case topBid: MarketAsksEmpty => if (registered) {
 //      currentTimeMillis = topBid.timestamp
