@@ -56,7 +56,7 @@ object MovingAverageTrader extends TraderCompanion {
 /**
  * Simple momentum strategy.
  */
-class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameters)
+class MovingAverageTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters)
   extends Trader(uid, marketIds, parameters) with ActorLogging {
 
   import context.dispatcher
@@ -72,13 +72,12 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
   val tolerance = parameters.get[Double](MovingAverageTrader.TOLERANCE)
   val withShort = parameters.getOrElse[Boolean](MovingAverageTrader.WITH_SHORT, false)
 
+  val marketId = marketIds(0)
   /**
    * Indicators needed by the Moving Average Trader
    */
-  val marketId = marketIds(0)
   val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, symbol, ohlcPeriod))
   val movingAverageIndicator = context.actorOf(Props(classOf[EmaIndicator], List(shortPeriods, longPeriods)))
-
 
   /**
    * Broker information
@@ -112,7 +111,7 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
       ohlcIndicator ! q
     }
 
-    case ohlc : OHLC => {
+    case ohlc: OHLC => {
       movingAverageIndicator ! ohlc
     }
 
@@ -131,15 +130,15 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
         case Some(x) => currentLong = x
         case None    => println("Error: Missing indicator with period " + longPeriods)
       }
-        decideOrder
+      decideOrder
     }
 
     // Order has been executed on the market = CLOSE Positions
-    case _: ExecutedBidOrder => // TODO SimplePrint / Log /.../Frontend log ??
-    case _: ExecutedAskOrder => // TODO SimplePrint/Log/.../Frontend log ??
+    case _: ExecutedBidOrder     => // TODO SimplePrint / Log /.../Frontend log ??
+    case _: ExecutedAskOrder     => // TODO SimplePrint/Log/.../Frontend log ??
 
     case whatever if !registered => println("MATrader: received while not registered [check that you have a Broker]: " + whatever)
-    case whatever            => println("MATrader: received unknown : " + whatever)
+    case whatever                => println("MATrader: received unknown : " + whatever)
   }
   def decideOrder = {
     var volume = 0.0
@@ -198,8 +197,7 @@ class MovingAverageTrader(uid: Long, marketIds : List[Long], parameters: Strateg
         placeOrder(MarketBidOrder(oid, uid, currentTimeMillis, whatC, withC, volume, -1))
         oid += 1
       }
-    }
-    // SELL signal
+    } // SELL signal
     else if (currentShort < currentLong) {
       if (holdings > 0.0) {
         placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
