@@ -34,7 +34,6 @@ import ch.epfl.ts.engine.TraderIdentity
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.traders.MadTrader
-import ch.epfl.ts.data.EndOfFetching
 
 /**
  * @param namingPrefix Prefix that will precede the name of each actor on this remote
@@ -225,5 +224,7 @@ object RemotingHostRunner {
         builder.shutdownManagedActors(3 seconds)
       }
     })
+    
+    // TODO: fix actor names including the full path to the root (even though it is remote)
   }
 }
