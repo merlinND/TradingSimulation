@@ -122,9 +122,9 @@ trait StrategyFactory {
                         (implicit builder: ComponentBuilder): SystemDeployment = {
 
     // ----- Common props (need one instance per host, used by all the traders)
+	  val broker = host.createRemotely(commonProps.broker, "Broker")
+	  val market = host.createRemotely(commonProps.market, "Market")
     val fetcher = host.createRemotely(commonProps.fetcher, "Fetcher")
-    val market = host.createRemotely(commonProps.market, "Market")
-    val broker = host.createRemotely(commonProps.broker, "Broker")
     val printer = commonProps.printer.map(p => host.createRemotely(p, "Printer"))
 
     // ----- Traders (possibly many) to be run in parallel on this host

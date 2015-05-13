@@ -1,21 +1,14 @@
 package ch.epfl.ts.optimization
 
-import scala.collection.mutable.{Map => MutableMap}
-import scala.collection.mutable.MutableList
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
-import akka.actor.ActorLogging
-import akka.actor.ActorRef
-import akka.actor.Address
-import akka.actor.Deploy
+
 import akka.actor.Props
 import akka.actor.actorRef2Scala
-import akka.remote.RemoteScope
-import ch.epfl.ts.component.Component
 import ch.epfl.ts.component.ComponentBuilder
-import ch.epfl.ts.component.ComponentRef
+import ch.epfl.ts.component.StartSignal
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.EndOfFetching
@@ -28,88 +21,11 @@ import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.ExecutedAskOrder
 import ch.epfl.ts.engine.ExecutedBidOrder
 import ch.epfl.ts.engine.FundWallet
-import ch.epfl.ts.engine.GetTraderParameters
 import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.TraderIdentity
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.traders.MadTrader
-
-/**
- * @param namingPrefix Prefix that will precede the name of each actor on this remote
- * @param systemName Name of the actor system being run on this remote
- */
-class RemoteHost(val hostname: String, val port: Int, val namingPrefix: String, val systemName: String = "remote") {
-  val address = Address("akka.tcp", systemName, hostname, port)
-  val deploy = Deploy(scope = RemoteScope(address))
-  
-  def createRemotely(props: Props, name: String)(implicit builder: ComponentBuilder): ComponentRef = {
-    // TODO: use `log.debug`
-    val actualName = namingPrefix + '-' + name
-    println("Creating remotely component " + actualName + " at host " + hostname)
-    builder.createRef(props.withDeploy(deploy), actualName)
-  }
-  
-  override def toString(): String = systemName + "@" + hostname + ":" + port
-}
-
-
-/**
- * Responsible for overseeing actors instantiated at worker nodes. That means it listens
- * to them (i.e. it doesn't send any commands or similar, so far, except for being able to ping them).
- * 
- * @param onEnd Callback to call when optimization has completed and the best trader was picked
- */
-class OptimizationSupervisor(onEnd: (TraderIdentity, EvaluationReport) => Unit) extends Component with ActorLogging {
-
-  /**
-   * Collection of evaluations for registered traders being tested
-   * The set of registered actors can be deduces from this map's keys.
-   */
-  // TODO: only keep the most N recent to avoid unnecessary build-up
-  val evaluations: MutableMap[ActorRef, MutableList[EvaluationReport]] = MutableMap.empty
-
-  def lastEvaluations = evaluations.map({ case (t, l) => t -> l.head })
-  def bestTraderPerformance = lastEvaluations.toList.sortBy(p => p._2).head
-  
-  var bestEvaluation: Option[EvaluationReport] = None
-  def askBestTraderIdentity = {
-    bestEvaluation = Some(bestTraderPerformance._2)
-    bestTraderPerformance._1 ! GetTraderParameters
-  }
-  
-  override def receiver = {
-    case w: ActorRef => {
-      evaluations += (w -> MutableList.empty)
-    }
-
-    case e: EvaluationReport if evaluations.contains(sender) => {
-      // Add the report to the collection
-      evaluations.get(sender).foreach { l => l += e }
-    }
-    
-    case e: EvaluationReport => log.error("Received report from unknown sender " + sender + ": " + e)
-
-    // When all data has been replayed, we can determine the best trader
-    case _: EndOfFetching if bestEvaluation.isEmpty => {
-      log.info("Supervisor has received an EndOfFetching signal. Will now try to determine the best fetcher's identity.")
-      askBestTraderIdentity
-    }
-    case _: EndOfFetching =>
-      log.warning("Supervisor has received more than one EndOfFetching signals")
-    
-    case t: TraderIdentity if bestEvaluation.isDefined => {
-      onEnd(t, bestEvaluation.get)
-    }
-    case t: TraderIdentity => {
-      log.warning("Received a TraderIdentity before knowing the best performance, which is weird:" + t)
-    }
-
-    
-    case m => log.warning("MasterActor received weird: " + m)
-  }
-  
-}
 
 /**
  * Runs a main() method that creates a MasterActor and remote WorkerActors
@@ -154,7 +70,13 @@ object RemotingHostRunner {
     // ----- Build the supervisor actor
     implicit val builder = new ComponentBuilder()
     val master = builder.createRef(Props(classOf[OptimizationSupervisor], onEnd _), "MasterActor")
-    val factory = new ForexLiveStrategyFactory(10 seconds, Currency.CHF)
+    
+    // ----- Factory: class responsible for creating the components
+    val speed = 100.0
+    val symbol = (Currency.EUR, Currency.CHF)
+    val start = "201304"
+    val end = "201305"
+    val factory = new ForexReplayStrategyFactory(10 seconds, symbol._2, symbol, speed, start, end)
     
     
     // ----- Generate candidate parameterizations
@@ -200,11 +122,13 @@ object RemotingHostRunner {
       }
       
       for(printer <- d.printer) {
-        d.market -> (printer, classOf[Transaction])
+        d.market -> (printer, classOf[Transaction], classOf[Quote])
         for(e <- d.evaluators) e -> (printer, classOf[EvaluationReport])
       }
     })                                                              
     
+    // Make sure brokers are started before the traders
+    for(d <- deployments) d.broker.ar ! StartSignal
     builder.start
     
     // ----- Registration to the supervisor
