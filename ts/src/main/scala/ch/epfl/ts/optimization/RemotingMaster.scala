@@ -1,43 +1,39 @@
 package ch.epfl.ts.optimization
 
+import scala.collection.mutable.{Map => MutableMap}
+import scala.collection.mutable.MutableList
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
-import scala.collection.mutable.{ Map => MutableMap, MutableList }
-import scala.reflect.ClassTag
-import scala.concurrent.Promise
-import scala.concurrent.ExecutionContext.Implicits.global
-import com.typesafe.config.ConfigFactory
-import akka.actor.Actor
+import akka.actor.ActorLogging
 import akka.actor.ActorRef
-import akka.actor.ActorSystem
 import akka.actor.Address
 import akka.actor.Deploy
 import akka.actor.Props
 import akka.actor.actorRef2Scala
 import akka.remote.RemoteScope
-import akka.actor.ActorLogging
-import ch.epfl.ts.engine.MarketRules
-import ch.epfl.ts.engine.MarketFXSimulator
-import ch.epfl.ts.engine.ForexMarketRules
-import ch.epfl.ts.component.fetch.TrueFxFetcher
-import ch.epfl.ts.component.fetch.PullFetchComponent
-import ch.epfl.ts.component.fetch.MarketNames
-import ch.epfl.ts.data.Quote
-import ch.epfl.ts.component.utils.Printer
+import ch.epfl.ts.component.Component
 import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.component.ComponentRef
-import ch.epfl.ts.data.Transaction
+import ch.epfl.ts.data.Currency
+import ch.epfl.ts.data.CurrencyPairParameter
+import ch.epfl.ts.data.EndOfFetching
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
-import ch.epfl.ts.traders.MadTrader
-import ch.epfl.ts.data.CurrencyPairParameter
-import ch.epfl.ts.data.Currency
+import ch.epfl.ts.data.Quote
+import ch.epfl.ts.data.Register
+import ch.epfl.ts.data.Transaction
 import ch.epfl.ts.data.WalletParameter
-import ch.epfl.ts.engine.Wallet
-import ch.epfl.ts.component.Component
-import ch.epfl.ts.evaluation.EvaluationReport
+import ch.epfl.ts.engine.ExecutedAskOrder
+import ch.epfl.ts.engine.ExecutedBidOrder
+import ch.epfl.ts.engine.FundWallet
 import ch.epfl.ts.engine.GetTraderParameters
+import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.TraderIdentity
+import ch.epfl.ts.engine.Wallet
+import ch.epfl.ts.evaluation.EvaluationReport
+import ch.epfl.ts.traders.MadTrader
 import ch.epfl.ts.data.EndOfFetching
 
 /**
@@ -178,7 +174,7 @@ object RemotingHostRunner {
 
     // TODO: use log.info
     println("Going to distribute " + parameterizations.size + " traders over " + availableHosts.size + " worker machines.")
-                                                                        
+                                                             
     // ----- Instantiate the all components on each available worker
     val distributed = ForexStrategyFactory.distributeOverHosts(availableHosts, parameterizations)
     val deployments = distributed.map({ case (host, parameters) =>
@@ -189,13 +185,27 @@ object RemotingHostRunner {
     
     // ----- Connections
     deployments.foreach(d => {
-      // TODO
       d.fetcher -> (d.market, classOf[Quote])
-      d.market -> (d.printer, classOf[Quote])
-    })
-                                                                        
+      d.fetcher -> (master, classOf[EndOfFetching])
+      d.market -> (d.broker, classOf[Quote], classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
+      // TODO: make sure to support all order types
+      d.broker -> (d.market, classOf[MarketAskOrder], classOf[MarketBidOrder])
+      
+      for(e <- d.evaluators) {
+        e -> (d.broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
+        d.market -> (e, classOf[Transaction])
+        
+        e -> (master, classOf[EvaluationReport])
+        for(printer <- d.printer) e -> (printer, classOf[EvaluationReport])
+      }
+      
+      for(printer <- d.printer) {
+        d.market -> (printer, classOf[Transaction])
+      }
+    })                                                              
     
     builder.start
+    
     // ----- Registration to the supervisor
     // Register each new trader to the master
     for(d <- deployments; e <- d.evaluators) {

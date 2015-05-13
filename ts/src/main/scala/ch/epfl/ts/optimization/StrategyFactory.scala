@@ -1,21 +1,22 @@
 package ch.epfl.ts.optimization
 
-import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
-import akka.actor.Deploy
-import ch.epfl.ts.engine.MarketFXSimulator
+import scala.concurrent.duration.DurationInt
+import scala.reflect.ClassTag
 import akka.actor.Props
-import ch.epfl.ts.component.ComponentBuilder
+import akka.actor.Deploy
+import akka.actor.Address
+import akka.actor.ActorRef
+import akka.remote.RemoteScope
+import ch.epfl.ts.engine.MarketFXSimulator
 import ch.epfl.ts.engine.ForexMarketRules
+import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.component.fetch.TrueFxFetcher
 import ch.epfl.ts.component.ComponentRef
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.component.fetch.PullFetchComponent
-import akka.actor.Address
 import ch.epfl.ts.component.utils.Printer
 import ch.epfl.ts.data.Quote
-import akka.remote.RemoteScope
-import scala.reflect.ClassTag
 import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.traders.TraderCompanion
 import ch.epfl.ts.brokers.StandardBroker
@@ -53,8 +54,7 @@ trait StrategyFactory {
    * 
    * @param evaluators Can be used just as a reference to a Trader (messages will be forwarded)
    */
-  class SystemDeployment(val fetcher: ComponentRef,
-                         val market: ComponentRef, broker: ComponentRef,
+  class SystemDeployment(val fetcher: ComponentRef, val market: ComponentRef, val broker: ComponentRef,
                          val evaluators: Set[ComponentRef],
                          val printer: Option[ComponentRef] = None)
   
@@ -104,10 +104,12 @@ trait StrategyFactory {
       val traderId = i.toLong
       val traderProps = strategyToOptimize.getProps(traderId, commonProps.marketIds, parameterization)
       val trader = host.createRemotely(traderProps, name)
+      
       // Evaluator monitoring the performance of this trader
       // TODO: factor these out
       val period = 10 seconds
       val referenceCurrency = Currency.CHF
+      
       val evaluatorProps = Props(classOf[Evaluator], trader.ar, traderId, trader.name, referenceCurrency, period)
       val evaluator = host.createRemotely(evaluatorProps, name + "-Evaluator")
       
