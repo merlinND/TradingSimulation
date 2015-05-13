@@ -73,15 +73,14 @@ object RsiExample {
     val rules = new FxMarketRulesWrapper()
     val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
 
-    // Trader: cross moving average
     val traderId = 123L
-    val periods = List(2, 6)
     val initialFunds: Wallet.Type = Map(Currency.CHF -> 100000.0)
     val parameters = new StrategyParameters(
       RsiTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
       RsiTrader.SYMBOL -> CurrencyPairParameter(symbol),
-      RsiTrader.OHLC_PERIOD -> new TimeParameter(1 minute),
-      RsiTrader.HIGH_RSI -> RealNumberParameter(70),
+      RsiTrader.OHLC_PERIOD -> new TimeParameter(1 hour),
+      RsiTrader.RSI_PERIOD->new NaturalNumberParameter(6),
+      RsiTrader.HIGH_RSI -> RealNumberParameter(80),
       RsiTrader.LOW_RSI -> RealNumberParameter(20))
 
     val trader = RsiTrader.getInstance(traderId, List(marketForexId), parameters, "RsiTrader")

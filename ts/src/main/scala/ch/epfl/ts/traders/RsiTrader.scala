@@ -31,8 +31,8 @@ import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.MarketAskOrder
 
 object RsiTrader extends TraderCompanion {
-  type ConcreteTrader = MovingAverageTrader
-  override protected val concreteTraderTag = scala.reflect.classTag[MovingAverageTrader]
+  type ConcreteTrader = RsiTrader
+  override protected val concreteTraderTag = scala.reflect.classTag[RsiTrader]
 
   /** Currency pair to trade */
   val SYMBOL = "Symbol"
@@ -60,7 +60,7 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
   val symbol = parameters.get[(Currency, Currency)](RsiTrader.SYMBOL)
   val (whatC, withC) = symbol
   val ohlcPeriod = parameters.get[FiniteDuration](RsiTrader.OHLC_PERIOD)
-  val rsiPeriod = parameters.get[Long](RsiTrader.RSI_PERIOD)
+  val rsiPeriod = parameters.get[Int](RsiTrader.RSI_PERIOD)
   val highRsi = parameters.get[Double](RsiTrader.HIGH_RSI)
   val lowRsi = parameters.get[Double](RsiTrader.HIGH_RSI)
 

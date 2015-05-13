@@ -7,7 +7,7 @@ import ch.epfl.ts.data._
 
 case class RSI(value : Double)
 
-class RsiIndicator(period : Long) extends Actor with ActorLogging {
+class RsiIndicator(period : Int) extends Actor with ActorLogging {
  
   var previousPrice : Double = 0.0
   var U : MutableList[Double] = MutableList[Double]()
