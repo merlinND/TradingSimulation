@@ -13,15 +13,22 @@ import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.NaturalNumberParameter
 import ch.epfl.ts.data.OHLC
 import ch.epfl.ts.data.Quote
+import ch.epfl.ts.indicators.RSI
 import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.engine.WalletFunds
 import ch.epfl.ts.indicators.OhlcIndicator
 import ch.epfl.ts.indicators.RsiIndicator
-import ch.epfl.ts.indicators.RsiIndicator
 import ch.epfl.ts.engine.GetWalletFunds
 import akka.pattern.ask
+import scala.math.floor
+import ch.epfl.ts.engine.AcceptedOrder
+import ch.epfl.ts.data.MarketOrder
+import ch.epfl.ts.engine.RejectedOrder
+import ch.epfl.ts.data.Order
+import ch.epfl.ts.data.MarketBidOrder
+import ch.epfl.ts.data.MarketAskOrder
 
 object RsiTrader extends TraderCompanion {
   type ConcreteTrader = MovingAverageTrader
@@ -72,6 +79,8 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
    */
   var tradingPrices = MHashMap[(Currency, Currency), (Double, Double)]()
 
+  var oid = 0
+
   override def receiver = {
 
     case q: Quote => {
@@ -90,13 +99,13 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
       log.debug("RsiIndicator: Broker confirmed")
     }
 
-    case rsi: RsiIndicator if registered => {
-      decideOrder
+    case rsi: RSI if registered => {
+      decideOrder(rsi.value)
     }
     case whatever if !registered => println("RsiTrader: received while not registered [check that you have a Broker]: " + whatever)
     case whatever                => println("RsiTrader: received unknown : " + whatever)
   }
-  def decideOrder = {
+  def decideOrder(rsi: Double) = {
     implicit val timeout = new Timeout(askTimeout)
     val future = (broker ? GetWalletFunds(uid, this.self)).mapTo[WalletFunds]
     future onSuccess {
@@ -104,8 +113,15 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
         var holdings = 0.0
         val cashWith = funds.getOrElse(withC, 0.0)
         holdings = funds.getOrElse(whatC, 0.0)
-       
-
+        //overbought : time to sell
+        if (rsi >= highRsi && holdings > 0.0) {
+          placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
+          //oversell : time to buy  
+        } else if (rsi <= lowRsi && holdings == 0) {
+          val askPrice = tradingPrices(whatC, withC)._2
+          val volumeToBuy = floor(cashWith / askPrice)
+          placeOrder(MarketBidOrder(oid, uid, currentTimeMillis, whatC, withC, volumeToBuy, -1))
+        }
       }
     }
     future onFailure {
@@ -116,4 +132,24 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
     }
   }
 
+  def placeOrder(order: MarketOrder) = {
+    oid+=1
+    implicit val timeout = new Timeout(askTimeout)
+    val future = (broker ? order).mapTo[Order]
+    future onSuccess {
+      // Transaction has been accepted by the broker (but may not be executed : e.g. limit orders) = OPEN Positions
+      case ao: AcceptedOrder => log.debug("Accepted order costCurrency: " + order.costCurrency() + " volume: " + ao.volume)
+      case _: RejectedOrder => {
+        log.debug("MATrader: order failed")
+      }
+      case _ => {
+        log.debug("MATrader: unknown order response")
+      }
+    }
+    future onFailure {
+      case p => {
+        log.debug("Wallet command failed: " + p)
+      }
+    }
+  }
 }
