@@ -4,6 +4,7 @@ import ch.epfl.ts.data.{Streamable, Order}
 import ch.epfl.ts.engine.{OrderBook, PartialOrderBook, MarketRules}
 import scala.collection.mutable.HashMap
 import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Quote
 
 /**
  * A wrapper around the MarketRules, so that all the information needed to proceed with the order is in one place.
@@ -14,4 +15,7 @@ abstract class MarketRulesWrapper(rules: MarketRules){
                    book: OrderBook, tradingPrices: HashMap[(Currency, Currency), (Double, Double)], //TODO(sygi): get type from original class
                    send: Streamable => Unit)
   def getRules = rules
+  
+  def initQuotes(q: Quote) = 0
+
 }

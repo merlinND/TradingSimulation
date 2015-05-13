@@ -28,6 +28,8 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
   private var lastHistoricalTime = 0L
   /** Time period at which to emit  */
   private val timekeeperPeriod = (500 milliseconds)
+  /** keep track of last quote before simulating */
+  private var lastQuote = Quote(marketId, -1, Currency.DEF, Currency.DEF, -1, -1)
   
   override def receiver: PartialFunction[Any, Unit] = {
     case o: Order => {
@@ -54,6 +56,7 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
       lastHistoricalTime = q.timestamp
       rules1.checkPendingOrders(marketId, book, tradingPrices, this.send[Streamable])
       tradingPrices((q.withC, q.whatC)) = (q.bid, q.ask)
+      lastQuote = q
       send(q)
     }
      
@@ -83,6 +86,8 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
     else
       rules1
   }
-  def changeRules =
+  def changeRules = {
+    if (!isSimulating) rules2.initQuotes(lastQuote) // allows for smooth transition to simulation
     isSimulating = !isSimulating
+  }
 }
