@@ -41,6 +41,7 @@ import ch.epfl.ts.component.utils.Printer
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 import ch.epfl.ts.traders.RsiTrader
+import ch.epfl.ts.data.BooleanParameter
 
 object RsiExample {
   def main(args: Array[String]): Unit = {
@@ -79,9 +80,12 @@ object RsiExample {
       RsiTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
       RsiTrader.SYMBOL -> CurrencyPairParameter(symbol),
       RsiTrader.OHLC_PERIOD -> new TimeParameter(1 hour),
-      RsiTrader.RSI_PERIOD->new NaturalNumberParameter(6),
+      RsiTrader.RSI_PERIOD->new NaturalNumberParameter(12),
       RsiTrader.HIGH_RSI -> RealNumberParameter(80),
-      RsiTrader.LOW_RSI -> RealNumberParameter(20))
+      RsiTrader.LOW_RSI -> RealNumberParameter(20),
+      RsiTrader.WITH_SMA_CONFIRMATION->BooleanParameter(true),
+      RsiTrader.LONG_SMA_PERIOD->new NaturalNumberParameter(20)
+    )
 
     val trader = RsiTrader.getInstance(traderId, List(marketForexId), parameters, "RsiTrader")
 

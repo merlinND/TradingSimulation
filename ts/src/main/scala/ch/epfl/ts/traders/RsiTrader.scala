@@ -31,6 +31,10 @@ import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.engine.ExecutedAskOrder
 import ch.epfl.ts.engine.ExecutedBidOrder
+import ch.epfl.ts.data.BooleanParameter
+import ch.epfl.ts.indicators.SmaIndicator
+import ch.epfl.ts.indicators.MovingAverage
+
 
 object RsiTrader extends TraderCompanion {
   type ConcreteTrader = RsiTrader
@@ -47,13 +51,23 @@ object RsiTrader extends TraderCompanion {
   /**LOW_RSI : Market is oversell, time to buy"*/
   val LOW_RSI = "lowRsi"
 
+  /**WITH_SMA_CONFIRMATION : need a confirmation by SMA indicator*/
+  val WITH_SMA_CONFIRMATION = "withSmaConfirmation"
+  /**LONG_SMA_PERIOD : should be > to the period of RSI*/
+  val LONG_SMA_PERIOD = "longSMAPeriod"
+
   override def strategyRequiredParameters = Map(
     SYMBOL -> CurrencyPairParameter,
     OHLC_PERIOD -> TimeParameter,
     RSI_PERIOD -> NaturalNumberParameter,
     HIGH_RSI -> RealNumberParameter,
     LOW_RSI -> RealNumberParameter)
+
+  override def optionalParameters = Map(
+    WITH_SMA_CONFIRMATION -> BooleanParameter,
+    LONG_SMA_PERIOD -> NaturalNumberParameter)
 }
+
 class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) with ActorLogging {
   import context.dispatcher
   override def companion = RsiTrader
@@ -66,9 +80,19 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
   val highRsi = parameters.get[Double](RsiTrader.HIGH_RSI)
   val lowRsi = parameters.get[Double](RsiTrader.HIGH_RSI)
 
+  val withSmaConfirmation = parameters.get[Boolean](RsiTrader.WITH_SMA_CONFIRMATION)
+  //TODO After the merge remove toLong (periods are int)
+  val longSmaPeriod = parameters.get[Int](RsiTrader.LONG_SMA_PERIOD).toLong
+  val shortSmaPeriod = rsiPeriod.toLong
+
   /**Indicators needed for RSI strategy*/
   val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, symbol, ohlcPeriod))
   val rsiIndicator = context.actorOf(Props(classOf[RsiIndicator], rsiPeriod))
+
+  //TODO do not create if not used
+  val smaIndicator = context.actorOf(Props(classOf[SmaIndicator], List(shortSmaPeriod, longSmaPeriod)))
+  var currentShort = 0.0
+  var currentLong = 0.0
 
   /**
    * Broker information
@@ -93,6 +117,9 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
 
     case ohlc: OHLC => {
       rsiIndicator ! ohlc
+      if (withSmaConfirmation) {
+        smaIndicator ! ohlc
+      }
     }
 
     case ConfirmRegistration => {
@@ -105,8 +132,19 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
       decideOrder(rsi.value)
     }
 
-    case eb: ExecutedBidOrder     => log.debug("executed bid volume: "+eb.volume)
-    case ea: ExecutedAskOrder     => log.debug("executed ask volume: "+ea.volume)
+    case ma: MovingAverage if registered => {
+      ma.value.get(shortSmaPeriod) match {
+        case Some(x) => currentShort = x
+        case None    => println("Error: Missing indicator with period " + shortSmaPeriod)
+      }
+      ma.value.get(longSmaPeriod) match {
+        case Some(x) => currentLong = x
+        case None    => println("Error: Missing indicator with period " + longSmaPeriod)
+      }
+    }
+
+    case eb: ExecutedBidOrder    => log.debug("executed bid volume: " + eb.volume)
+    case ea: ExecutedAskOrder    => log.debug("executed ask volume: " + ea.volume)
 
     case whatever if !registered => println("RsiTrader: received while not registered [check that you have a Broker]: " + whatever)
     case whatever                => println("RsiTrader: received unknown : " + whatever)
@@ -119,14 +157,27 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
         var holdings = 0.0
         val cashWith = funds.getOrElse(withC, 0.0)
         holdings = funds.getOrElse(whatC, 0.0)
-        //overbought : time to sell
-        if (rsi >= highRsi && holdings > 0.0) {
-          placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
-          //oversell : time to buy  
-        } else if (rsi <= lowRsi && holdings == 0) {
-          val askPrice = tradingPrices(whatC, withC)._2
-          val volumeToBuy = floor(cashWith / askPrice)
-          placeOrder(MarketBidOrder(oid, uid, currentTimeMillis, whatC, withC, volumeToBuy, -1))
+        if (!withSmaConfirmation) {
+          //overbought : time to sell
+          if (rsi >= highRsi && holdings > 0.0) {
+            placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
+            //oversell : time to buy  
+          } else if (rsi <= lowRsi && holdings == 0) {
+            val askPrice = tradingPrices(whatC, withC)._2
+            val volumeToBuy = floor(cashWith / askPrice)
+            placeOrder(MarketBidOrder(oid, uid, currentTimeMillis, whatC, withC, volumeToBuy, -1))
+          }
+        } //withSmaConfirmation
+        else {
+          //overbought : time to sell
+          if (rsi >= highRsi && holdings > 0.0 && currentShort <= currentLong) {
+            placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
+            //oversell : time to buy  
+          } else if (rsi <= lowRsi && holdings == 0 && currentShort >= currentLong) {
+            val askPrice = tradingPrices(whatC, withC)._2
+            val volumeToBuy = floor(cashWith / askPrice)
+            placeOrder(MarketBidOrder(oid, uid, currentTimeMillis, whatC, withC, volumeToBuy, -1))
+          }
         }
       }
     }
