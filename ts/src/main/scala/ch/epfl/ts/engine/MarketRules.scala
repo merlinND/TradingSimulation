@@ -200,4 +200,13 @@ class MarketRules extends Serializable {
       send(q)
     }
   }
+  
+  def initQuotes(q: Quote) = {
+    lastBidPrice = q.bid
+    lastAskPrice = q.ask
+    withC = q.withC
+    whatC = q.whatC
+    println("MarketRules: initializing quotes with " + q )
+    0
+  }
 }
