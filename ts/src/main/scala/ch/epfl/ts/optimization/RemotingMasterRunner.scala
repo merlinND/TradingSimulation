@@ -92,15 +92,15 @@ object RemotingMasterRunner {
       MovingAverageTrader.SHORT_PERIODS,
       MovingAverageTrader.LONG_PERIODS
     )
-    val initialWallet: Wallet.Type = Map(Currency.EUR -> 1000.0, Currency.CHF -> 1000.0)
+    val initialWallet: Wallet.Type = Map(Currency.EUR -> 0, Currency.CHF -> 5000.0)
     val otherParameterValues = Map(
       MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
       MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
-      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 hour),
+      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 day),
       MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002)      
     )
     
-    val maxInstances = (2 * availableHosts.size)
+    val maxInstances = (100 * availableHosts.size)
     val parameterizations = StrategyOptimizer.generateParameterizations(strategyToOptimize, parametersToOptimize,
                                                                         otherParameterValues, maxInstances).toSet
 
@@ -117,8 +117,7 @@ object RemotingMasterRunner {
     // ----- Connections
     deployments.foreach(d => {
       d.fetcher -> (d.market, classOf[Quote])
-      // TODO: is it being received correctly?
-      d.fetcher -> (Seq(d.market, master), EndOfFetching)
+      d.fetcher -> (Seq(d.market, master), classOf[EndOfFetching])
       d.market -> (d.broker, classOf[Quote], classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
       // TODO: make sure to support all order types
       d.broker -> (d.market, classOf[MarketAskOrder], classOf[MarketBidOrder])
@@ -133,6 +132,8 @@ object RemotingMasterRunner {
       
       for(printer <- d.printer) {
         d.market -> (printer, classOf[Transaction])
+        d.fetcher -> (printer, classOf[EndOfFetching])
+        
         for(e <- d.evaluators) e -> (printer, classOf[EvaluationReport])
       }
     })
@@ -149,8 +150,8 @@ object RemotingMasterRunner {
     }
     
     // Use this if we need to terminate early regardless of the data being fetched
-    terminateOptimizationAfter(11 seconds, master.ar)
+    //terminateOptimizationAfter(11 seconds, master.ar)
     
-    // TODO: fix actor names including the full path to the root (even though it is remote)
+    // TODO: fix actor names including the full path to the host system (even though it is actually created in the remote system)
   }
 }
