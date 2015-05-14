@@ -188,7 +188,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, currency: Currency, period
     val volatility = computeVolatility
     val drawdown = maxLoss / initial
     val sharpeRatio = (totalReturns - riskFreeRate) / volatility
-
+    
     send(EvaluationReport(traderId, trader.name, wallet.toMap, currency, initial, curVal, totalReturns, volatility, drawdown, sharpeRatio))
   }
 

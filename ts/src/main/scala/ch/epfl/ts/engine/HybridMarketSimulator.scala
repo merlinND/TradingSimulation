@@ -8,9 +8,6 @@ import akka.actor.ActorLogging
 import ch.epfl.ts.component.utils.Timekeeper
 import akka.actor.Props
 import ch.epfl.ts.data.TheTimeIs
-import ch.epfl.ts.engine.MarketAsksEmpty
-import ch.epfl.ts.engine.MarketBidsEmpty
-import ch.epfl.ts.engine.MarketMakerNotification
 
 /**
  * Market simulator, where first the data is being received from fetcher and market behaves in a way that traders' orders

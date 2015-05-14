@@ -17,8 +17,10 @@ import akka.testkit.TestKit
 import akka.util.Timeout
 import ch.epfl.ts.brokers.StandardBroker
 import ch.epfl.ts.component.ComponentBuilder
+import scala.concurrent.Await
 import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 import ch.epfl.ts.engine.{MarketFXSimulator, ForexMarketRules}
+
 
 object TestHelpers {
   def makeTestActorSystem(name: String = "TestActorSystem") =
@@ -68,10 +70,11 @@ class SimpleBrokerWrapped(market: ActorRef) extends StandardBroker {
 class FxMarketWrapped(uid: Long, rules: ForexMarketRules) extends MarketFXSimulator(uid, new FxMarketRulesWrapper(rules)) {
   import context.dispatcher
   override def send[T: ClassTag](t: T) {
-    val broker = context.actorSelection("../Broker")
+    val brokerSelection = context.actorSelection("../Broker")
     implicit val timeout = new Timeout(100 milliseconds)
-    for (res <- broker.resolveOne()) {
-      res ! t
-    }
+    val broker = Await.result(brokerSelection.resolveOne(), timeout.duration)
+    println("Tried to get Broker: " + broker)
+    println("Market sent to Broker ONLY: " + t)
+    broker ! t
   }
 }

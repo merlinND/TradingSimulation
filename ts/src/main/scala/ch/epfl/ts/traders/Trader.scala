@@ -15,6 +15,7 @@ import ch.epfl.ts.engine.FundWallet
 import ch.epfl.ts.data.Register
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.WalletParameter
+import akka.actor.ActorLogging
 import ch.epfl.ts.engine.GetTraderParameters
 import ch.epfl.ts.engine.TraderIdentity
 
@@ -32,6 +33,7 @@ case class RequiredParameterMissingException(message: String) extends RuntimeExc
  * @param marketIds List of market IDs that this trader trades on.
  *  This could be useful if the trader wants to receive indicators from various markets.
  */
+
 
 abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: StrategyParameters) extends Component {
   /** Gives a handle to the companion object */
@@ -102,7 +104,7 @@ abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: Stra
  * The user should not have to specify the parameter names as strings, but rather
  * be able to use the keys exposed by the strategy's companion object.
  */
-trait TraderCompanion {
+trait TraderCompanion extends Serializable {
   type Key = String
   
   /**
