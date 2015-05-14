@@ -1,17 +1,18 @@
 package ch.epfl.ts.component.fetch
 
+import java.util.Date
+import java.util.Calendar
+import java.util.Timer
+import java.util.TimerTask
+import scala.language.postfixOps
+import scala.util.parsing.combinator._
+import scala.io.Source
+import scala.concurrent.duration.DurationInt
 import ch.epfl.ts.data.Quote
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.EndOfFetching
 import ch.epfl.ts.component.persist.QuotePersistor
 import ch.epfl.ts.component.fetch.MarketNames._
-import scala.util.parsing.combinator._
-import scala.io.Source
-import scala.concurrent.duration._
-import java.util.Date
-import java.util.Calendar
-import java.util.Timer
-import java.util.TimerTask
 
 /**
  * HistDataCSVFetcher class reads data from csv source and converts it to Quotes.
@@ -62,6 +63,12 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
   val askPref = "DAT_NT_" + currencyPair.toUpperCase() + "_T_ASK_"
   
   /**
+   * Initial delay before starting to send quotes in order to let the system
+   * get each component started.
+   */
+  val initialDelay = (1 second)
+  
+  /**
    * The centerpiece of this class, where we actually load the data.
    * It contains all quotes this fetcher reads from disk, ready to be fetch()ed.
    * 
@@ -92,7 +99,7 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
    * t = (time when next quote was recorded) - (time when current quote was recorded)
    */
   val timer = new Timer()
-  timer.schedule(new SendQuotes, 0)
+  timer.schedule(new SendQuotes, initialDelay.toMillis)
   class SendQuotes extends java.util.TimerTask {
     
     def run() {
@@ -106,9 +113,6 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
         // If there are more quotes to send, move forward
         currentQuote = nextQuote
         nextQuote = allQuotes.next
-        
-        // TODO: remove this
-        send(EndOfFetching)
       } else if (currentQuote == nextQuote) {
         // Or maybe we already sent the last quote
         send(EndOfFetching)
