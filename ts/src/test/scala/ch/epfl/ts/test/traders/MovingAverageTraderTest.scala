@@ -65,7 +65,7 @@ class MovingAverageTraderTest
   market.ar ! testQuote
   broker.ar ! testQuote
 
-  val initWallet = initialFunds;
+  val initWallet = initialFunds
   var cash = initialFunds(Currency.CHF)
   var volume = floor(cash / askPrice)
 

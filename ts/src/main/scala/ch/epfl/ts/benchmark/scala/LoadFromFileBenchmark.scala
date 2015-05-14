@@ -18,12 +18,12 @@ object LoadFromFileBenchmark {
     val filename = "fakeData-999721.csv"
 
     println("#####----- Java: using BufferedReader -----#####")
-    var br: BufferedReader = null;
-    var line: String = "";
-    val cvsSplitBy: String = ",";
+    var br: BufferedReader = null
+    var line: String = ""
+    val cvsSplitBy: String = ","
     var rawList: List[String] = List()
 
-    br = new BufferedReader(new FileReader(filename));
+    br = new BufferedReader(new FileReader(filename))
     print("read file and store into List: ")
     val startTime = System.currentTimeMillis()
     while ({ line = br.readLine(); line != null }) {
@@ -69,7 +69,7 @@ object LoadFromFileBenchmark {
       }))
     println
 
-    
+
     println("#####----- Scala: using akka Actors and scala.io.Source -----#####")
     val system = ActorSystem("ReadingBenchmarking")
     val bufferedReader = system.actorOf(Props(new BufferedReaderActor(filename)), "bufferedReader")
@@ -78,7 +78,7 @@ object LoadFromFileBenchmark {
   }
 
   class SimpleReaderActor(filename: String, next: ActorRef) extends Actor {
-    
+
 
     def receive = {
       case "Start" => timed({
@@ -86,7 +86,7 @@ object LoadFromFileBenchmark {
         val source = Source.fromFile(filename)
         print("read file and store into list: ")
 //        val entriesList = timed(source.getLines().toList)
-        
+
         val entriesList = source.getLines().toList
         //println( (System.currentTimeMillis()-start) + " ms")
 //        next ! "Start"

@@ -61,10 +61,10 @@ object MovingAverageFXExample {
         val replaySpeed = 4000.0
 
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-        val startDate = dateFormat.parse("201304");
-        val endDate = dateFormat.parse("201304");
-        val workingDir = "./data";
-        val currencyPair = symbol._1.toString() + symbol._2.toString();
+        val startDate = dateFormat.parse("201304")
+        val endDate = dateFormat.parse("201304")
+        val workingDir = "./data"
+        val currencyPair = symbol._1.toString() + symbol._2.toString()
 
         val fetcherProps = Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, replaySpeed)
         builder.createRef(fetcherProps, "HistDataFetcher")

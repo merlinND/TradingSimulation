@@ -176,7 +176,7 @@ case class OHLC(marketId: Long, open: Double, high: Double, low: Double, close: 
  * @see LimitOrder
  */
 case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Currency, bid: Double, ask: Double) extends Streamable {
-  override def toString() = "(" + whatC.toString().toUpperCase() + "/" + withC.toString().toUpperCase() + ") = (" + bid + ", " + ask + ")";
+  override def toString() = "(" + whatC.toString().toUpperCase() + "/" + withC.toString().toUpperCase() + ") = (" + bid + ", " + ask + ")"
 }
 
 /**

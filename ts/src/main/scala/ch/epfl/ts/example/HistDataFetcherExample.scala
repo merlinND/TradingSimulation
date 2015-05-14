@@ -9,7 +9,7 @@ import ch.epfl.ts.data.EndOfFetching
 import scala.reflect.ClassTag
 
 /**
- * This system should instantiate a histDataCSVFetcher and 
+ * This system should instantiate a histDataCSVFetcher and
  * display the fetched data live on the command line
  */
 object HistDataFetcherExample {
@@ -19,14 +19,14 @@ object HistDataFetcherExample {
     // variables for the fetcher
     val speed = 60.0
     val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-    val startDate = dateFormat.parse("201304");
-    val endDate   = dateFormat.parse("201304");
-    val workingDir = "./data";
-    val currencyPair = "EURCHF";
-    
+    val startDate = dateFormat.parse("201304")
+    val endDate   = dateFormat.parse("201304")
+    val workingDir = "./data"
+    val currencyPair = "EURCHF"
+
     // Create Components
     // build fetcher
-    val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, speed),"HistFetcher")    
+    val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, speed),"HistFetcher")
     // build printer
     val printer = builder.createRef(Props(classOf[Printer], "Printer"), "Printer")
 
