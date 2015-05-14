@@ -1,9 +1,11 @@
 package ch.epfl.ts.optimization
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
+
+import akka.actor.ActorRef
 import akka.actor.Props
 import akka.actor.actorRef2Scala
 import ch.epfl.ts.component.ComponentBuilder
@@ -14,19 +16,18 @@ import ch.epfl.ts.data.EndOfFetching
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.Quote
+import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.data.Register
+import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.Transaction
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.ExecutedAskOrder
 import ch.epfl.ts.engine.ExecutedBidOrder
 import ch.epfl.ts.engine.FundWallet
 import ch.epfl.ts.engine.GetWalletFunds
-import ch.epfl.ts.engine.TraderIdentity
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.traders.MovingAverageTrader
-import ch.epfl.ts.data.TimeParameter
-import ch.epfl.ts.data.RealNumberParameter
 
 /**
  * Runs a main() method that creates all remote systems
@@ -59,6 +60,16 @@ object RemotingMasterRunner {
       new RemoteHost(hostname, port, prefix, systemName)
     })
   }
+  
+  /**
+   * Use this if we need to terminate early regardless of the data being fetched
+   */
+  def terminateOptimizationAfter(delay: FiniteDuration, supervisor: ActorRef)(implicit builder: ComponentBuilder) =
+    builder.system.scheduler.scheduleOnce(delay) {
+      println("---------- Terminating optimization after a fixed duration of " + delay)
+      supervisor ! EndOfFetching
+    }
+  
   
   def main(args: Array[String]): Unit = {
 
@@ -137,6 +148,8 @@ object RemotingMasterRunner {
       master.ar ! e.ar
     }
     
+    // Use this if we need to terminate early regardless of the data being fetched
+    terminateOptimizationAfter(11 seconds, master.ar)
     
     // TODO: fix actor names including the full path to the root (even though it is remote)
   }
