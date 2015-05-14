@@ -4,7 +4,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
-
 import akka.actor.ActorRef
 import akka.actor.Props
 import akka.actor.actorRef2Scala
@@ -28,6 +27,8 @@ import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.traders.MovingAverageTrader
+import ch.epfl.ts.data.LimitAskOrder
+import ch.epfl.ts.data.LimitBidOrder
 
 /**
  * Runs a main() method that creates all remote systems
@@ -120,10 +121,12 @@ object RemotingMasterRunner {
       d.fetcher -> (Seq(d.market, master), classOf[EndOfFetching])
       d.market -> (d.broker, classOf[Quote], classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
       // TODO: make sure to support all order types
-      d.broker -> (d.market, classOf[MarketAskOrder], classOf[MarketBidOrder])
+      d.broker -> (d.market, classOf[LimitBidOrder], classOf[LimitAskOrder], classOf[MarketBidOrder], classOf[MarketAskOrder])
       
       for(e <- d.evaluators) {
-        e -> (d.broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
+        d.fetcher -> (e, classOf[EndOfFetching])
+        e -> (d.broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds])
+        e -> (d.broker, classOf[LimitBidOrder], classOf[LimitAskOrder], classOf[MarketBidOrder], classOf[MarketAskOrder])
         d.market -> (e, classOf[Quote], classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
         d.market -> (e, classOf[Transaction])
         

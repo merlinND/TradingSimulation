@@ -42,6 +42,7 @@ import ch.epfl.ts.data.BooleanParameter
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 import ch.epfl.ts.data.CoefficientParameter
+import ch.epfl.ts.data.EndOfFetching
 
 object MovingAverageFXExample {
   def main(args: Array[String]): Unit = {
@@ -105,6 +106,7 @@ object MovingAverageFXExample {
 
     // ----- Connecting actors
     fxQuoteFetcher -> (forexMarket, classOf[Quote])
+    fxQuoteFetcher -> (printer, classOf[EndOfFetching])
     forexMarket -> (Seq(broker, trader), classOf[Quote])
 
     evaluator -> (printer, classOf[EvaluationReport])
