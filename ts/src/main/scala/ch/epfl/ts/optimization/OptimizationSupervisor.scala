@@ -24,13 +24,19 @@ class OptimizationSupervisor(onEnd: (TraderIdentity, EvaluationReport) => Unit) 
   // TODO: only keep the most N recent to avoid unnecessary build-up
   val evaluations: MutableMap[ActorRef, MutableList[EvaluationReport]] = MutableMap.empty
 
-  def lastEvaluations = evaluations.map({ case (t, l) => t -> l.head })
-  def bestTraderPerformance = lastEvaluations.toList.sortBy(p => p._2).head
+  def hasEvaluations = evaluations.forall(p => !p._2.isEmpty)
+  def lastEvaluations: Option[Map[ActorRef, EvaluationReport]] =
+    if (hasEvaluations) Some(evaluations.map({ case (t, l) => t -> l.head }).toMap)
+    else None
+  def bestTraderPerformance = lastEvaluations.map(_.toList.sortBy(p => p._2).head)
   
   var bestEvaluation: Option[EvaluationReport] = None
-  def askBestTraderIdentity = {
-    bestEvaluation = Some(bestTraderPerformance._2)
-    bestTraderPerformance._1 ! GetTraderParameters
+  def askBestTraderIdentity = bestTraderPerformance match {
+    case Some((trader, evaluation)) => {
+      bestEvaluation = Some(evaluation)
+      trader ! GetTraderParameters
+    }
+    case None => throw new Exception("Tried to get best trader's identity while no EvaluationReport had been seen yet")
   }
   
   override def receiver = {
@@ -46,6 +52,8 @@ class OptimizationSupervisor(onEnd: (TraderIdentity, EvaluationReport) => Unit) 
     case e: EvaluationReport => log.error("Received report from unknown sender " + sender + ": " + e)
 
     // When all data has been replayed, we can determine the best trader
+    case EndOfFetching if lastEvaluations.isEmpty =>
+      log.warning("Supervisor has received an EndOfFetching signal but hasn't seen any EvaluationReport yet.")
     case EndOfFetching if bestEvaluation.isEmpty => {
       log.info("Supervisor has received an EndOfFetching signal. Will now try to determine the best fetcher's identity.")
       askBestTraderIdentity
