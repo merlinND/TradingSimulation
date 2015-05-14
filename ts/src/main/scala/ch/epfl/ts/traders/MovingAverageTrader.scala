@@ -1,45 +1,40 @@
 package ch.epfl.ts.traders
-import ch.epfl.ts.component.Component
-import ch.epfl.ts.indicators.MovingAverage
-import ch.epfl.ts.data.Currency._
-import ch.epfl.ts.data.{ MarketAskOrder, MarketBidOrder, Quote }
-import ch.epfl.ts.data.Currency
-import akka.actor.ActorLogging
-import ch.epfl.ts.engine.MarketFXSimulator
-import akka.actor.ActorRef
-import ch.epfl.ts.data.ConfirmRegistration
-import ch.epfl.ts.data.Register
+
+import scala.collection.mutable.{HashMap => MHashMap}
 import scala.concurrent.duration.FiniteDuration
-import ch.epfl.ts.data.CurrencyPairParameter
-import ch.epfl.ts.data.NaturalNumberParameter
-import ch.epfl.ts.data.StrategyParameters
-import ch.epfl.ts.data.TimeParameter
-import ch.epfl.ts.data.RealNumberParameter
-import ch.epfl.ts.data.BooleanParameter
-import scala.slick.direct.order
-import akka.pattern.ask
-import ch.epfl.ts.data._
-import akka.util.Timeout
-import scala.collection.mutable.{ HashMap => MHashMap }
 import scala.math.abs
 import scala.math.floor
-import ch.epfl.ts.engine.Wallet
+
+import akka.actor.ActorLogging
+import akka.actor.ActorRef
 import akka.actor.Props
-import ch.epfl.ts.indicators.OhlcIndicator
-import ch.epfl.ts.indicators.SmaIndicator
+import akka.actor.actorRef2Scala
+import akka.pattern.ask
+import akka.util.Timeout
+import ch.epfl.ts.data.BooleanParameter
+import ch.epfl.ts.data.ConfirmRegistration
+import ch.epfl.ts.data.Currency.Currency
+import ch.epfl.ts.data.CurrencyPairParameter
+import ch.epfl.ts.data.MarketAskOrder
+import ch.epfl.ts.data.MarketBidOrder
+import ch.epfl.ts.data.MarketOrder
+import ch.epfl.ts.data.MarketShortOrder
+import ch.epfl.ts.data.NaturalNumberParameter
+import ch.epfl.ts.data.OHLC
+import ch.epfl.ts.data.Order
+import ch.epfl.ts.data.Quote
+import ch.epfl.ts.data.RealNumberParameter
+import ch.epfl.ts.data.StrategyParameters
+import ch.epfl.ts.data.TimeParameter
+import ch.epfl.ts.engine.AcceptedOrder
+import ch.epfl.ts.engine.ExecutedAskOrder
+import ch.epfl.ts.engine.ExecutedBidOrder
+import ch.epfl.ts.engine.GetWalletFunds
+import ch.epfl.ts.engine.RejectedOrder
+import ch.epfl.ts.engine.WalletFunds
 import ch.epfl.ts.indicators.EmaIndicator
-import ch.epfl.ts.engine.RejectedOrder
-import ch.epfl.ts.engine.ExecutedBidOrder
-import ch.epfl.ts.engine.WalletFunds
-import ch.epfl.ts.engine.AcceptedOrder
-import ch.epfl.ts.engine.ExecutedAskOrder
-import ch.epfl.ts.engine.GetWalletFunds
-import ch.epfl.ts.engine.RejectedOrder
-import ch.epfl.ts.engine.ExecutedBidOrder
-import ch.epfl.ts.engine.WalletFunds
-import ch.epfl.ts.engine.AcceptedOrder
-import ch.epfl.ts.engine.ExecutedAskOrder
-import ch.epfl.ts.engine.GetWalletFunds
+import ch.epfl.ts.indicators.MovingAverage
+import ch.epfl.ts.indicators.OhlcIndicator
 
 /**
  * MovingAverageTrader companion object
@@ -274,5 +269,4 @@ class MovingAverageTrader(uid: Long, marketIds: List[Long], parameters: Strategy
   override def init = {
     log.debug("MovingAverageTrader received startSignal")
   }
-
 }

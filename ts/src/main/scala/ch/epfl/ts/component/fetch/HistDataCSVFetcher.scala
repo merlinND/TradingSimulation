@@ -201,7 +201,10 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
         Quote(q.marketId, q.timestamp, whatC, withC, q.bid, q.ask)
       })
   }
-  
+
+  override def stop = {
+    timer.cancel()
+  }
 }
 
 /**

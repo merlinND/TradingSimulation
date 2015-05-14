@@ -11,7 +11,6 @@ import ch.epfl.ts.component.persist.DummyPersistor
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.engine.MarketFXSimulator
 import ch.epfl.ts.traders.MovingAverageTrader
-import ch.epfl.ts.component.utils.BackLoop
 import ch.epfl.ts.indicators.SmaIndicator
 import ch.epfl.ts.component.fetch.PullFetchComponent
 import ch.epfl.ts.data.{ Quote, OHLC }
@@ -41,6 +40,7 @@ import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.component.utils.Printer
 import ch.epfl.ts.data.BooleanParameter
 import ch.epfl.ts.evaluation.EvaluationReport
+import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 
 object MovingAverageFXExample {
   def main(args: Array[String]): Unit = {
@@ -57,7 +57,7 @@ object MovingAverageFXExample {
         val fetcherFx: TrueFxFetcher = new TrueFxFetcher
         builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "TrueFxFetcher")
       } else {
-        val replaySpeed = 40000.0
+        val replaySpeed = 4000.0
 
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
         val startDate = dateFormat.parse("201301");
@@ -70,7 +70,7 @@ object MovingAverageFXExample {
       }
     }
     // Market
-    val rules = new ForexMarketRules()
+    val rules = new FxMarketRulesWrapper()
     val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
 
     // Trader: cross moving average
@@ -103,9 +103,8 @@ object MovingAverageFXExample {
     val printer = builder.createRef(Props(classOf[Printer], "MyPrinter"), "Printer")
 
     // ----- Connecting actors
-
-    // TODO : connect fetcher only to the market (other components will get quotes from it)
-    fxQuoteFetcher -> (Seq(forexMarket, broker, evaluator), classOf[Quote])
+    fxQuoteFetcher -> (forexMarket, classOf[Quote])
+    forexMarket -> (Seq(broker, trader), classOf[Quote])
 
     evaluator -> (printer, classOf[EvaluationReport])
     evaluator -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])

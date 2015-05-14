@@ -15,8 +15,10 @@ import ch.epfl.ts.engine.FundWallet
 import ch.epfl.ts.data.Register
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.WalletParameter
+import akka.actor.ActorLogging
 import ch.epfl.ts.engine.GetTraderParameters
 import ch.epfl.ts.engine.TraderIdentity
+import ch.epfl.ts.data.TheTimeIs
 
 case class RequiredParameterMissingException(message: String) extends RuntimeException(message)
 
@@ -33,6 +35,7 @@ case class RequiredParameterMissingException(message: String) extends RuntimeExc
  *  This could be useful if the trader wants to receive indicators from various markets.
  */
 
+
 abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: StrategyParameters) extends Component {
   /** Gives a handle to the companion object */
   def companion: TraderCompanion
@@ -43,7 +46,7 @@ abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: Stra
   
   /** Default timeout to use when Asking another component asynchronously */
   val askTimeout = 500 milliseconds
-  var currentTimeMillis : Long = 0L
+  var currentTimeMillis: Long = 0L
   
   val initialFunds = parameters.get[Map[Currency.Currency, Double]]("InitialFunds")
   
@@ -57,6 +60,10 @@ abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: Stra
     case GetTraderParameters => {
       println("Got a GetTraderParameters")
       sender ! TraderIdentity(self.path.name, uid, companion, parameters)
+    }
+    
+    case TheTimeIs(t) => {
+      currentTimeMillis = t
     }
   }
   
@@ -102,7 +109,7 @@ abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: Stra
  * The user should not have to specify the parameter names as strings, but rather
  * be able to use the keys exposed by the strategy's companion object.
  */
-trait TraderCompanion {
+trait TraderCompanion extends Serializable {
   type Key = String
   
   /**

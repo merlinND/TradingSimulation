@@ -21,6 +21,7 @@ abstract class MovingAverage(val value: Map[Int, Double])
 abstract class MaIndicator(periods: List[Int]) extends Actor with ActorLogging {
 
   var values: MutableList[OHLC] = MutableList[OHLC]()
+
   val sortedPeriods = periods.sorted
   val maxPeriod = sortedPeriods.last
 

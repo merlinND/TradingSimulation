@@ -114,7 +114,7 @@ class BrokerInteractionTest
   "Wallet " should {
     " block the orders exceeding funds" in {
       within(1 second) {
-        EventFilter.debug(message = "MarketFXSimulator : received a bidOrder", occurrences = 0) intercept {
+        EventFilter.debug(message = "FxMS: received a bidOrder", occurrences = 0) intercept {
           EventFilter.debug(message = "TraderWithB: order failed", occurrences = 1) intercept {
             trader ! 'sendTooBigOrder
           }

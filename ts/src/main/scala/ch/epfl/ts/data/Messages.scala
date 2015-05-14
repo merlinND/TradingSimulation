@@ -8,6 +8,13 @@ import ch.epfl.ts.data.Currency._
 trait Streamable
 
 /**
+ * Message sent out by an actor which takes authority on the system's time.
+ * This way, we may override both physical time and historical data time if needed.
+ * @see Timekeeper
+ */
+case class TheTimeIs(now: Long) extends Streamable
+
+/**
  * Data Transfer Object representing a Transaction
  * @param mid market id
  * @param price
@@ -56,6 +63,7 @@ abstract class Order() extends Streamable with Chargeable {
   override def costCurrency() = withC
 }
 
+
 /**
  * Type of orders: You send a bid order if you want to buy a security at a given price.
  *                 You send an ask order if you want to sell a security.
@@ -92,6 +100,7 @@ case class LimitAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val 
   extends LimitOrder {
   override def costCurrency() = whatC
 }
+
 /**
  * @param whatC Which currency we are buying
  * @param withC The currency with which we are buying
@@ -102,6 +111,8 @@ case class LimitShortOrder(val oid: Long, val uid: Long, val timestamp: Long, va
   extends LimitOrder {
   override def costCurrency() = whatC
 }
+
+//TODO: remove price from common subclass, as for MarketOrders it doesn't make sense
 abstract class MarketOrder extends Order
 
 /**
@@ -164,7 +175,7 @@ case class OHLC(marketId: Long, open: Double, high: Double, low: Double, close: 
  *
  * @see LimitOrder
  */
-case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Currency, bid: Double, ask: Double) {
+case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Currency, bid: Double, ask: Double) extends Streamable {
   override def toString() = "(" + whatC.toString().toUpperCase() + "/" + withC.toString().toUpperCase() + ") = (" + bid + ", " + ask + ")";
 }
 
