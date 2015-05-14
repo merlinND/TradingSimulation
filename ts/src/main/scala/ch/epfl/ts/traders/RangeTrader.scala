@@ -85,8 +85,7 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
   var rangeSize : Double = 0.0
 
   val marketId = MarketNames.FOREX_ID
-  val oneHour : FiniteDuration = 60*60*1000 milliseconds
-  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), oneHour),"ohlcIndicator")
+  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), 1 hour),"ohlcIndicator")
   println(ohlcIndicator.path)
   
   //number of past OHLC that we used to compute support and range
