@@ -29,14 +29,14 @@ import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.RealNumberParameter
 
 /**
- * Runs a main() method that creates a MasterActor and remote WorkerActors
- * by calling createRemoteActors() for every availableWorker. It assumes
- * that there is a RemotingWorker class running and listening on port 3333
+ * Runs a main() method that creates all remote systems
+ * as well as an `OptimizationSupervisor` to watch them all.
+ * It assumes that there is a `RemotingWorker` class running and listening
  * on every availableWorker.
  * 
  * @see {@link ch.epfl.ts.optimization.RemotingWorker}
  */
-object RemotingHostRunner {
+object RemotingMasterRunner {
 
   val availableHosts = {
     val availableWorkers = List(

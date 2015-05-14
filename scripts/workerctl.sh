@@ -21,10 +21,10 @@ PORTS=(22 22 22 22 58575 22 65530 52640)
 BRANCH="master"
 
 # Which class to run on workers
-CLASS="ch.epfl.ts.optimization.RemotingWorker"
+CLASS="ch.epfl.ts.optimization.RemotingWorkerRunner"
 
 # Which logfile to write to on workers
-LOGFILE_ON_WORKER="~/RemotingWorker.log"
+LOGFILE_ON_WORKER="~/RemotingWorkerRunner.log"
 
 bold=$(tput bold) ; normal=$(tput sgr0) # Text formatting
 
@@ -35,7 +35,7 @@ bold=$(tput bold) ; normal=$(tput sgr0) # Text formatting
 #	3. "nohup <command3>" makes sure that command3 is not killed when its parent is killed
 #		(in our case: sh will be killed as soon as ssh has sent its command and disconnects,
 #		but nohup assures this doesn't happen to sbt)
-#	4. "sbt 'project ts' 'runMain ch.epfl.ts.remoting.RemotingWorker'" runs our remote actor system
+#	4. "sbt 'project ts' 'runMain ch.epfl.ts.remoting.RemotingWorkerRunner'" runs our remote actor system
 #	5. " > ~/RemoteActor.log 2>&1" redirects all sbt output to ~/RemoteActor.log
 START_CMD="sh -c \"\cd ~/TradingSimulation; \
 			nohup sbt 'project ts' 'runMain $CLASS' \
