@@ -81,9 +81,8 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
   val lowRsi = parameters.get[Double](RsiTrader.HIGH_RSI)
 
   val withSmaConfirmation = parameters.get[Boolean](RsiTrader.WITH_SMA_CONFIRMATION)
-  //TODO After the merge remove toLong (periods are int)
-  val longSmaPeriod = parameters.get[Int](RsiTrader.LONG_SMA_PERIOD).toLong
-  val shortSmaPeriod = rsiPeriod.toLong
+  val longSmaPeriod = parameters.get[Int](RsiTrader.LONG_SMA_PERIOD)
+  val shortSmaPeriod = rsiPeriod
 
   /**Indicators needed for RSI strategy*/
   val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, symbol, ohlcPeriod))
