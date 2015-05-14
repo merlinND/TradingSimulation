@@ -38,6 +38,7 @@ import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.component.utils.Printer
+import ch.epfl.ts.data.BooleanParameter
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 
@@ -56,11 +57,11 @@ object MovingAverageFXExample {
         val fetcherFx: TrueFxFetcher = new TrueFxFetcher
         builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "TrueFxFetcher")
       } else {
-        val replaySpeed = 40000.0
+        val replaySpeed = 4000.0
 
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-        val startDate = dateFormat.parse("201304");
-        val endDate = dateFormat.parse("201305");
+        val startDate = dateFormat.parse("201301");
+        val endDate = dateFormat.parse("201312");
         val workingDir = "./data";
         val currencyPair = symbol._1.toString() + symbol._2.toString();
 
@@ -79,10 +80,13 @@ object MovingAverageFXExample {
     val parameters = new StrategyParameters(
       MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
       MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
-      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 minute),
+
+      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 day),
       MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
       MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
-      MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002))
+      MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002),
+      MovingAverageTrader.WITH_SHORT -> BooleanParameter(true),
+      MovingAverageTrader.SHORT_PERCENT -> RealNumberParameter(0.2))
 
     val trader = MovingAverageTrader.getInstance(traderId, List(marketForexId), parameters, "MovingAverageTrader")
 
@@ -95,6 +99,7 @@ object MovingAverageFXExample {
     val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
 
     // Add printer if needed to debug / display
+
     val printer = builder.createRef(Props(classOf[Printer], "MyPrinter"), "Printer")
 
     // ----- Connecting actors

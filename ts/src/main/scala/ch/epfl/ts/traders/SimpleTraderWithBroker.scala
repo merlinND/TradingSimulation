@@ -26,13 +26,14 @@ import ch.epfl.ts.engine.Wallet
 object SimpleTraderWithBroker extends TraderCompanion {
   type ConcreteTrader = SimpleTraderWithBroker
   override protected val concreteTraderTag = scala.reflect.classTag[SimpleTraderWithBroker]
-  
+
   override def strategyRequiredParameters = Map()
 }
 
 /**
  * Dummy broker-aware trader.
  */
+
 class SimpleTraderWithBroker(uid: Long, marketIds: List[Long], parameters: StrategyParameters)
     extends Trader(uid, marketIds, parameters)
     with ActorLogging {
