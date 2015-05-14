@@ -128,7 +128,8 @@ class StandardBroker extends Component with ActorLogging {
       val allowShort = o match {
         case _: MarketShortOrder | _: LimitShortOrder => true
         case _                                        => false
-
+      }
+      
       val placementCost = o match {
         case _: MarketBidOrder   => o.volume * tradingPrices(o.whatC, o.withC)._2 // we buy at ask price
         case _: MarketAskOrder   => o.volume

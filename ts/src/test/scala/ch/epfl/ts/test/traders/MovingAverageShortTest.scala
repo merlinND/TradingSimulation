@@ -154,6 +154,7 @@ class MovingAverageShortTest
   }
 
 }
+
 /**
  * A bit dirty hack to allow ComponentRef-like communication between components, while having them in Test ActorSystem
  * @param uid traderID

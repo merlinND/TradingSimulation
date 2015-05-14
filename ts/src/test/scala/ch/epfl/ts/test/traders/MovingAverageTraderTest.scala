@@ -152,16 +152,3 @@ class MovingAverageTraderTest
   }
 }
 
-/**
- * A bit dirty hack to allow ComponentRef-like communication between components, while having them in Test ActorSystem
- * @param uid traderID
- * @param StrategyParameters parameters
- * @param broker ActorRef
- */
-class MovingAverageTraderWrapped(uid: Long, marketIds : List[Long], parameters: StrategyParameters, broker: ActorRef)
-  extends MovingAverageTrader(uid, marketIds, parameters) {
-  override def send[T: ClassTag](t: T) {
-    broker ! t
-  }
-  override def send[T: ClassTag](t: List[T]) = t.map(broker ! _)
-}
