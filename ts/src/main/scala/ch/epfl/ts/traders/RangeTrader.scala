@@ -48,14 +48,14 @@ private case class GotWalletFunds(wallet : Try[WalletFunds]) extends Serializabl
 object RangeTrader extends TraderCompanion {
   type ConcreteTrader = RangeTrader
   override protected val concreteTraderTag = scala.reflect.classTag[RangeTrader]
-  
+
   /** Currencies to trade */
   val SYMBOL = "Symbol"
   /** Volume to trade */
   val VOLUME = "Volume"
   /** Size of the window during which we will send order, expressed in percent of the range total size */
   val ORDER_WINDOW = "OrderWindow"
-  
+
   override def strategyRequiredParameters = Map(
     SYMBOL -> CurrencyPairParameter,
     VOLUME -> RealNumberParameter,
@@ -63,61 +63,61 @@ object RangeTrader extends TraderCompanion {
   )
 }
 
-/** 
+/**
  * The strategy used by this trader is a classical mean reversion strategy.
- * We define to range the resistance and the support.  
+ * We define to range the resistance and the support.
  * The resistance is considered as a ceiling and when prices are close to it we sell since we expect prices to go back to normal
  * The support is considered as a floor ans when pricess are close to it is a good time to buy. But note that if prices breaks the
  * support then we liquidate our position. We avoid the risk that prices will crash.
  * @param volume the volume that we want to buy
  */
 class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParameters)
-    extends Trader(uid, marketIds, parameters) with ActorLogging{
+    extends Trader(uid, marketIds, parameters) {
 
   override def companion = RangeTrader
 
   val (whatC, withC) = parameters.get[(Currency, Currency)](RangeTrader.SYMBOL)
   val orderWindow = parameters.get[Double](RangeTrader.ORDER_WINDOW)
-  var recomputeRange : Boolean = true 
+  var recomputeRange : Boolean = true
   var resistance : Double = Double.MaxValue
   var support : Double = Double.MinValue
   var oid: Long = 0;
   var currentPrice: Double = 0.0
   var volume : Double = 0
-  
+
   /** Define the height of the range the buy/sell window will be define as a percentage of this range */
   var rangeSize : Double = 0.0
 
   val marketId = MarketNames.FOREX_ID
   val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), 1 hour),"ohlcIndicator")
   println(ohlcIndicator.path)
-  
+
   /** Number of past OHLC that we use to compute support and range */
-  val timePeriod = 48 
+  val timePeriod = 48
   val tolerance = 1
   val rangeIndicator = context.actorOf(Props(classOf[RangeIndicator], timePeriod, tolerance), "rangeIndicator")
-  
+
   /**
    * To make sure that we sell when we actually have something to sell
    * and buy only when we haven't buy yet
    */
   var holdings : Double = 0.0
   var rangeReady : Boolean = false
-  var askPrice = 0.0  
+  var askPrice = 0.0
   var bidPrice = 0.0
-  
+
   /**
    * Broker information
    */
   var broker: ActorRef = null
   var registered = false
-  
+
   /**
    * When we receive an OHLC we check if the price is in the buying range or in the selling range.
    * If the price break the support we sell (assumption price will crashes)
    */
   override def receiver = {
-    
+
     case GotWalletFunds(wallet) => wallet match {
       case Success(WalletFunds(id, funds: Map[Currency, Double])) => {
         val cashWith = funds.getOrElse(withC, 0.0)
@@ -129,20 +129,20 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
       }
       case Failure(e) => log.error("Range trader was supposed to receive wallet funds but received "+e+ " instead")
     }
-    
+
     case ConfirmRegistration => {
       broker = sender()
       registered = true
       log.debug("RangeTrader: Broker confirmed")
     }
-    
+
     case quote : Quote => {
       currentTimeMillis = quote.timestamp
       askPrice = quote.ask
       bidPrice = quote.bid
       ohlcIndicator ! quote
     }
-    
+
     case ohlc : OHLC if registered => {
       rangeIndicator ! ohlc
       currentPrice = ohlc.close
@@ -150,7 +150,7 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
         prepareOrder
       }
     }
-    
+
     case range : RangeIndic => {
       log.debug("received range with support = "+range.support+" and resistance = "+range.resistance)
       if(recomputeRange) {
@@ -162,15 +162,15 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
       }
       rangeReady = true
     }
-    
+
     case _: ExecutedBidOrder => log.debug("RangeTrader: bid executed")
     case _: ExecutedAskOrder => log.debug("RangeTrader: ask executed")
     case o => log.info("RangeTrader received unknown: " + o)
   }
- 
+
   def decideOrder = {
     println("holdings : "+holdings)
-    
+
     /** We receive a sell signal */
     if(currentPrice >= resistance - (rangeSize * orderWindow) && holdings > 0.0) {
       oid += 1
@@ -178,7 +178,7 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
       placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
       log.debug("sell")
     }
-    
+
     /** panic sell, the prices breaks the support*/
     else if(currentPrice < support - (rangeSize * orderWindow) && holdings > 0) {
       oid += 1
@@ -186,9 +186,9 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
       placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
       log.debug("panic sell")
     }
-    
-    
-    /** We are in the buy window*/ 
+
+
+    /** We are in the buy window*/
      else if(currentPrice <= support + (rangeSize * orderWindow) && currentPrice > support && holdings == 0.0) {
        oid += 1
        recomputeRange = false
@@ -196,32 +196,32 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
        println("we just buy : "+volume+" to price "+currentPrice+" and support "+support + " sellingwindow "+(support + (rangeSize * orderWindow)))
        log.debug("buy")
     }
-        
+
     /** We are breaking the resistance with no holdings recompute the range*/
     else if(currentPrice > resistance && holdings == 0.0) {
       recomputeRange = true
       log.debug("resitance broken allow range recomputation")
     }
-     
+
     /** panic signal better not buy*/
     else if(currentPrice < support && holdings == 0.0){
       log.debug("we break support with no holdings -> recompute range")
       recomputeRange = true
     }
-        
+
     else {
       log.debug("nothing is done")
     }
-  }  
+  }
   override def init {
     log.debug("range trader start")
   }
-  
+
   import context.dispatcher
   def prepareOrder = {
     implicit val timeout = new Timeout(askTimeout)
     val f: Future[WalletFunds] = (broker ? GetWalletFunds(uid, this.self)).mapTo[WalletFunds]
-    // TODO: is this really needed? Maybe we could catch the `WalletFunds` response directly in the main receiver 
+    // TODO: is this really needed? Maybe we could catch the `WalletFunds` response directly in the main receiver
     // TODO: could we simplify this by making a custom "waiting for wallet" receiver? (look into `context become`)
     f.onComplete { walletFund => this.self ! GotWalletFunds(walletFund) }
     f.onFailure {
@@ -248,4 +248,4 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
       }
     }
   }
-}  
+}
