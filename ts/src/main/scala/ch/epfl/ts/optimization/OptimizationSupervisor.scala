@@ -76,13 +76,13 @@ class OptimizationSupervisor extends Component with ActorLogging {
     case e: EvaluationReport => log.error("Received report from unknown sender " + sender + ": " + e)
 
     // When all data has been replayed, we can determine the best trader
-    case EndOfFetching if lastEvaluations.isEmpty =>
+    case _: EndOfFetching if lastEvaluations.isEmpty =>
       log.warning("Supervisor has received an EndOfFetching signal but hasn't seen any EvaluationReport yet.")
-    case EndOfFetching if bestEvaluation.isEmpty => {
+    case _: EndOfFetching if bestEvaluation.isEmpty => {
       log.debug("Supervisor has received an EndOfFetching signal. Will now try to determine the best fetcher's identity.")
       askBestTraderIdentity()
     }
-    case EndOfFetching =>
+    case _: EndOfFetching =>
       log.warning("Supervisor has received more than one EndOfFetching signals")
     
       

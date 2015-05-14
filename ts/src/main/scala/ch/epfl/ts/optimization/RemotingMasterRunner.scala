@@ -67,7 +67,7 @@ object RemotingMasterRunner {
   def terminateOptimizationAfter(delay: FiniteDuration, supervisor: ActorRef)(implicit builder: ComponentBuilder) =
     builder.system.scheduler.scheduleOnce(delay) {
       println("---------- Terminating optimization after a fixed duration of " + delay)
-      supervisor ! EndOfFetching
+      supervisor ! EndOfFetching(System.currentTimeMillis())
     }
   
   
