@@ -1,15 +1,16 @@
 package ch.epfl.ts.evaluation
 
-import akka.util.Timeout
-import ch.epfl.ts.engine.{Wallet, TraderIdentity, GetTraderParameters}
-
 import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.collection.mutable.{Map => MMap, MutableList => MList}
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.concurrent.duration.FiniteDuration
+
+import akka.actor.ActorLogging
 import akka.actor.{ActorRef, Cancellable}
 import akka.pattern.{ ask, pipe }
+import akka.util.Timeout
+import ch.epfl.ts.engine.{Wallet, TraderIdentity, GetTraderParameters}
 import ch.epfl.ts.component.{ComponentRegistration, Component, ComponentRef}
 import ch.epfl.ts.data._
 
@@ -59,7 +60,8 @@ case class EvaluationReport(traderId: Long, traderName: String, wallet: Map[Curr
   * @param currency the reference currency for reporting and calculation
   * @param period the time period to send evaluation report
   */
-class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: Currency, period: FiniteDuration) extends Component {
+class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: Currency, period: FiniteDuration)
+    extends Component with ActorLogging {
   // For usage of Scheduler
   import context._
 
@@ -108,7 +110,7 @@ class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: 
     case 'Report =>
       if (canReport) report
       
-    case TraderIdentity(_, _, companion, parameters) =>
+    case TraderIdentity(_, _, companion, parameters) if initialWallet.isEmpty =>
       initialWallet = parameters.get[Wallet.Type](companion.INITIAL_FUNDS)
       initialWallet.foreach { case (currency, amount) =>
         wallet += currency -> (wallet.getOrElse(currency, 0.0) + amount)
