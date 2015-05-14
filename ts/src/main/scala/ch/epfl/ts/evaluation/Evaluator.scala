@@ -109,6 +109,8 @@ class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: 
       
     case 'Report =>
       if (canReport) report
+    case _: EndOfFetching =>
+      if (canReport) report
       
     case TraderIdentity(_, _, companion, parameters) if initialWallet.isEmpty =>
       initialWallet = parameters.get[Wallet.Type](companion.INITIAL_FUNDS)
