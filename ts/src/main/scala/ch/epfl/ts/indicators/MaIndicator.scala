@@ -12,16 +12,17 @@ import ch.epfl.ts.data.Streamable
 /**
  * Moving Average value data
  */
-abstract class MovingAverage(val value: Map[Long, Double]) extends Streamable
+abstract class MovingAverage(val value: Map[Int, Double]) extends Streamable
 
 /**
  * Moving average superclass. To implement a moving average indicator,
  * extend this class and implement the computeMa() method.
  * @param periods List of periods (expressed in "Number of OHLC" unit)
  */
-abstract class MaIndicator(periods: List[Long]) extends Actor with ActorLogging {
+abstract class MaIndicator(periods: List[Int]) extends Actor with ActorLogging {
 
   var values: MutableList[OHLC] = MutableList[OHLC]()
+
   val sortedPeriods = periods.sorted
   val maxPeriod = sortedPeriods.last
 

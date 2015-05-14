@@ -1,16 +1,16 @@
 package ch.epfl.ts.indicators
 
 import scala.collection.mutable.MutableList
-case class EMA(override val value: Map[Long, Double]) extends MovingAverage(value) with Serializable
+case class EMA(override val value: Map[Int, Double]) extends MovingAverage(value) with Serializable
 
-class EmaIndicator(periods: List[Long]) extends MaIndicator(periods: List[Long]) {
+class EmaIndicator(periods: List[Int]) extends MaIndicator(periods: List[Int]) {
   val multipliers = periods.map(p => p -> 2.0 / (p + 1)).toMap
   var previousMas = periods.map(p => (p -> 0.0)).toMap
   var hasStarted = periods.map(p => p -> false).toMap
 
   def computeMa: EMA = {
 
-    def auxCompute(period: Long): Double = {
+    def auxCompute(period: Int): Double = {
       //EMA = SMA at initialization
       if (!hasStarted(period)) {
         var sma: Double = 0.0

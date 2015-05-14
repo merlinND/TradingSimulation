@@ -61,6 +61,7 @@ abstract class Order() extends Streamable with Chargeable {
   override def costCurrency() = withC
 }
 
+
 /**
  * Type of orders: You send a bid order if you want to buy a security at a given price.
  *                 You send an ask order if you want to sell a security.
@@ -97,6 +98,18 @@ case class LimitAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val 
   extends LimitOrder {
   override def costCurrency() = whatC
 }
+
+/**
+ * @param whatC Which currency we are buying
+ * @param withC The currency with which we are buying
+ * Allow shorting of whatC
+ * @see LimitOrder
+ */
+case class LimitShortOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+  extends LimitOrder {
+  override def costCurrency() = whatC
+}
+
 //TODO: remove price from common subclass, as for MarketOrders it doesn't make sense
 abstract class MarketOrder extends Order
 
@@ -107,7 +120,7 @@ abstract class MarketOrder extends Order
  * @see LimitOrder
  */
 case class MarketBidOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
-  extends MarketOrder{
+  extends MarketOrder {
 }
 
 /**
@@ -117,7 +130,17 @@ case class MarketBidOrder(val oid: Long, val uid: Long, val timestamp: Long, val
  * @see LimitOrder
  */
 case class MarketAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
-  extends MarketOrder{
+  extends MarketOrder {
+  override def costCurrency() = whatC
+}
+/**
+ * @param whatC Which currency we are buying
+ * @param withC The currency with which we are buying
+ * Allow shorting of whatC
+ * @see LimitOrder
+ */
+case class MarketShortOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+  extends MarketOrder {
   override def costCurrency() = whatC
 }
 
@@ -128,7 +151,7 @@ case class MarketAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val
  * @see LimitOrder
  */
 case class DelOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
-  extends Order{
+  extends Order {
 }
 
 /**

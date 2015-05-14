@@ -16,6 +16,7 @@ import ch.epfl.ts.engine.FundWallet
 import ch.epfl.ts.data.Register
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.WalletParameter
+import akka.actor.ActorLogging
 import ch.epfl.ts.engine.GetTraderParameters
 import ch.epfl.ts.engine.TraderIdentity
 import ch.epfl.ts.data.TheTimeIs

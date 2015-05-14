@@ -21,7 +21,7 @@ class TimekeeperTestSuite extends ActorTestSuite("TimekeeperTestSuite") {
     val offset = now
     
     "Send out a first timestamp right away, using the given base" in {
-      val timeout = (50 milliseconds)
+      val timeout = (100 milliseconds)
       within(timeout) {
         val received = expectMsgType[TheTimeIs]
         assert(received.now >= base, "Timestamps should never be smaller than the base timestamp")

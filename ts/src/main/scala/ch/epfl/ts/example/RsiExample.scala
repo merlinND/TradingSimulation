@@ -38,18 +38,18 @@ import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.component.utils.Printer
-import ch.epfl.ts.data.BooleanParameter
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
-import ch.epfl.ts.data.CoefficientParameter
+import ch.epfl.ts.traders.RsiTrader
+import ch.epfl.ts.data.BooleanParameter
 
-object MovingAverageFXExample {
+object RsiExample {
   def main(args: Array[String]): Unit = {
     implicit val builder = new ComponentBuilder()
     val marketForexId = MarketNames.FOREX_ID
 
     val useLiveData = false
-    val symbol = (Currency.EUR, Currency.CHF)
+    val symbol = (Currency.USD, Currency.CHF)
 
     // ----- Creating actors
     // Fetcher
@@ -58,11 +58,11 @@ object MovingAverageFXExample {
         val fetcherFx: TrueFxFetcher = new TrueFxFetcher
         builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "TrueFxFetcher")
       } else {
-        val replaySpeed = 4000.0
+        val replaySpeed = 10000.0
 
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
         val startDate = dateFormat.parse("201304");
-        val endDate = dateFormat.parse("201304");
+        val endDate = dateFormat.parse("201305");
         val workingDir = "./data";
         val currencyPair = symbol._1.toString() + symbol._2.toString();
 
@@ -74,33 +74,30 @@ object MovingAverageFXExample {
     val rules = new FxMarketRulesWrapper()
     val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rules), MarketNames.FOREX_NAME)
 
-    // Trader: cross moving average
     val traderId = 123L
-    val periods = List(2, 6)
-    val initialFunds: Wallet.Type = Map(Currency.CHF -> 5000.0)
+    val initialFunds: Wallet.Type = Map(Currency.CHF -> 100000.0)
     val parameters = new StrategyParameters(
-      MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
-      MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
+      RsiTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
+      RsiTrader.SYMBOL -> CurrencyPairParameter(symbol),
+      RsiTrader.OHLC_PERIOD -> new TimeParameter(1 hour),
+      RsiTrader.RSI_PERIOD->new NaturalNumberParameter(12),
+      RsiTrader.HIGH_RSI -> RealNumberParameter(80),
+      RsiTrader.LOW_RSI -> RealNumberParameter(20),
+      RsiTrader.WITH_SMA_CONFIRMATION->BooleanParameter(true),
+      RsiTrader.LONG_SMA_PERIOD->new NaturalNumberParameter(20)
+    )
 
-      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 day),
-      MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
-      MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
-      MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002),
-      MovingAverageTrader.WITH_SHORT -> BooleanParameter(true),
-      MovingAverageTrader.SHORT_PERCENT -> CoefficientParameter(0.2))
-
-    val trader = MovingAverageTrader.getInstance(traderId, List(marketForexId), parameters, "MovingAverageTrader")
+    val trader = RsiTrader.getInstance(traderId, List(marketForexId), parameters, "RsiTrader")
 
     // Evaluation
     val evaluationPeriod = 2 seconds
     val referenceCurrency = symbol._2
-    val evaluator = builder.createRef(Props(classOf[Evaluator], trader.ar, traderId, trader.name, referenceCurrency, evaluationPeriod), "Evaluator")
+    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, referenceCurrency, evaluationPeriod), "Evaluator")
 
     // Broker
     val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
 
     // Add printer if needed to debug / display
-
     val printer = builder.createRef(Props(classOf[Printer], "MyPrinter"), "Printer")
 
     // ----- Connecting actors

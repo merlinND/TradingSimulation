@@ -20,7 +20,7 @@ case class EvaluationReport(traderId: Long, traderName: String, wallet: Map[Curr
                             currency: Currency, initial: Double, current: Double, totalReturns: Double,
                             volatility: Double, drawdown: Double, sharpeRatio: Double)
                            extends Ordered[EvaluationReport] with Serializable {
-  
+
   /** Compares two evaluation reports by total returns
     *
     * Returns x where:
@@ -62,7 +62,7 @@ case class EvaluationReport(traderId: Long, traderName: String, wallet: Map[Curr
 class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: Currency, period: FiniteDuration) extends Component {
   // For usage of Scheduler
   import context._
-  
+
   // Initial values
   private var initialValueReceived = false
   private var initialWallet: Map[Currency, Double] = Map.empty
@@ -97,10 +97,10 @@ class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: 
       buy(t)
     case t: Transaction if t.sellerId == traderId =>  // sell
       sell(t)
-      
+
     case t: Transaction => // Nothing to do
        // Let's not forward unrelated transactions to our poor Trader
-      
+
     case q: Quote =>
       updatePrice(q)
       trader ! q
@@ -157,7 +157,7 @@ class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: 
     val Quote(_, _, whatC, withC, bid, ask) = q
     priceTable.put(whatC -> withC, bid)
     priceTable.put(withC -> whatC, 1/ask)
-    
+
     if(lastValue.isEmpty) {
       lastValue = Some(valueOfWallet(wallet.toMap))
     }

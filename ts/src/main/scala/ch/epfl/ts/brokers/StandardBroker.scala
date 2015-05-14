@@ -28,6 +28,11 @@ import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.LimitBidOrder
 import ch.epfl.ts.data.LimitAskOrder
+import ch.epfl.ts.data.MarketShortOrder
+import ch.epfl.ts.data.MarketAskOrder
+import ch.epfl.ts.data.LimitShortOrder
+import ch.epfl.ts.data.LimitShortOrder
+import ch.epfl.ts.data.MarketAskOrder
 
 /**
  */
@@ -51,10 +56,10 @@ class StandardBroker extends Component with ActorLogging {
       context.actorOf(Props[Wallet], "wallet" + id)
       sender() ! ConfirmRegistration
     }
-    case FundWallet(uid, curr, value) => {
+    case FundWallet(uid, curr, value, allowNegative) => {
       log.debug("Broker: got a request to fund a wallet")
       val replyTo = sender
-      executeForWallet(uid, FundWallet(uid, curr, value), {
+      executeForWallet(uid, FundWallet(uid, curr, value, allowNegative), {
         case WalletConfirm(uid) => {
           log.debug("Broker: Wallet confirmed")
           replyTo ! WalletConfirm(uid)
@@ -72,41 +77,78 @@ class StandardBroker extends Component with ActorLogging {
         log.debug("Broker: someone asks for not - his wallet")
         return dummyReturn
       }
-      executeForWallet(uid, GetWalletFunds(uid,ref), {
+      executeForWallet(uid, GetWalletFunds(uid, ref), {
         case w: WalletFunds => {
           replyTo ! w
         }
       })
     }
 
-    //TODO(sygi): refactor
-    case e: ExecutedBidOrder =>
-      finishExecutedOrder(e, e.whatC, e.volume)
+    case e: ExecutedBidOrder => {
+      if (mapping.contains(e.uid)) {
+        val replyTo = mapping.getOrElse(e.uid, null)
+        executeForWallet(e.uid, FundWallet(e.uid, e.whatC, e.volume), {
+          case WalletConfirm(uid) => {
+            log.debug("Broker: Transaction executed")
+            println("going to send execut bid to : "+replyTo)
+            replyTo ! e
+          }
+          case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
+        })
+      }
+    }
+    case e: ExecutedAskOrder => {
+      if (mapping.contains(e.uid)) {
+        val replyTo = mapping.getOrElse(e.uid, null)
+        executeForWallet(e.uid, FundWallet(e.uid, e.withC, e.volume * e.price), {
+          case WalletConfirm(uid) => {
+            log.debug("Broker: Transaction executed")
+            println("going to send execut ask to : "+replyTo)
 
-    case e: ExecutedAskOrder =>
-      finishExecutedOrder(e, e.withC, e.volume * e.price)
+            replyTo ! e
+          }
+          case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
+        })
+      }
+    }
 
     //TODO(sygi): refactor charging the wallet/placing an order
     case o: Order => {
       log.debug("Broker: received order")
       val replyTo = sender
-      val uid = o.chargedTraderId()
+
       if (!ableToProceed(o)){
         log.warning("Broker: Unable to proceed MarketBid request before getting first quote")
         replyTo ! RejectedOrder.apply(o)
         return dummyReturn
       }
+
+      val uid = o.chargedTraderId()
+      val allowShort = o match {
+        case _: MarketShortOrder | _: LimitShortOrder => true
+        case _                                        => false
+      }
+      
       val placementCost = o match {
-        case _: MarketBidOrder => o.volume * tradingPrices(o.whatC, o.withC)._2 // we buy at ask price
-        case _: MarketAskOrder => o.volume
-        case _: LimitBidOrder  => o.volume * o.price
-        case _: LimitAskOrder  => o.volume
+        case _: MarketBidOrder   => o.volume * tradingPrices(o.whatC, o.withC)._2 // we buy at ask price
+        case _: MarketAskOrder   => o.volume
+        case _: MarketShortOrder => o.volume
+        case _: LimitBidOrder    => o.volume * o.price
+        case _: LimitAskOrder    => o.volume
+        case _: LimitShortOrder  => o.volume
+
       }
       val costCurrency = o.costCurrency()
-      executeForWallet(uid, FundWallet(uid, costCurrency, -placementCost), {
+      val orderToSend = o match {
+        //converting shortOrders
+        case o:MarketShortOrder => MarketAskOrder(o.oid,o.uid,o.timestamp,o.whatC,o.withC,o.volume,o.price)
+        case o:LimitShortOrder => LimitAskOrder(o.oid,o.uid,o.timestamp,o.whatC,o.withC,o.volume,o.price)
+        case _ => o
+      }
+      executeForWallet(uid, FundWallet(uid, costCurrency, -placementCost, allowShort), {
         case WalletConfirm(uid) => {
           log.debug("Broker: Wallet confirmed")
-          send(o)
+          send(orderToSend)
           replyTo ! AcceptedOrder.apply(o) //means: order placed
         }
         case WalletInsufficient(uid) => {
@@ -138,7 +180,7 @@ class StandardBroker extends Component with ActorLogging {
   def executeForWallet(uid: Long, question: WalletState, cb: PartialFunction[Any, Unit]) = {
     context.child("wallet" + uid) match {
       case Some(walletActor) => {
-        implicit val timeout = new Timeout(100 milliseconds)
+        implicit val timeout = new Timeout(1000 milliseconds)
         val future = (walletActor ? question).mapTo[WalletState]
         future onSuccess cb
         future onFailure {
