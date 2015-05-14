@@ -62,7 +62,7 @@ object RangeExample {
     val dummyPersistor = new DummyPersistor()
     
     // Backloop
-    val backloop = builder.createRef(Props(classOf[BackLoop], marketForexId, dummyPersistor), "backloop")
+  //  val backloop = builder.createRef(Props(classOf[BackLoop], marketForexId, dummyPersistor), "backloop")
     
     // Trader: range trader. 
     val traderId: Long = 123L
@@ -73,7 +73,8 @@ object RangeExample {
       RangeTrader.VOLUME -> RealNumberParameter(10.0),
       RangeTrader.ORDER_WINDOW -> CoefficientParameter(0.20)
     )
-    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, List(marketForexId),parameters), "RangeTrader")
+    val traderName = "RangeTrader"
+    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, List(marketForexId),parameters), traderName)
    
     // Indicator
     // specify period over which we build the OHLC (from quotes)
@@ -83,8 +84,8 @@ object RangeExample {
     // Evaluator
     val periodEvaluator : FiniteDuration  = 2000 milliseconds
     val currency = Currency.CHF
-    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, currency, periodEvaluator), "evaluator")
-    
+    val evaluator = builder.createRef(Props(classOf[Evaluator], trader.ar, traderId, traderName,currency, periodEvaluator), "evaluator")
+
     
     //printer
     val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")
