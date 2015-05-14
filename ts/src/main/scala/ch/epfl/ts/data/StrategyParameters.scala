@@ -16,7 +16,7 @@ import ch.epfl.ts.engine.Wallet
  *
  * It can be constructed with an arbitrary number of parameters.
  */
-class StrategyParameters(params: (String, Parameter)*) {
+class StrategyParameters(params: (String, Parameter)*) extends Serializable {
   type Key = String
   val parameters = params.toMap
 
@@ -94,7 +94,7 @@ class StrategyParameters(params: (String, Parameter)*) {
  * Strategies can declare required and optional parameters.
  * Each parameter has a "range" of valid values.
  */
-abstract class Parameter(val name: String) { self =>
+abstract class Parameter(val name: String) extends Serializable { self =>
   /** Type of the value this parameter holds */
   type T
 
