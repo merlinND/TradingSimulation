@@ -1,4 +1,4 @@
-package ch.epfl.ts.test.component
+package ch.epfl.ts.test.traders
 
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps

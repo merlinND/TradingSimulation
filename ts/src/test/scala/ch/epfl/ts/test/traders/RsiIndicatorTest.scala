@@ -12,7 +12,6 @@ import scala.language.postfixOps
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration.DurationInt
 
-
 @RunWith(classOf[JUnitRunner])
 class RsiIndicatorTest extends ActorTestSuite("RsiIndicator") {
     
