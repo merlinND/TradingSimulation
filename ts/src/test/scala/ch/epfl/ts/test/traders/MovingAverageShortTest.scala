@@ -28,6 +28,7 @@ import ch.epfl.ts.test.SimpleBrokerWrapped
 import ch.epfl.ts.traders.MovingAverageTrader
 import ch.epfl.ts.data.NaturalNumberParameter
 import ch.epfl.ts.indicators.SMA
+import ch.epfl.ts.data.CoefficientParameter
 
 /**
  * @warning Some of the following tests are dependent and should be executed in the specified order.
@@ -50,7 +51,7 @@ class MovingAverageShortTest
     MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
     MovingAverageTrader.TOLERANCE -> RealNumberParameter(tolerance),
     MovingAverageTrader.WITH_SHORT -> BooleanParameter(true),
-    MovingAverageTrader.SHORT_PERCENT -> RealNumberParameter(0.2))
+    MovingAverageTrader.SHORT_PERCENT -> CoefficientParameter(0.2))
 
   val marketID = 1L
   val market = builder.createRef(Props(classOf[FxMarketWrapped], marketID, new ForexMarketRules()), MarketNames.FOREX_NAME)

@@ -4,7 +4,6 @@ import scala.collection.mutable.{HashMap => MHashMap}
 import scala.concurrent.duration.FiniteDuration
 import scala.math.abs
 import scala.math.floor
-
 import akka.actor.ActorLogging
 import akka.actor.ActorRef
 import akka.actor.Props
@@ -35,6 +34,7 @@ import ch.epfl.ts.engine.WalletFunds
 import ch.epfl.ts.indicators.EmaIndicator
 import ch.epfl.ts.indicators.MovingAverage
 import ch.epfl.ts.indicators.OhlcIndicator
+import ch.epfl.ts.data.CoefficientParameter
 
 /**
  * MovingAverageTrader companion object
@@ -55,7 +55,7 @@ object MovingAverageTrader extends TraderCompanion {
   val TOLERANCE = "Tolerance"
   /** Allow the use of Short orders in the strategy */
   val WITH_SHORT = "WithShort"
-  /** Percetange of wallet to short */
+  /** Maximum percentage of wallet that we allow to short */
   val SHORT_PERCENT = "ShortPercent"
 
   override def strategyRequiredParameters = Map(
@@ -67,7 +67,7 @@ object MovingAverageTrader extends TraderCompanion {
 
   override def optionalParameters = Map(
     WITH_SHORT -> BooleanParameter,
-    SHORT_PERCENT -> RealNumberParameter)
+    SHORT_PERCENT -> CoefficientParameter)
 }
 
 /**
@@ -88,11 +88,13 @@ class MovingAverageTrader(uid: Long, marketIds: List[Long], parameters: Strategy
   val longPeriods = parameters.get[Int](MovingAverageTrader.LONG_PERIODS)
   val tolerance = parameters.get[Double](MovingAverageTrader.TOLERANCE)
   val withShort = parameters.getOrElse[Boolean](MovingAverageTrader.WITH_SHORT, false)
+
+  val marketId = marketIds(0)
   val shortPercent = parameters.getOrElse[Double](MovingAverageTrader.SHORT_PERCENT, 0.0)
+
   /**
    * Indicators needed by the Moving Average Trader
    */
-  val marketId = marketIds(0)
   val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, symbol, ohlcPeriod))
   val movingAverageIndicator = context.actorOf(Props(classOf[EmaIndicator], List(shortPeriods, longPeriods)))
 
@@ -167,7 +169,7 @@ class MovingAverageTrader(uid: Long, marketIds: List[Long], parameters: Strategy
         var holdings = 0.0
         var shortings = 0.0
         var toShortAmount = 0.0
-        
+
         val cashWith = funds.getOrElse(withC, 0.0)
         holdings = funds.getOrElse(whatC, 0.0)
         log.debug("cash " + cashWith + " holdings" + holdings)
