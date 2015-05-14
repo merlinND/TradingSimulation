@@ -41,6 +41,7 @@ import ch.epfl.ts.component.utils.Printer
 import ch.epfl.ts.data.BooleanParameter
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
+import ch.epfl.ts.data.CoefficientParameter
 
 object MovingAverageFXExample {
   def main(args: Array[String]): Unit = {
@@ -48,7 +49,7 @@ object MovingAverageFXExample {
     val marketForexId = MarketNames.FOREX_ID
 
     val useLiveData = false
-    val symbol = (Currency.USD, Currency.CHF)
+    val symbol = (Currency.EUR, Currency.CHF)
 
     // ----- Creating actors
     // Fetcher
@@ -60,8 +61,8 @@ object MovingAverageFXExample {
         val replaySpeed = 4000.0
 
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-        val startDate = dateFormat.parse("201301");
-        val endDate = dateFormat.parse("201312");
+        val startDate = dateFormat.parse("201304");
+        val endDate = dateFormat.parse("201304");
         val workingDir = "./data";
         val currencyPair = symbol._1.toString() + symbol._2.toString();
 
@@ -86,7 +87,7 @@ object MovingAverageFXExample {
       MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
       MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002),
       MovingAverageTrader.WITH_SHORT -> BooleanParameter(true),
-      MovingAverageTrader.SHORT_PERCENT -> RealNumberParameter(0.2))
+      MovingAverageTrader.SHORT_PERCENT -> CoefficientParameter(0.2))
 
     val trader = MovingAverageTrader.getInstance(traderId, List(marketForexId), parameters, "MovingAverageTrader")
 

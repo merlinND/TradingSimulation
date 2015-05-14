@@ -4,7 +4,6 @@ import scala.collection.mutable.{HashMap => MHashMap}
 import scala.concurrent.duration.FiniteDuration
 import scala.math.abs
 import scala.math.floor
-
 import akka.actor.ActorLogging
 import akka.actor.ActorRef
 import akka.actor.Props
@@ -35,6 +34,7 @@ import ch.epfl.ts.engine.WalletFunds
 import ch.epfl.ts.indicators.EmaIndicator
 import ch.epfl.ts.indicators.MovingAverage
 import ch.epfl.ts.indicators.OhlcIndicator
+import ch.epfl.ts.data.CoefficientParameter
 
 /**
  * MovingAverageTrader companion object
@@ -67,7 +67,7 @@ object MovingAverageTrader extends TraderCompanion {
 
   override def optionalParameters = Map(
     WITH_SHORT -> BooleanParameter,
-    SHORT_PERCENT -> RealNumberParameter)
+    SHORT_PERCENT -> CoefficientParameter)
 }
 
 /**
