@@ -36,6 +36,11 @@ import ch.epfl.ts.indicators.RangeIndicator
 import ch.epfl.ts.indicators.RangeIndic
 
 
+/**
+ * @note This needs to be on top level for serializability
+ */
+private case class GotWalletFunds(wallet : Try[WalletFunds]) extends Serializable
+
 
 /**
  * RangeTrader companion object
@@ -72,7 +77,6 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
   override def companion = RangeTrader
 
   val (whatC, withC) = parameters.get[(Currency, Currency)](RangeTrader.SYMBOL)
-  //val volume = parameters.get[Double](RangeTrader.VOLUME)
   val orderWindow = parameters.get[Double](RangeTrader.ORDER_WINDOW)
   var recomputeRange : Boolean = true 
   var resistance : Double = Double.MaxValue
@@ -81,14 +85,14 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
   var currentPrice: Double = 0.0
   var volume : Double = 0
   
- /**Define the height of the range the buy/sell window will be define as a percentage of this range */
+  /** Define the height of the range the buy/sell window will be define as a percentage of this range */
   var rangeSize : Double = 0.0
 
   val marketId = MarketNames.FOREX_ID
   val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), 1 hour),"ohlcIndicator")
   println(ohlcIndicator.path)
   
-  //number of past OHLC that we used to compute support and range
+  /** Number of past OHLC that we use to compute support and range */
   val timePeriod = 48 
   val tolerance = 1
   val rangeIndicator = context.actorOf(Props(classOf[RangeIndicator], timePeriod, tolerance), "rangeIndicator")
@@ -159,11 +163,6 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
       rangeReady = true
     }
     
-//    case didBrokerAcceptOrder(order) => {
-//      println("broker respond with order :"+ order.getClass)
-//    }
-    
-    
     case _: ExecutedBidOrder => log.debug("RangeTrader: bid executed")
     case _: ExecutedAskOrder => log.debug("RangeTrader: ask executed")
     case o => log.info("RangeTrader received unknown: " + o)
@@ -218,20 +217,17 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
     log.debug("range trader start")
   }
   
-  private case class GotWalletFunds(wallet : Try[WalletFunds])
   import context.dispatcher
   def prepareOrder = {
     implicit val timeout = new Timeout(askTimeout)
-    val f: Future[WalletFunds] = (broker ? GetWalletFunds(uid, this.self)).mapTo[WalletFunds] 
-    f.onComplete { walletFund => this.self ! GotWalletFunds(walletFund) } 
+    val f: Future[WalletFunds] = (broker ? GetWalletFunds(uid, this.self)).mapTo[WalletFunds]
+    // TODO: is this really needed? Maybe we could catch the `WalletFunds` response directly in the main receiver 
+    // TODO: could we simplify this by making a custom "waiting for wallet" receiver? (look into `context become`)
+    f.onComplete { walletFund => this.self ! GotWalletFunds(walletFund) }
+    f.onFailure {
+      case e => log.warning("RangeTrader: Wallet command failed: " + e)
+    }
   }
-  
-//  private case class didBrokerAcceptOrder(order : Try[Order])
-//  def placeOrder(order: MarketOrder) = {
-//    implicit val timeout = new Timeout(askTimeout)
-//    val f : Future[Order] = (broker ? order).mapTo[Order]
-//    f.onComplete { order => this.self ! didBrokerAcceptOrder(order)}
-//  }
 
   def placeOrder(order: MarketOrder) = {
     implicit val timeout = new Timeout(askTimeout)

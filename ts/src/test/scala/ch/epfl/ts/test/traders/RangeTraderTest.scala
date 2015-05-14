@@ -59,9 +59,9 @@ class RangeTraderTest
   val testQuote = Quote(1L, System.currentTimeMillis(), symbol._1, symbol._2, bidPrice, askPrice)
   val market = builder.createRef(Props(classOf[FxMarketWrapped], marketId, new ForexMarketRules()), MarketNames.FOREX_NAME)
   val broker = builder.createRef(Props(classOf[SimpleBrokerWrapped], market.ar), "Broker")
-  val trader = builder.createRef(Props(classOf[RangeTraderWrapped], traderId, List(marketId), parameters, broker.ar),"RangeTrader")
-    println("create trader : "+trader.ar.path)
-
+  val trader = builder.createRef(Props(classOf[RangeTraderWrapped], traderId, List(marketId), parameters, broker.ar), "RangeTrader")
+  
+  
   market.ar ! StartSignal
   broker.ar ! StartSignal
   market.ar ! testQuote
@@ -69,7 +69,6 @@ class RangeTraderTest
 
   "A range trader " should {
   
-    
     "register" in {
       within(1 second) {
         EventFilter.debug(message = "RangeTrader: Broker confirmed", occurrences = 1) intercept {
@@ -157,7 +156,7 @@ class RangeTraderTest
  * @param StrategyParameters parameters
  * @param broker ActorRef
  */
-class RangeTraderWrapped(uid: Long, marketIds : List[Long], parameters: StrategyParameters, broker: ActorRef)
+class RangeTraderWrapped(uid: Long, marketIds: List[Long], parameters: StrategyParameters, broker: ActorRef)
   extends RangeTrader(uid, marketIds, parameters) {
   override def send[T: ClassTag](t: T) {
     broker ! t
