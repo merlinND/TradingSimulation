@@ -29,6 +29,7 @@ import ch.epfl.ts.component.utils.Printer
 import ch.epfl.ts.traders.MMwithWallet
 import ch.epfl.ts.traders.TraderCompanion
 import ch.epfl.ts.config.FundsGermany
+import ch.epfl.ts.traders.TraderCompanion
 
 /**
  * Market simulation with first reading historical data and then running simulation on its own.
@@ -39,33 +40,45 @@ object FullMarketSimulationWithCustomSetup {
   
   /** market configuration */
   val symbol = (Currency.EUR, Currency.CHF)
-  val fundDistribution = new FundsGermany      /* country */
-  val exchangeRateFunding = (1.0, 1.0)         /* ._1: fund to symbol._1, ._2: fund to  symbol._2
-                                                * must be hardcoded since the distribution 
-                                                * might be given in a different currency and
-                                                * hence this is only a scaling factor
-                                                */ 
-  var traderDistribution = Map[Class[_], Int]() /* trader type -> number of instances */
-  var traderList = List[TraderCompanion]()      /* list of trader instances, to be filled during setup */
-  var marketMaker: TraderCompanion = null       /* market maker (who is technically a trader */
+  val fundDistribution = new FundsGermany
+  /**
+   * ._1: fund to symbol._1, ._2: fund to  symbol._2
+   * Must be hardcoded since the distribution might be given in a different currency and
+   * hence this is only a scaling factor.
+   */ 
+  // TODO: there is most likely a more functional way to do that
+  val exchangeRateFunding = (1.0, 1.0)
+  /** Trader type -> number of instances */
+  var traderDistribution = Map(
+    MadTrader -> 5
+    // TODO: other relevant trading strategies
+  )
+  /** Market maker (who is technically a trader */
+  var marketMaker: TraderCompanion = null
   
-  def setup = {
+  /**
+   * @return References to the traders that were instantiated
+   */
+  def instantiateTraders(implicit builder: ComponentBuilder): List[ComponentRef] = {
     // TODO Jakob
-    /** add trader type and number of instances */
-    traderDistribution += classOf[MadTrader] -> 5
     
-    val numberOfTraders = traderDistribution.foldLeft(0)(_+_._2)
-    /** create trader instances */
-    traderList = traderDistribution.flatMap(x => x match {
-      case (key, value) => key match {
-        case madtrader if madtrader.isAssignableFrom(classOf[MadTrader]) => {
-          // TODO create value instances of MadTrader
-          List[TraderCompanion]()
-        }
-        case _ => {
-          println("Unknown trader class")
-          List[TraderCompanion]()
-        }
+    // TODO: is this needed?
+    val numberOfTraders = traderDistribution.values.sum
+    
+		var uid = 0L
+    val marketIds = List(MarketNames.FOREX_ID)
+    // TODO: get interesting parameters (in particular, initial funds)
+    val emptyParameters = new StrategyParameters
+    
+    // Instantiate traders of each type
+    traderDistribution.flatMap({
+      case (companion, n) => {
+        val traders = List.range(0, n).map(i => {
+          companion.getInstance(uid, marketIds, emptyParameters, "trader-" + uid)
+        })
+        uid += 1
+        
+        traders
       }
     }).toList
   }
@@ -87,6 +100,9 @@ object FullMarketSimulationWithCustomSetup {
     val tId = 15L
     val marketId = MarketNames.FOREX_ID
 
+    // TODO: instantiate many traders instead
+    //val traders = instantiateTraders
+    
     val trader = MadTrader.getInstance(tId, List(marketId), parameters, "OneMadTrader")
     addConsument(classOf[Quote], trader)
     addConsument(classOf[TheTimeIs], trader)
