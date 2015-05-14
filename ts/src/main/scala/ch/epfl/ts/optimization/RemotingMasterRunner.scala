@@ -60,17 +60,12 @@ object RemotingMasterRunner {
     })
   }
   
-  val optimizationFinished = Promise[(TraderIdentity, EvaluationReport)]
-  def onEnd(t: TraderIdentity, e: EvaluationReport) = {
-    optimizationFinished.success((t, e))
-    Unit
-  }
-
   def main(args: Array[String]): Unit = {
 
-    // ----- Build the supervisor actor
     implicit val builder = new ComponentBuilder()
-    val master = builder.createRef(Props(classOf[OptimizationSupervisor], onEnd _), "MasterActor")
+    
+    // ----- Supervisor actor    
+    val master = builder.createRef(Props(classOf[OptimizationSupervisor]), "MasterActor")
     
     // ----- Factory: class responsible for creating the components
     val speed = 200000.0
@@ -94,7 +89,7 @@ object RemotingMasterRunner {
       MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002)      
     )
     
-    val maxInstances = (5 * availableHosts.size)
+    val maxInstances = (2 * availableHosts.size)
     val parameterizations = StrategyOptimizer.generateParameterizations(strategyToOptimize, parametersToOptimize,
                                                                         otherParameterValues, maxInstances).toSet
 
@@ -107,7 +102,6 @@ object RemotingMasterRunner {
       println("Creating " + parameters.size + " instances of " + strategyToOptimize.getClass.getSimpleName + " on host " + host)
       factory.createRemoteActors(master, host, strategyToOptimize, parameterizations)
     })
-    
     
     // ----- Connections
     deployments.foreach(d => {
@@ -133,6 +127,7 @@ object RemotingMasterRunner {
     })
     
     // Make sure brokers are started before the traders
+    master.ar ! StartSignal
     for(d <- deployments) d.broker.ar ! StartSignal
     builder.start
     
@@ -142,17 +137,6 @@ object RemotingMasterRunner {
       master.ar ! e.ar
     }
     
-    optimizationFinished.future.onSuccess({
-      case (TraderIdentity(name, uid, companion, parameters), evaluation: EvaluationReport) => {
-        println("---------- Optimization completed ----------")
-        println(s"The best trader was: $name (id $uid) using strategy $companion.")
-        println(s"Its parameters were:\n$parameters")
-        println(s"Its final evaluation was:\n$evaluation")
-        println("--------------------------------------------")
-        
-        builder.shutdownManagedActors(3 seconds)
-      }
-    })
     
     // TODO: fix actor names including the full path to the root (even though it is remote)
   }

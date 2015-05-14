@@ -150,7 +150,6 @@ trait StrategyFactory {
       // Assert that parameterization is valid for this strategy (will throw if it is not the case)
       strategyToOptimize.verifyParameters(parameterization)
 
-      // TODO: user of this class could give a list of names
       val name = {
         if(i < names.size) "Trader-" + names(i)
         else "Trader-" + i
