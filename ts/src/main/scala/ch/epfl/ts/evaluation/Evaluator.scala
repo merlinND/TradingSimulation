@@ -99,13 +99,15 @@ class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: 
       sell(t)
 
     case t: Transaction => // Nothing to do
-       // Let's not forward unrelated transactions to our poor Trader
+       // Let's not forward unrelated transactions to our poor busy Trader
 
     case q: Quote =>
       updatePrice(q)
-      trader ! q
+      trader forward q
+      
     case 'Report =>
       if (canReport) report
+      
     case TraderIdentity(_, _, companion, parameters) =>
       initialWallet = parameters.get[Wallet.Type](companion.INITIAL_FUNDS)
       initialWallet.foreach { case (currency, amount) =>
@@ -115,7 +117,9 @@ class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: 
       if(canReport) {
         lastValue = Some(valueOfWallet(wallet.toMap))
       }
-    case m => trader ! m
+      
+    // All other messages, we just pass along
+    case m => trader forward m
   }
 
   /**
