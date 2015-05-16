@@ -51,8 +51,6 @@ abstract class AbstractTraderShowcaseExample extends AbstractForexExample with T
       d.fetcher -> (e, classOf[EndOfFetching])
       d.market -> (e, classOf[Quote], classOf[Transaction])
       e -> (d.broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
-
-      e -> (d.printer.get, classOf[EvaluationReport])
     })
 
     // ----- Print things for debug
