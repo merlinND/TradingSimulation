@@ -112,7 +112,7 @@ object RemotingMasterRunner {
     val distributed = factory.distributeOverHosts(availableHosts, parameterizations)
     val deployments = distributed.map({ case (host, parameters) =>
       println("Creating " + parameters.size + " instances of " + strategyToOptimize.getClass.getSimpleName + " on host " + host)
-      factory.createRemoteActors(master, host, strategyToOptimize, parameterizations)
+      factory.createDeployment(master, host, strategyToOptimize, parameterizations)
     })
 
     // ----- Connections
