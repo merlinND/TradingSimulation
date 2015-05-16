@@ -15,7 +15,7 @@ import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.traders.RsiTrader
 import ch.epfl.ts.traders.TraderCompanion
 
-object RsiExample extends AbstractTraderShowcaseExample {
+object RsiTraderExample extends AbstractTraderShowcaseExample {
 
   val useLiveData = false
   val replaySpeed = 4000.0

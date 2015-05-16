@@ -16,7 +16,7 @@ import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.traders.MovingAverageTrader
 import ch.epfl.ts.traders.TraderCompanion
 
-object MovingAverageFXExample extends AbstractTraderShowcaseExample {
+object MovingAverageTraderExample extends AbstractTraderShowcaseExample {
 
   val useLiveData = false
   val replaySpeed = 4000.0

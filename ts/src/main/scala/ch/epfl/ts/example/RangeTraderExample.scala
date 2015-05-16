@@ -12,7 +12,7 @@ import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.traders.RangeTrader
 import ch.epfl.ts.traders.TraderCompanion
 
-object RangeExample extends AbstractTraderShowcaseExample {
+object RangeTraderExample extends AbstractTraderShowcaseExample {
 
   val useLiveData = false
   val replaySpeed = 4000.0
