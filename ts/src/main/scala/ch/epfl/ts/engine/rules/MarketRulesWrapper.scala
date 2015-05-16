@@ -15,7 +15,7 @@ abstract class MarketRulesWrapper(rules: MarketRules){
                    book: OrderBook, tradingPrices: HashMap[(Currency, Currency), (Double, Double)], //TODO(sygi): get type from original class
                    send: Streamable => Unit)
   def getRules = rules
-  
-  def initQuotes(q: Quote) = 0
 
+  /** give the first quote to be able to generate them periodically right from the start */
+  def initQuotes(q: Quote): Unit
 }

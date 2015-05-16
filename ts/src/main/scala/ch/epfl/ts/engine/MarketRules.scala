@@ -27,12 +27,6 @@ class MarketRules extends Serializable {
   var lastAskPrice = 1.0
   var withC = Currency.DEF
   var whatC = Currency.DEF
-  
-
-  var lastBidPrice = 1.0
-  var lastAskPrice = 1.0
-  var withC = Currency.DEF
-  var whatC = Currency.DEF
 
   // when used on TreeSet, head() and iterator() provide increasing order
   def asksOrdering = new Ordering[Order] {
@@ -175,10 +169,6 @@ class MarketRules extends Serializable {
         topAsk = topBid
         topBid = tmp
       }
-      lastBidPrice = topBid.price
-      lastAskPrice = topAsk.price
-      whatC = topAsk.whatC
-      withC = topAsk.withC
       
       val q = Quote(marketId, timestamp, topAsk.whatC, topAsk.withC, topBid.price, topAsk.price)
       println("MR: generating quote " + q)
@@ -198,6 +188,5 @@ class MarketRules extends Serializable {
     withC = q.withC
     whatC = q.whatC
     println("MarketRules: initializing quotes with " + q )
-    0
   }
 }

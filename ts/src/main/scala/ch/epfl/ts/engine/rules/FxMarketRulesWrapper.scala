@@ -76,4 +76,6 @@ class FxMarketRulesWrapper(val rules :ForexMarketRules = new ForexMarketRules())
       }
     }
   }
+
+  override def initQuotes(q: Quote): Unit = {}
 }
