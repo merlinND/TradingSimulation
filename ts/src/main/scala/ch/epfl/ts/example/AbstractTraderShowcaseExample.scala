@@ -72,7 +72,7 @@ abstract class AbstractTraderShowcaseExample extends AbstractForexExample with T
   
   def main(args: Array[String]): Unit = {
     // ----- Creating actors
-    val d = factory.createDeployment(localHost, strategy, parameterizations)
+    val d = factory.createDeployment(localHost, strategy, parameterizations, traderNames)
 
     // ----- Connecting actors
     makeConnections(d)
