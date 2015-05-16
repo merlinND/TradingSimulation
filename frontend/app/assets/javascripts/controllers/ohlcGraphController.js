@@ -17,7 +17,7 @@
             ws.onmessage = function(event) {
               var symbolOhlc = JSON.parse(event.data);
               $scope.$apply(function() {
-                var name = symbolOhlc.whatC.name + " to " + symbolOhlc.withC.name;
+                var name = symbolOhlc.whatC.s + " to " + symbolOhlc.withC.s;
                 var ohlc = symbolOhlc.ohlc;
                 var ohlcSeries = $scope.chartSeries.filter(function(series) {
                   return series.name == name;

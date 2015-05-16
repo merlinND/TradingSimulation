@@ -13,7 +13,7 @@
           $scope.evaluationReports[report.traderId] = report;
           
           if (!$scope.referenceCurrency) {
-            $scope.referenceCurrency = report.currency.name;
+            $scope.referenceCurrency = report.currency.s;
           }
         };
         
