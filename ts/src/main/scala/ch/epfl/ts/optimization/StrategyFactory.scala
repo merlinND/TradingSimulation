@@ -170,7 +170,7 @@ trait StrategyFactory {
       strategyToOptimize.verifyParameters(parameterization)
 
       val name = {
-        if(i < names.size) "Trader-" + names(i)
+        if(i < names.size) names(i)
         else "Trader-" + i
       }
 
@@ -207,9 +207,21 @@ trait StrategyFactory {
   /**
    * Sanitize a string into a valid actor name
    *
-   * @TODO Make more complete (many cases are not covered here)
+   * @TODO Make more complete (most cases are not covered here)
    */
   def sanitizeActorName(s: String): String = {
-    s.replace("Öéèüçäà- ", "Oeeucaa__")
+    val replacements = Map(
+      "Ö" -> "O",
+      "é" -> "e",
+      "è" -> "e",
+      "ü" -> "u",
+      "ç" -> "c",
+      "ä" -> "a",
+      "à" -> "a",
+      " " -> "-"
+    )
+    replacements.foldLeft(s)({
+      case (string, (from, to)) => string.replaceAll(from, to)
+    })
   }
 }
