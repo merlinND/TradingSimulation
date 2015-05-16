@@ -4,12 +4,12 @@ import scala.collection.mutable.{HashMap => MHashMap}
 import scala.language.existentials
 import scala.language.postfixOps
 import scala.reflect.ClassTag
-
 import akka.actor.Actor
 import akka.actor.ActorRef
 import akka.actor.actorRef2Scala
+import akka.actor.ActorLogging
 
-trait Receiver extends Actor {
+trait Receiver extends Actor with ActorLogging {
   def receive: PartialFunction[Any, Unit]
 
   def send[T: ClassTag](t: T): Unit
@@ -23,15 +23,15 @@ abstract class Component extends Receiver {
   final def componentReceive: PartialFunction[Any, Unit] = {
     case ComponentRegistration(ar, ct, name) =>
       connect(ar, ct, name)
-      println("Received destination " + this.getClass.getSimpleName + ": from " + ar + " to " + ct.getSimpleName)
+      log.debug("Received destination " + this.getClass.getSimpleName + ": from " + ar + " to " + ct.getSimpleName)
     case StartSignal => stopped = false
       start
-      println("Received Start " + this.getClass.getSimpleName)
+      log.debug("Received Start " + this.getClass.getSimpleName)
     case StopSignal => context.stop(self)
       stop
-      println("Received Stop " + this.getClass.getSimpleName)
+      log.debug("Received Stop " + this.getClass.getSimpleName)
       stopped = true
-    case y if stopped => println("Received data when stopped " + this.getClass.getSimpleName + " of type " + y.getClass )
+    case y if stopped => log.debug("Received data when stopped " + this.getClass.getSimpleName + " of type " + y.getClass )
   }
 
   /**

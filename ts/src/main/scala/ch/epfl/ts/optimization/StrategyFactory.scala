@@ -36,6 +36,17 @@ class QuoteTag extends ClassTag[Quote] with Serializable {
 }
 
 /**
+ * Contains concrete references to instances created remotely (or locally just as well, actually).
+ * An instance of this class contains references to all components
+ * that were instantiated on a host.
+ *
+ * @param evaluators Can be used just as a reference to a Trader (messages will be forwarded)
+ */
+class SystemDeployment(val fetcher: ComponentRef, val market: ComponentRef, val broker: ComponentRef,
+                       val evaluators: Set[ComponentRef],
+                       val printer: Option[ComponentRef] = None)
+
+/**
  * This trait defines abstract methods and fields with everything that is needed
  * for a trading system (market, broker, data fetcher, traders, ...).
  * We implement here what can be done generically, but otherwise this trait
@@ -93,18 +104,6 @@ trait StrategyFactory {
 
 
   /**
-   * Contains concrete references to instances created remotely (or locally just as well, actually).
-   * An instance of this class contains references to all components
-   * that were instantiated on a host.
-   *
-   * @param evaluators Can be used just as a reference to a Trader (messages will be forwarded)
-   */
-  class SystemDeployment(val fetcher: ComponentRef, val market: ComponentRef, val broker: ComponentRef,
-                         val evaluators: Set[ComponentRef],
-                         val printer: Option[ComponentRef] = None)
-
-
-  /**
    * Define a set of props (used to create components) that will be created identically on
    * all actor systems (i.e. every worker will run these actors).
    * It should respect the `CommonProps` interface, but can be extended as you wish.
@@ -126,8 +125,7 @@ trait StrategyFactory {
    * For the given remote worker (host machine), create the common components
    * and an instance of the trading strategy for each parameterization given.
    *
-   * @param master            Supervisor actor to register the remote actors to
-   * @param host              Remote machine on which to deploy the new actors
+   * @param host              System on which to deploy the new actors (may be remote)
    * @param parameterizations Many parameter values (one trader + evaluator
                               will be instantiated for each)
    * @param names             Names to assign to the strategies. Number of elements
@@ -137,20 +135,20 @@ trait StrategyFactory {
    *
    * @return A `SystemDeployment` containing references to all instantiated components
    */
-  def createRemoteActors(master: ComponentRef, host: RemoteHost,
-                         strategyToOptimize: TraderCompanion,
-                         parameterizations: Set[StrategyParameters], names: Set[String] = Set.empty)
-                        (implicit builder: ComponentBuilder): SystemDeployment = {
+  def createDeployment(host: AnyHost,
+                       strategyToOptimize: TraderCompanion,
+                       parameterizations: Set[StrategyParameters], names: Set[String] = Set.empty)
+                      (implicit builder: ComponentBuilder): SystemDeployment = {
 
     // ----- Common props (need one instance per host, used by all the traders)
-	  val broker = host.createRemotely(commonProps.broker, "Broker")
-	  val market = host.createRemotely(commonProps.market, "Market")
-    val fetcher = host.createRemotely(commonProps.fetcher, "Fetcher")
-    val printer = commonProps.printer.map(p => host.createRemotely(p, "Printer"))
+	  val broker = host.actorFor(commonProps.broker, "Broker")
+	  val market = host.actorFor(commonProps.market, "Market")
+    val fetcher = host.actorFor(commonProps.fetcher, "Fetcher")
+    val printer = commonProps.printer.map(p => host.actorFor(p, "Printer"))
 
     // ----- Traders (possibly many) to be run in parallel on this host
     val sanitized = names.map(n => sanitizeActorName(n)).toList
-    val evaluators = createRemoteTraders(host, strategyToOptimize, parameterizations, sanitized)
+    val evaluators = createTraders(host, strategyToOptimize, parameterizations, sanitized)
 
     new SystemDeployment(fetcher, market, broker, evaluators, printer)
   }
@@ -162,9 +160,9 @@ trait StrategyFactory {
    *         Also, it should be used just as a reference to the Trader itself since it will forward
    *         the messages.
    */
-  protected def createRemoteTraders(host: RemoteHost, strategyToOptimize: TraderCompanion,
-                                  parameterizations: Set[StrategyParameters], names: List[String] = List.empty)
-                                 (implicit builder: ComponentBuilder): Set[ComponentRef] = {
+  protected def createTraders(host: AnyHost, strategyToOptimize: TraderCompanion,
+                              parameterizations: Set[StrategyParameters], names: List[String] = List.empty)
+                             (implicit builder: ComponentBuilder): Set[ComponentRef] = {
     // One trader for each parameterization
     for((parameterization, i) <- parameterizations.zipWithIndex) yield {
 
@@ -172,18 +170,18 @@ trait StrategyFactory {
       strategyToOptimize.verifyParameters(parameterization)
 
       val name = {
-        if(i < names.size) "Trader-" + names(i)
+        if(i < names.size) names(i)
         else "Trader-" + i
       }
       
       // Trader
       val traderId = i.toLong
       val traderProps = strategyToOptimize.getProps(traderId, commonProps.marketIds, parameterization)
-      val trader = host.createRemotely(traderProps, name)
+      val trader = host.actorFor(traderProps, name)
 
       // Evaluator monitoring the performance of this trader
       val evaluatorProps = Props(classOf[Evaluator], trader.ar, traderId, trader.name, referenceCurrency, evaluationPeriod)
-      val evaluator = host.createRemotely(evaluatorProps, name + "-Evaluator")
+      val evaluator = host.actorFor(evaluatorProps, name + "-Evaluator")
 
       evaluator
     }
@@ -195,7 +193,7 @@ trait StrategyFactory {
    * @TODO Less naive repartition
    * @TODO This could actually be a very generic function
    */
-  def distributeOverHosts(hosts: List[RemoteHost], parameterizations: Set[StrategyParameters]): Map[RemoteHost, Set[StrategyParameters]] = {
+  def distributeOverHosts(hosts: Seq[RemoteHost], parameterizations: Set[StrategyParameters]): Map[RemoteHost, Set[StrategyParameters]] = {
     // Prepare parameters for worker actors (there will be one actor per parameter value)
     val nPerHost = (parameterizations.size / hosts.length.toDouble).ceil.toInt
 
@@ -208,9 +206,21 @@ trait StrategyFactory {
   /**
    * Sanitize a string into a valid actor name
    *
-   * @TODO Make more complete (many cases are not covered here)
+   * @TODO Make more complete (most cases are not covered here)
    */
   def sanitizeActorName(s: String): String = {
-    s.replace("Öéèüçäà- ", "Oeeucaa__")
+    val replacements = Map(
+      "Ö" -> "O",
+      "é" -> "e",
+      "è" -> "e",
+      "ü" -> "u",
+      "ç" -> "c",
+      "ä" -> "a",
+      "à" -> "a",
+      " " -> "-"
+    )
+    replacements.foldLeft(s)({
+      case (string, (from, to)) => string.replaceAll(from, to)
+    })
   }
 }
