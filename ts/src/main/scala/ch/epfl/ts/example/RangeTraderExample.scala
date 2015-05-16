@@ -22,7 +22,7 @@ object RangeTraderExample extends AbstractTraderShowcaseExample {
   val symbol = (Currency.EUR, Currency.CHF)
 
   val strategy: TraderCompanion = RangeTrader
-  val parameterization = {
+  val parameterizations = Set({
     val initialFunds: Wallet.Type = Map(Currency.CHF -> 10000000.0)
     new StrategyParameters(
       RangeTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
@@ -30,6 +30,6 @@ object RangeTraderExample extends AbstractTraderShowcaseExample {
       RangeTrader.VOLUME -> RealNumberParameter(10.0),
       RangeTrader.ORDER_WINDOW -> CoefficientParameter(0.20)
     )
-  }
+  })
 
 }

@@ -26,7 +26,7 @@ object MovingAverageTraderExample extends AbstractTraderShowcaseExample {
   val symbol = (Currency.EUR, Currency.CHF)
 
   val strategy: TraderCompanion = MovingAverageTrader
-  val parameterization = {
+  val parameterizations = Set({
     val periods = List(2, 6)
     val initialFunds: Wallet.Type = Map(Currency.CHF -> 5000.0)
     new StrategyParameters(
@@ -39,6 +39,6 @@ object MovingAverageTraderExample extends AbstractTraderShowcaseExample {
       MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002),
       MovingAverageTrader.WITH_SHORT -> BooleanParameter(true),
       MovingAverageTrader.SHORT_PERCENT -> CoefficientParameter(0.2))
-  }
+  })
 
 }

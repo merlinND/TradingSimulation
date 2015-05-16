@@ -62,12 +62,12 @@ abstract class AbstractTraderShowcaseExample extends AbstractForexExample with T
   /** The single strategy to showcase */
   def strategy: TraderCompanion
 
-  /** A single parameterization for this strategy */
-  def parameterization: StrategyParameters
+  /** Parameterizations to instantiate for this strategy (may be a singleton) */
+  def parameterizations: Set[StrategyParameters]
 
   def main(args: Array[String]): Unit = {
     // ----- Creating actors
-    val d = factory.createDeployment(localHost, strategy, Set(parameterization))
+    val d = factory.createDeployment(localHost, strategy, parameterizations)
 
     // ----- Connecting actors
     makeConnections(d)
