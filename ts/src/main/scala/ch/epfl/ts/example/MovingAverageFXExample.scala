@@ -42,6 +42,7 @@ import ch.epfl.ts.data.BooleanParameter
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 import ch.epfl.ts.data.CoefficientParameter
+import akka.actor.Actor
 
 object MovingAverageFXExample {
   def main(args: Array[String]): Unit = {
@@ -50,7 +51,7 @@ object MovingAverageFXExample {
 
     val useLiveData = false
     val symbol = (Currency.EUR, Currency.CHF)
-
+    
     // ----- Creating actors
     // Fetcher
     val fxQuoteFetcher = {

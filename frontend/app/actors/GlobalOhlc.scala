@@ -23,6 +23,7 @@ import scala.collection.mutable.Set
 import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.OHLC
 import scala.collection.mutable.HashMap
+import utils.TradingSimulationActorSelection
 
 /**
  * Computes OHLC for each currency based on the quote data fetched in the TradingSimulation backend
@@ -38,12 +39,10 @@ class GlobalOhlc(out: ActorRef) extends Actor {
   var workers = HashMap[Symbol, ActorRef]()
   val ohlcPeriod = 60 minutes
 
-  val config = ConfigFactory.load()
-  val name = config.getString("akka.backend.systemName")
-  val hostname = config.getString("akka.backend.hostname")
-  val port = config.getString("akka.backend.port")
-  val actors = context.actorSelection("akka.tcp://" + name + "@" + hostname + ":" + port + "/user/*")
-  actors ! ComponentRegistration(self, classOf[Quote], "frontendQuote")
+  val fetchers = new TradingSimulationActorSelection(context,
+    ConfigFactory.load().getString("akka.backend.fetcherActorSelection")).get
+    
+  fetchers ! ComponentRegistration(self, classOf[Quote], "frontendQuote")
 
   def receive() = {
     case q: Quote =>
