@@ -63,7 +63,7 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   val interval = parameters.get[FiniteDuration](MadTrader.INTERVAL)
   val volume = parameters.get[Int](MadTrader.ORDER_VOLUME)
   val volumeVariation = parameters.getOrElse[Double](MadTrader.ORDER_VOLUME_VARIATION, 0.1)
-  val currencies = parameters.get[(Currency.Currency, Currency.Currency)](MadTrader.CURRENCY_PAIR)
+  val currencies = parameters.get[(Currency, Currency)](MadTrader.CURRENCY_PAIR)
 
   var alternate = 0
   val r = new Random
@@ -71,6 +71,11 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   // TODO: make wallet-aware
   var price = 1.0
   override def receiver = {
+    
+    case q: Quote => {
+      currentTimeMillis = q.timestamp
+      price = q.bid
+    }
     
     case 'SendMarketOrder => {
       // Randomize volume and price
@@ -80,19 +85,14 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
       val dummyPrice = price * (1 + 1e-3 * variation)
 
       if (alternate % 2 == 0) {
-        println("MadTrader: sending limit ask order")
         send[Order](LimitAskOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       } else {
-        println("MadTrader: sending limit bid order")
         send[Order](LimitBidOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       }
       alternate = alternate + 1
       orderId = orderId + 1
     }
-    case q: Quote => {
-      currentTimeMillis = q.timestamp
-      price = q.bid
-    }
+
     case t => println("MadTrader: received unknown " + t)
   }
 

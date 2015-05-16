@@ -5,6 +5,7 @@ import scala.reflect
 import scala.reflect.ClassTag
 import scala.concurrent.duration.DurationInt
 import akka.actor.Props
+import akka.actor.Deploy
 import ch.epfl.ts.component.Component
 import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.component.ComponentRef
@@ -35,8 +36,8 @@ case class RequiredParameterMissingException(message: String) extends RuntimeExc
  *  This could be useful if the trader wants to receive indicators from various markets.
  */
 
-
-abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: StrategyParameters) extends Component {
+abstract class Trader(val uid: Long, marketIds: List[Long], val parameters: StrategyParameters)
+    extends Component with ActorLogging {
   /** Gives a handle to the companion object */
   def companion: TraderCompanion
   
@@ -48,7 +49,7 @@ abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: Stra
   val askTimeout = 500 milliseconds
   var currentTimeMillis: Long = 0L
   
-  val initialFunds = parameters.get[Map[Currency.Currency, Double]]("InitialFunds")
+  val initialFunds = parameters.get[Map[Currency, Double]]("InitialFunds")
   
   /**
    * @note We *do not* catch everything, we leave this partial function undefined
@@ -58,7 +59,6 @@ abstract class Trader(val uid: Long, marketIds : List[Long],val parameters: Stra
   // TODO: move all common Trader behaviors to this receiver
   final def traderReceive: PartialFunction[Any, Unit] = {
     case GetTraderParameters => {
-      println("Got a GetTraderParameters")
       sender ! TraderIdentity(self.path.name, uid, companion, parameters)
     }
     
@@ -130,21 +130,24 @@ trait TraderCompanion extends Serializable {
    * 
    * This is the preferred method to instantiate a Trader, as it will perform parameter checking first. 
    */
-  final def getInstance(uid: Long, marketIds : List[Long], parameters: StrategyParameters, name: String)(implicit builder: ComponentBuilder): ComponentRef = {
+  final def getInstance(uid: Long, marketIds : List[Long], parameters: StrategyParameters,
+                        name: String, deploy: Option[Deploy] = None)
+                       (implicit builder: ComponentBuilder): ComponentRef = {
     verifyParameters(parameters)
-    getConcreteInstance(builder, uid, marketIds, parameters, name)
+    val props = deploy match { 
+      case Some(d) => getProps(uid, marketIds, parameters).withDeploy(d)
+      case None => getProps(uid, marketIds, parameters)
+    }
+    
+    builder.createRef(props, name)
   }
   
   /**
-   * Provide a new instance of the concrete trading strategy using these parameters.
+   * Provide props in order to build a new instance of the concrete trading strategy using these parameters.
    * Can be overriden by concrete TraderCompanion, but the generic implementation should be sufficient.
    */
-  protected def getConcreteInstance(builder: ComponentBuilder,
-                                    uid: Long, 
-                                    marketIds : List[Long],
-                                    parameters: StrategyParameters,
-                                    name: String) = {
-    builder.createRef(Props(concreteTraderTag.runtimeClass, uid, marketIds, parameters), name)
+  def getProps(uid: Long, marketIds : List[Long], parameters: StrategyParameters) = {
+    Props(concreteTraderTag.runtimeClass, uid, marketIds, parameters)
   }
   
   /**

@@ -21,21 +21,17 @@ import ch.epfl.ts.engine.{
 }
 import scala.Some
 import ch.epfl.ts.data.{ Register, ConfirmRegistration, Order }
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import scala.collection.mutable.{ HashMap => MHashMap }
 import ch.epfl.ts.data.Quote
-import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.LimitBidOrder
 import ch.epfl.ts.data.LimitAskOrder
 import ch.epfl.ts.data.MarketShortOrder
-import ch.epfl.ts.data.MarketAskOrder
-import ch.epfl.ts.data.LimitShortOrder
 import ch.epfl.ts.data.LimitShortOrder
 import ch.epfl.ts.data.MarketAskOrder
 
 /**
- * Created by sygi on 03.04.15.
  */
 class StandardBroker extends Component with ActorLogging {
   import context.dispatcher
@@ -107,7 +103,7 @@ class StandardBroker extends Component with ActorLogging {
         case _: MarketShortOrder | _: LimitShortOrder => true
         case _                                        => false
       }
-      
+
       val placementCost = o match {
         case _: MarketBidOrder   => o.volume * tradingPrices(o.whatC, o.withC)._2 // we buy at ask price
         case _: MarketAskOrder   => o.volume

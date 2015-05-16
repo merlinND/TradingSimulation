@@ -24,13 +24,12 @@ abstract class PushFetch[T] extends Fetch[T] {
 /* Actor implementation */
 class PullFetchComponent[T: ClassTag](f: PullFetch[T]) extends Component {
   import context._
-  case object Fetch
-  system.scheduler.schedule(10 milliseconds, f.interval() milliseconds, self, Fetch)
+  
+  system.scheduler.schedule(10 milliseconds, f.interval() milliseconds, self, 'DoFetchNow)
 
   override def receiver = {
     // pull and send to each listener
-    case Fetch =>
-      println("PullFetchComponent Fetch " + System.currentTimeMillis())
+    case 'DoFetchNow =>
       f.fetch().map(t => send[T](t))
     case _ =>
   }
@@ -39,13 +38,12 @@ class PullFetchComponent[T: ClassTag](f: PullFetch[T]) extends Component {
 /* Actor implementation */
 class PullFetchListComponent[T: ClassTag](f: PullFetch[T]) extends Component {
   import context._
-  case object Fetch
-  system.scheduler.schedule(0 milliseconds, f.interval() milliseconds, self, Fetch)
+  
+  system.scheduler.schedule(0 milliseconds, f.interval() milliseconds, self, 'DoFetchNow)
 
   override def receiver = {
     // pull and send to each listener
-    case Fetch =>
-      println("PullFetchListComponent Fetch " + System.currentTimeMillis())
+    case 'DoFetchNow =>
       send(f.fetch())
     case _ =>
   }

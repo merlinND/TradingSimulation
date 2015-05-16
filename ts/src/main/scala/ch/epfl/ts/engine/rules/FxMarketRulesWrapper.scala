@@ -2,7 +2,7 @@ package ch.epfl.ts.engine.rules
 
 import ch.epfl.ts.engine.{OrderBook, ForexMarketRules}
 import ch.epfl.ts.data._
-import ch.epfl.ts.data.Currency.Currency
+import ch.epfl.ts.data.Currency
 import scala.collection.mutable
 import scala.Some
 import ch.epfl.ts.data.MarketBidOrder

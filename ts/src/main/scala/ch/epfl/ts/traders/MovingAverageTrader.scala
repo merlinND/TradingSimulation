@@ -4,6 +4,7 @@ import scala.collection.mutable.{HashMap => MHashMap}
 import scala.concurrent.duration.FiniteDuration
 import scala.math.abs
 import scala.math.floor
+
 import akka.actor.ActorLogging
 import akka.actor.ActorRef
 import akka.actor.Props
@@ -11,8 +12,9 @@ import akka.actor.actorRef2Scala
 import akka.pattern.ask
 import akka.util.Timeout
 import ch.epfl.ts.data.BooleanParameter
+import ch.epfl.ts.data.CoefficientParameter
 import ch.epfl.ts.data.ConfirmRegistration
-import ch.epfl.ts.data.Currency.Currency
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
@@ -34,7 +36,6 @@ import ch.epfl.ts.engine.WalletFunds
 import ch.epfl.ts.indicators.EmaIndicator
 import ch.epfl.ts.indicators.MovingAverage
 import ch.epfl.ts.indicators.OhlcIndicator
-import ch.epfl.ts.data.CoefficientParameter
 
 /**
  * MovingAverageTrader companion object
@@ -74,7 +75,7 @@ object MovingAverageTrader extends TraderCompanion {
  * Simple momentum strategy.
  */
 class MovingAverageTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters)
-  extends Trader(uid, marketIds, parameters) with ActorLogging {
+  extends Trader(uid, marketIds, parameters) {
 
   import context.dispatcher
 

@@ -2,7 +2,6 @@ package ch.epfl.ts.component
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.{HashMap => MHashMap}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
@@ -10,12 +9,14 @@ import scala.concurrent.duration.FiniteDuration
 import scala.language.existentials
 import scala.language.postfixOps
 import scala.reflect.ClassTag
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-
 import akka.actor._
 import akka.pattern.gracefulStop
+import akka.pattern.ask
+import akka.util.Timeout
+import ch.epfl.ts.component.utils.Reaper
+import ch.epfl.ts.component.utils.StartKilling
 
 case object StartSignal
 case object StopSignal
@@ -30,52 +31,19 @@ final class ComponentBuilder(val system: ActorSystem) {
   def this(name: String) {
     this(ActorSystem(name, ConfigFactory.load()))
   }
-  
+
   def this(myName: String, config: Config) {
     this(ActorSystem(myName, config))
   }
 
-  
-  
+
   type ComponentProps = akka.actor.Props
   var graph = Map[ComponentRef, List[(ComponentRef, Class[_])]]()
   var instances = List[ComponentRef]()
-  
-  
-  /**
-   * Supervising actor that waits for Actors termination
-   * @see http://letitcrash.com/post/30165507578/shutdown-patterns-in-akka-2
-   */
-  private class Reaper extends Actor {
-    var watched = ArrayBuffer.empty[ActorRef]
-    var cb: () => Any = () => Unit
-    
-    override def receive = {
-      case StartKilling(l, onAllDead) => {
-        cb = onAllDead
-        instances.foreach(c => {
-          context.watch(c.ar)
-          c.ar ! PoisonPill
-          
-          watched += c.ar
-        })
-        
-        if(instances.isEmpty) cb()
-      }
-      
-      case Terminated(ref) => {
-        watched -= ref
-        if(watched.isEmpty) cb()
-      }
-    }
-  }
-  /**
-   * @param references List of components that need to be watched
-   * @param onAllDead Callback function to call when all watched actors have been terminated
-   */
-  private case class StartKilling(references: List[ComponentRef], onAllDead: () => Any)
-  private val reaper = system.actorOf(Props(classOf[Reaper], this), "Reaper")
-    
+
+  private val reaper = system.actorOf(Props(classOf[Reaper]), "Reaper")
+
+
   def add(src: ComponentRef, dest: ComponentRef, data: Class[_]) {
     println("Connecting " + src.ar + " to " + dest.ar + " for type " + data.getSimpleName)
     graph = graph + (src -> ((dest, data) :: graph.getOrElse(src, List[(ComponentRef, Class[_])]())))
@@ -102,32 +70,37 @@ final class ComponentBuilder(val system: ActorSystem) {
     instances = new ComponentRef(system.actorOf(props, name), props.clazz, name, this) :: instances
     instances.head
   }
-  
+
   /**
    * Gracefully stop all managed components.
    * When all stops are successful, we clear the `instances` list.
-   * 
+   *
    * @note This differs from the `stop` in that here, actors get killed for good,
    *       and cannot get restarted.
-   * 
+   *
    * @return A future which completes when *all* managed actors have shut down.
    */
-  def shutdownManagedActors(timeout: FiniteDuration = 3 seconds): Future[Unit] = {
-    val p = Promise[Unit]()
+  def shutdownManagedActors(timeout: FiniteDuration = 10 seconds): Future[Unit] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
     
-    val cb: () => Any = () => {
+    // This allows the user of this function to be notified when shutdown is complete
+    val externalPromise = Promise[Unit]()
+
+    implicit val tt = new Timeout(timeout)
+    val p: Future[Any] = (reaper ? StartKilling(instances.map(_.ar)))
+
+    p.onSuccess({ case _ =>
       instances = List[ComponentRef]()
-      p.success(Unit)
-    }
-    reaper ! StartKilling(instances, cb)
-    
-    p.future
+      externalPromise.success(Unit)
+    })
+
+    externalPromise.future
   }
 }
 
 /** Encapsulates [[akka.actor.ActorRef]] to facilitate connection of components
-  * TODO(sygi): support sending messages to ComponentRefs through !
-  */
+ * TODO(sygi): support sending messages to ComponentRefs through !
+ */
 class ComponentRef(val ar: ActorRef, val clazz: Class[_], val name: String, cb: ComponentBuilder) extends Serializable {
   /** Connects current component to the destination component
     *
@@ -200,7 +173,7 @@ abstract class Component extends Receiver {
 
   /* TODO: Dirty hack, componentReceive giving back unmatched to rematch in receiver using a andThen */
   override def receive = componentReceive orElse receiver
-  
+
   def send[T: ClassTag](t: T) = dest.get(t.getClass).map(_.map (_ ! t)) //TODO(sygi): support superclasses
   def send[T: ClassTag](t: List[T]) = t.map( elem => dest.get(elem.getClass).map(_.map(_ ! elem)))
 }
