@@ -81,9 +81,9 @@ object RemotingMasterRunner {
 
     // ----- Factory: class responsible for creating the components
     val speed = 200000.0
-    val symbol = (Currency.EUR, Currency.CHF)
-    val start = "201304"
-    val end = "201304"
+    val symbol = (Currency.USD, Currency.CHF)
+    val start = "201411"
+    val end = "201411"
     val factory = new ForexReplayStrategyFactory(10 seconds, symbol._2, symbol, speed, start, end)
 
 
@@ -93,7 +93,7 @@ object RemotingMasterRunner {
       MovingAverageTrader.SHORT_PERIODS,
       MovingAverageTrader.LONG_PERIODS
     )
-    val initialWallet: Wallet.Type = Map(Currency.EUR -> 0, Currency.CHF -> 5000.0)
+    val initialWallet: Wallet.Type = Map(symbol._1 -> 0, symbol._2 -> 5000.0)
     val otherParameterValues = Map(
       MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
       MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
@@ -101,7 +101,7 @@ object RemotingMasterRunner {
       MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002)
     )
 
-    val maxInstances = (100 * availableHosts.size)
+    val maxInstances = (10 * availableHosts.size)
     val parameterizations = StrategyOptimizer.generateParameterizations(strategyToOptimize, parametersToOptimize,
                                                                         otherParameterValues, maxInstances).toSet
 
