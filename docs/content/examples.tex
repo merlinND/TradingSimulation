@@ -27,18 +27,6 @@ The broker receives orders from the trader, and forward them into the market sim
 
 The market simulator generates transactions based on the orders received from brokers, and sends the transaction result back to the broker.
 
-\subsection{Replay}
-
-In this example, we demonstrate how to use the framework to experiment Forex trading with the \emph{MovingAverageTrader} on history Forex data. The component graph is as follows:
-
-\noindent
-\includegraphics[width=\textwidth]{img/examples/forex-replay}
-
-In the component graph above, the \emph{HistDataCSVFetcher} reads history quotes from CSV files, and send them to the market simulator and trader.
-
-The trader produces ask or bid orders based on the quotes data, and sends them to the market simulator. The market simulator generates transactions based on the orders received from the trader.
-
-The market simulator generates transactions based on received orders, and sends the transactions to the printer, which in turn prints them in the console.
 
 \subsection{Evaluating the Performance of Traders}
 
