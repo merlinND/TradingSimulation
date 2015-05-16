@@ -36,24 +36,22 @@ object DemoExample extends AbstractOptimizationExample {
   
   /** Names for our trader instances */
   override lazy val traderNames = {
-    val urlToNames = getClass.getResource("/names.txt")
+    val urlToNames = getClass.getResource("/names-shuffled.txt")
     val names = Source.fromFile(urlToNames.toURI()).getLines()
     names.toSet
   }
   
   // Trading strategy
   val maxInstances = traderNames.size
-  val strategy = MovingAverageTrader
+  val strategy = RangeTrader
   val parametersToOptimize = Set(
-    MovingAverageTrader.SHORT_PERIODS,
-    MovingAverageTrader.LONG_PERIODS
+    RangeTrader.ORDER_WINDOW,
+    RangeTrader.VOLUME
   )
   val otherParameterValues = {
     val initialWallet: Wallet.Type = Map(symbol._1 -> 0, symbol._2 -> 5000.0)
-    Map(MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
-        MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
-        MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 day),
-        MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002))
+    Map(RangeTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
+        RangeTrader.SYMBOL -> CurrencyPairParameter(symbol))
   }
   
   

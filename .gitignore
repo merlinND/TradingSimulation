@@ -39,3 +39,4 @@ data/*
 !data/.gitkeep
 ts/src/main/resources/application.conf
 ts/src/main/resources/names.txt
+ts/src/main/resources/names-shuffled.txt

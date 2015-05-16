@@ -35,6 +35,7 @@ import ch.epfl.ts.engine.WalletFunds
 import ch.epfl.ts.indicators.OhlcIndicator
 import ch.epfl.ts.indicators.RangeIndicator
 import ch.epfl.ts.indicators.RangeIndic
+import ch.epfl.ts.engine.WalletConfirm
 
 
 /**
@@ -91,7 +92,6 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
 
   val marketId = MarketNames.FOREX_ID
   val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), 1 hour),"ohlcIndicator")
-  println(ohlcIndicator.path)
 
   /** Number of past OHLC that we use to compute support and range */
   val timePeriod = 48
@@ -122,8 +122,6 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
     case GotWalletFunds(wallet) => wallet match {
       case Success(WalletFunds(id, funds: Map[Currency, Double])) => {
         val cashWith = funds.getOrElse(withC, 0.0)
-        println("we receive the new information from our broker holdings: "+holdings+" and volume: "+volume)
-        println("askPrice ="+askPrice)
         holdings = funds.getOrElse(whatC, 0.0)
         volume = Math.floor(cashWith / askPrice)
         decideOrder
@@ -166,12 +164,12 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
 
     case _: ExecutedBidOrder => log.debug("RangeTrader: bid executed")
     case _: ExecutedAskOrder => log.debug("RangeTrader: ask executed")
+    case _: WalletFunds =>
+    case _: WalletConfirm =>
     case o => log.info("RangeTrader received unknown: " + o)
   }
 
   def decideOrder = {
-    println("holdings : "+holdings)
-
     /** We receive a sell signal */
     if(currentPrice >= resistance - (rangeSize * orderWindow) && holdings > 0.0) {
       oid += 1
@@ -194,7 +192,6 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
        oid += 1
        recomputeRange = false
        placeOrder(MarketBidOrder(oid, uid, currentTimeMillis, whatC, withC, volume, -1))
-       println("we just buy : "+volume+" to price "+currentPrice+" and support "+support + " sellingwindow "+(support + (rangeSize * orderWindow)))
        log.debug("buy")
     }
 
