@@ -14,6 +14,7 @@ import ch.epfl.ts.data.ParameterTrait
 import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.Quote
+import akka.actor.ActorLogging
 
 /**
  * Required and optional parameters used by this strategy
@@ -50,11 +51,10 @@ object MadTrader extends TraderCompanion {
 /**
  * Trader that gives just random ask and bid orders alternatively
  */
-class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
+class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters)
+    with ActorLogging {
   import context._
   override def companion = MadTrader
-
-  private case object SendMarketOrder
 
   // TODO: this initial order ID should be unique in the system
   var orderId = 4567
@@ -72,7 +72,7 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   var price = 1.0
   override def receiver = {
     
-    case SendMarketOrder => {
+    case 'SendMarketOrder => {
       // Randomize volume and price
       val variation = volumeVariation * (r.nextDouble() - 0.5) * 2.0
       val theVolume = ((1 + variation) * volume).toInt
@@ -100,6 +100,6 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
    * When simulation is started, plan ahead the next random trade
    */
   override def init = {
-    system.scheduler.schedule(initialDelay, interval, self, SendMarketOrder)
+    system.scheduler.schedule(initialDelay, interval, self, 'SendMarketOrder)
   }
 }
