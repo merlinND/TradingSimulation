@@ -42,6 +42,7 @@ import ch.epfl.ts.data.BooleanParameter
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 import ch.epfl.ts.data.CoefficientParameter
+import ch.epfl.ts.data.EndOfFetching
 
 object MovingAverageFXExample {
   def main(args: Array[String]): Unit = {
@@ -49,7 +50,7 @@ object MovingAverageFXExample {
     val marketForexId = MarketNames.FOREX_ID
 
     val useLiveData = false
-    val symbol = (Currency.EUR, Currency.CHF)
+    val symbol = (Currency.USD, Currency.CHF)
 
     // ----- Creating actors
     // Fetcher
@@ -61,8 +62,8 @@ object MovingAverageFXExample {
         val replaySpeed = 4000.0
 
         val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
-        val startDate = dateFormat.parse("201304");
-        val endDate = dateFormat.parse("201304");
+        val startDate = dateFormat.parse("201411");
+        val endDate = dateFormat.parse("201411");
         val workingDir = "./data";
         val currencyPair = symbol._1.toString() + symbol._2.toString();
 
@@ -94,7 +95,7 @@ object MovingAverageFXExample {
     // Evaluation
     val evaluationPeriod = 2 seconds
     val referenceCurrency = symbol._2
-    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, referenceCurrency, evaluationPeriod), "Evaluator")
+    val evaluator = builder.createRef(Props(classOf[Evaluator], trader.ar, traderId, trader.name, referenceCurrency, evaluationPeriod), "Evaluator")
 
     // Broker
     val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
@@ -105,6 +106,7 @@ object MovingAverageFXExample {
 
     // ----- Connecting actors
     fxQuoteFetcher -> (forexMarket, classOf[Quote])
+    fxQuoteFetcher -> (printer, classOf[EndOfFetching])
     forexMarket -> (Seq(broker, trader), classOf[Quote])
 
     evaluator -> (printer, classOf[EvaluationReport])

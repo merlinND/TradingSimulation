@@ -2,7 +2,7 @@ package ch.epfl.ts.engine
 
 import scala.collection.mutable.{ HashMap => MHashMap }
 import ch.epfl.ts.component.Component
-import ch.epfl.ts.data.Currency.Currency
+import ch.epfl.ts.data.Currency
 
 /**
  * Base class for all market simulators.

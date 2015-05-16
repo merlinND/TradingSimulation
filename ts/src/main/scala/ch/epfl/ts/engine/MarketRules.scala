@@ -1,6 +1,6 @@
 package ch.epfl.ts.engine
 
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data._
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.data.MarketBidOrder
@@ -81,7 +81,7 @@ class MarketRules extends Serializable {
       if (matchExists(bestMatch.price, newOrder.price)) {
 
         bestMatchesBook delete bestMatch
-        send(DelOrder(bestMatch.oid, bestMatch.uid, newOrder.timestamp, DEF, DEF, 0.0, 0.0))
+        send(DelOrder(bestMatch.oid, bestMatch.uid, newOrder.timestamp, Currency.DEF, Currency.DEF, 0.0, 0.0))
 
         // perfect match
         if (bestMatch.volume == newOrder.volume) {

@@ -1,4 +1,4 @@
-package ch.epfl.ts.remoting
+package ch.epfl.ts.optimization
 
 import com.typesafe.config.ConfigFactory
 import akka.actor.Actor
@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.actor.ActorRef
 
-object RemotingWorker {
+object RemotingWorkerRunner {
   def main(args: Array[String]): Unit = {
 
     // `akka.remote.netty.tcp.hostname` is specified on a per-machine basis in the `application.conf` file

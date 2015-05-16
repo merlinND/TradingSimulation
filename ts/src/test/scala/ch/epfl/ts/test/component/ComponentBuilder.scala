@@ -1,15 +1,15 @@
 package ch.epfl.ts.test.component
 
-import scala.language.postfixOps
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import ch.epfl.ts.test.ActorTestSuite
+
 import akka.actor.Props
-import ch.epfl.ts.component.Component
-import scala.concurrent.Await
 import ch.epfl.ts.component.utils.Printer
+import ch.epfl.ts.test.ActorTestSuite
 
 @RunWith(classOf[JUnitRunner])
 class ComponentBuilderTestSuite extends ActorTestSuite("ComponentBuilderTestSuite") {

@@ -7,7 +7,7 @@ import ch.epfl.ts.brokers.StandardBroker
 import ch.epfl.ts.traders.SimpleTraderWithBroker
 import org.scalatest.WordSpecLike
 import scala.concurrent.duration._
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import com.typesafe.config.ConfigFactory
 import scala.language.postfixOps
 import scala.reflect.ClassTag
@@ -31,15 +31,15 @@ class BrokerInteractionTest
   val marketID = 1L
   val market = system.actorOf(Props(classOf[FxMarketWrapped], marketID, new ForexMarketRules()), MarketNames.FOREX_NAME)
   val broker: ActorRef = system.actorOf(Props(classOf[SimpleBrokerWrapped], market), "Broker")
-  
+
   val tId = 15L
   val parameters = new StrategyParameters(SimpleTraderWithBroker.INITIAL_FUNDS -> WalletParameter(Map()))
   val trader = system.actorOf(Props(classOf[SimpleTraderWrapped], tId, List(marketID), parameters, broker), "Trader")
 
   market ! StartSignal
   broker ! StartSignal
-  market ! Quote(marketID, System.currentTimeMillis(), CHF, USD, 10.2, 13.2)
-  broker ! Quote(marketID, System.currentTimeMillis(), CHF, USD, 10.2, 13.2)
+  market ! Quote(marketID, System.currentTimeMillis(), Currency.CHF, Currency.USD, 10.2, 13.2)
+  broker ! Quote(marketID, System.currentTimeMillis(), Currency.CHF, Currency.USD, 10.2, 13.2)
   "A trader " should {
     " register in a broker on startSignal" in {
       within(1 second) {
@@ -82,7 +82,7 @@ class BrokerInteractionTest
     }
     " check the state of his wallet" in {
       within(1 second) {
-        EventFilter.debug(message = USD + " -> Some(100.0)", occurrences = 1) intercept {
+        EventFilter.debug(message = Currency.USD + " -> Some(100.0)", occurrences = 1) intercept {
           EventFilter.debug(message = "TraderWithB: money I have: ", occurrences = 1) intercept {
             EventFilter.debug(message = "Broker: got a get show wallet request", occurrences = 1) intercept {
               trader ! 'knowYourWallet
@@ -102,8 +102,8 @@ class BrokerInteractionTest
         }
         //sendMarketOrder is a Market Bid Order in CHF/USD of volume 3 it means buy 3CHF at market price (ask price = 13.2 in the test)
         //So the cost here is  : 3*13.2
-        EventFilter.debug(message = USD + " -> Some("+(100.0-3*13.2)+")", occurrences = 1) intercept {
-          EventFilter.debug(start = CHF + " -> Some", occurrences = 1) intercept {
+        EventFilter.debug(message = Currency.USD + " -> Some("+(100.0-3*13.2)+")", occurrences = 1) intercept {
+          EventFilter.debug(start = Currency.CHF + " -> Some", occurrences = 1) intercept {
               trader ! 'knowYourWallet
           }
         }

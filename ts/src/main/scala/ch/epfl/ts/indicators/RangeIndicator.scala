@@ -7,6 +7,7 @@ import akka.actor.Actor
 import akka.actor.ActorLogging
 
 case class RangeIndic(val support : Double, val resistance : Double, val period : Int ) 
+
 /**
  * This indicator will define a range that contains most of the prices in the given period.
  * A range is defined by two value a resistance that can be seen as the ceiling and a support which can be seen as a floor.

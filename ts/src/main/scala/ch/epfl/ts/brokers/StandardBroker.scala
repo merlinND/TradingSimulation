@@ -21,7 +21,7 @@ import ch.epfl.ts.engine.{
 }
 import scala.Some
 import ch.epfl.ts.data.{ Register, ConfirmRegistration, Order }
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import scala.collection.mutable.{ HashMap => MHashMap }
 import ch.epfl.ts.data.Quote
 import ch.epfl.ts.data.MarketAskOrder
@@ -35,7 +35,6 @@ import ch.epfl.ts.data.LimitShortOrder
 import ch.epfl.ts.data.MarketAskOrder
 
 /**
- * Created by sygi on 03.04.15.
  */
 class StandardBroker extends Component with ActorLogging {
   import context.dispatcher
@@ -91,7 +90,6 @@ class StandardBroker extends Component with ActorLogging {
         executeForWallet(e.uid, FundWallet(e.uid, e.whatC, e.volume), {
           case WalletConfirm(uid) => {
             log.debug("Broker: Transaction executed")
-            println("going to send execut bid to : "+replyTo)
             replyTo ! e
           }
           case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
@@ -104,7 +102,6 @@ class StandardBroker extends Component with ActorLogging {
         executeForWallet(e.uid, FundWallet(e.uid, e.withC, e.volume * e.price), {
           case WalletConfirm(uid) => {
             log.debug("Broker: Transaction executed")
-            println("going to send execut ask to : "+replyTo)
 
             replyTo ! e
           }
@@ -129,7 +126,7 @@ class StandardBroker extends Component with ActorLogging {
         case _: MarketShortOrder | _: LimitShortOrder => true
         case _                                        => false
       }
-      
+
       val placementCost = o match {
         case _: MarketBidOrder   => o.volume * tradingPrices(o.whatC, o.withC)._2 // we buy at ask price
         case _: MarketAskOrder   => o.volume

@@ -7,9 +7,7 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
 import ch.epfl.ts.data.ConfirmRegistration
-import ch.epfl.ts.data.Currency.CHF
-import ch.epfl.ts.data.Currency.Currency
-import ch.epfl.ts.data.Currency.USD
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.MarketOrder
 import ch.epfl.ts.data.Order
@@ -35,9 +33,8 @@ object SimpleTraderWithBroker extends TraderCompanion {
  */
 
 class SimpleTraderWithBroker(uid: Long, marketIds: List[Long], parameters: StrategyParameters)
-    extends Trader(uid, marketIds, parameters)
-    with ActorLogging {
-  
+    extends Trader(uid, marketIds, parameters) {
+
   // Allows the usage of ask pattern in an Actor
   import context.dispatcher
 
@@ -75,18 +72,18 @@ class SimpleTraderWithBroker(uid: Long, marketIds: List[Long], parameters: Strat
     }
 
     case 'sendTooBigOrder => {
-      val order = MarketBidOrder(oid, uid, currentTimeMillis, CHF, USD, 1000.0, 100000.0)
+      val order = MarketBidOrder(oid, uid, currentTimeMillis, Currency.CHF, Currency.USD, 1000.0, 100000.0)
       placeOrder(order)
       oid = oid + 1
     }
     case 'sendMarketOrder => {
-      val order = MarketBidOrder(oid, uid, currentTimeMillis, CHF, USD, 3.0, 14.0)
+      val order = MarketBidOrder(oid, uid, currentTimeMillis, Currency.CHF, Currency.USD, 3.0, 14.0)
       placeOrder(order)
       oid = oid + 1
     }
     case 'addFunds => {
       log.debug("TraderWithB: trying to add 100 bucks")
-      send(FundWallet(uid, USD, 100))
+      send(FundWallet(uid, Currency.USD, 100))
     }
     case 'knowYourWallet => {
       send(GetWalletFunds(uid,this.self))

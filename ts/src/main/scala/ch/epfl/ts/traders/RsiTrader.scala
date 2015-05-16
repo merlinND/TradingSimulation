@@ -68,7 +68,7 @@ object RsiTrader extends TraderCompanion {
     LONG_SMA_PERIOD -> NaturalNumberParameter)
 }
 
-class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) with ActorLogging {
+class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   import context.dispatcher
   override def companion = RsiTrader
   val marketId = marketIds(0)
@@ -160,7 +160,7 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
           //overbought : time to sell
           if (rsi >= highRsi && holdings > 0.0) {
             placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
-            //oversell : time to buy  
+            //oversell : time to buy
           } else if (rsi <= lowRsi && holdings == 0) {
             val askPrice = tradingPrices(whatC, withC)._2
             val volumeToBuy = floor(cashWith / askPrice)
@@ -171,7 +171,7 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
           //overbought : time to sell
           if (rsi >= highRsi && holdings > 0.0 && currentShort <= currentLong) {
             placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
-            //oversell : time to buy  
+            //oversell : time to buy
           } else if (rsi <= lowRsi && holdings == 0 && currentShort >= currentLong) {
             val askPrice = tradingPrices(whatC, withC)._2
             val volumeToBuy = floor(cashWith / askPrice)
