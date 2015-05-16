@@ -4,6 +4,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
+
 import akka.actor.ActorRef
 import akka.actor.Props
 import akka.actor.actorRef2Scala
@@ -12,6 +13,8 @@ import ch.epfl.ts.component.StartSignal
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.EndOfFetching
+import ch.epfl.ts.data.LimitAskOrder
+import ch.epfl.ts.data.LimitBidOrder
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.Quote
@@ -27,8 +30,6 @@ import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.traders.MovingAverageTrader
-import ch.epfl.ts.data.LimitAskOrder
-import ch.epfl.ts.data.LimitBidOrder
 
 /**
  * Runs a main() method that creates all remote systems
@@ -112,7 +113,7 @@ object RemotingMasterRunner {
     val distributed = factory.distributeOverHosts(availableHosts, parameterizations)
     val deployments = distributed.map({ case (host, parameters) =>
       println("Creating " + parameters.size + " instances of " + strategyToOptimize.getClass.getSimpleName + " on host " + host)
-      factory.createDeployment(master, host, strategyToOptimize, parameterizations)
+      factory.createDeployment(host, strategyToOptimize, parameterizations)
     })
 
     // ----- Connections

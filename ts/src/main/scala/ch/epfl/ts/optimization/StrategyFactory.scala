@@ -126,7 +126,6 @@ trait StrategyFactory {
    * For the given remote worker (host machine), create the common components
    * and an instance of the trading strategy for each parameterization given.
    *
-   * @param master            Supervisor actor to register the remote actors to
    * @param host              System on which to deploy the new actors (may be remote)
    * @param parameterizations Many parameter values (one trader + evaluator
                               will be instantiated for each)
@@ -137,7 +136,7 @@ trait StrategyFactory {
    *
    * @return A `SystemDeployment` containing references to all instantiated components
    */
-  def createDeployment(master: ComponentRef, host: AnyHost,
+  def createDeployment(host: AnyHost,
                        strategyToOptimize: TraderCompanion,
                        parameterizations: Set[StrategyParameters], names: Set[String] = Set.empty)
                       (implicit builder: ComponentBuilder): SystemDeployment = {
