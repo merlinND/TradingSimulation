@@ -37,7 +37,7 @@ case class RequiredParameterMissingException(message: String) extends RuntimeExc
  */
 
 abstract class Trader(val uid: Long, marketIds: List[Long], val parameters: StrategyParameters)
-    extends Component with ActorLogging {
+    extends Component {
   /** Gives a handle to the companion object */
   def companion: TraderCompanion
   

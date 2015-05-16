@@ -121,7 +121,7 @@ class ComponentRef(val ar: ActorRef, val clazz: Class[_], val name: String, cb: 
   }
 }
 
-trait Receiver extends Actor {
+trait Receiver extends Actor with ActorLogging {
   def receive: PartialFunction[Any, Unit]
 
   def send[T: ClassTag](t: T): Unit
