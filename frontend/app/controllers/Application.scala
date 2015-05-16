@@ -31,7 +31,7 @@ object Application extends Controller {
   def quote = WebSocket.acceptWithActor[String, String] { request =>
     out =>
       Props(classOf[MessageToJson[Quote]], out,
-        config.getString("akka.backend.fetcherActorSelection"), implicitly[ClassTag[Quote]])
+        config.getString("akka.backend.fetchersActorSelection"), implicitly[ClassTag[Quote]])
   }
 
   def globalOhlc = WebSocket.acceptWithActor[String, String] { request =>
@@ -41,13 +41,13 @@ object Application extends Controller {
   def transaction = WebSocket.acceptWithActor[String, String] { request =>
     out =>
       Props(classOf[MessageToJson[Transaction]], out, 
-          config.getString("akka.backend.marketActorSelection"), implicitly[ClassTag[Transaction]])
+          config.getString("akka.backend.marketsActorSelection"), implicitly[ClassTag[Transaction]])
   }
 
   def traderRegistration = WebSocket.acceptWithActor[String, String] { request =>
     out =>
       Props(classOf[MessageToJson[Register]], out,
-        config.getString("akka.backend.traderActorSelection"), implicitly[ClassTag[Register]])
+        config.getString("akka.backend.tradersActorSelection"), implicitly[ClassTag[Register]])
   }
 
   def traderParameters = WebSocket.acceptWithActor[String, String] { request =>
@@ -57,7 +57,7 @@ object Application extends Controller {
   def evaluationReport = WebSocket.acceptWithActor[String, String] { request =>
     out => 
       Props(classOf[MessageToJson[EvaluationReport]], out,
-        config.getString("akka.backend.evaluationActorSelection"), implicitly[ClassTag[EvaluationReport]])
+        config.getString("akka.backend.evaluatorsActorSelection"), implicitly[ClassTag[EvaluationReport]])
   }
 
 }

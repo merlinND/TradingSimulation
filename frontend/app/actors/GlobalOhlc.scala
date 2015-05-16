@@ -39,7 +39,7 @@ class GlobalOhlc(out: ActorRef) extends Actor {
   val ohlcPeriod = 60 minutes
 
   val fetchers = new TradingSimulationActorSelection(context,
-    ConfigFactory.load().getString("akka.backend.fetcherActorSelection")).get
+    ConfigFactory.load().getString("akka.backend.fetchersActorSelection")).get
     
   fetchers ! ComponentRegistration(self, classOf[Quote], "frontendQuote")
 

@@ -24,7 +24,7 @@ class TraderParameters(out: ActorRef) extends Actor {
   implicit val formats = DefaultFormats
 
   val traders = new TradingSimulationActorSelection(context,
-    ConfigFactory.load().getString("akka.backend.traderActorSelection")).get
+    ConfigFactory.load().getString("akka.backend.tradersActorSelection")).get
 
   traders ! ComponentRegistration(self, classOf[Trader], "frontend" + classOf[Trader])
   traders ! ComponentRegistration(self, classOf[TraderIdentity], "frontend" + classOf[TraderIdentity])
