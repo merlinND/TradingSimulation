@@ -14,6 +14,7 @@ import ch.epfl.ts.data.ParameterTrait
 import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.Quote
+import akka.actor.ActorLogging
 
 /**
  * Required and optional parameters used by this strategy
@@ -21,7 +22,7 @@ import ch.epfl.ts.data.Quote
 object MadTrader extends TraderCompanion {
   type ConcreteTrader = MadTrader
   override protected val concreteTraderTag = scala.reflect.classTag[MadTrader]
-  
+
   /** Interval between two random trades (in ms) */
   val INTERVAL = "interval"
 
@@ -69,12 +70,12 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   // TODO: make wallet-aware
   var price = 1.0
   override def receiver = {
-    
+
     case q: Quote => {
       currentTimeMillis = q.timestamp
       price = q.bid
     }
-    
+
     case 'SendMarketOrder => {
       // Randomize volume and price
       val variation = volumeVariation * (r.nextDouble() - 0.5) * 2.0
