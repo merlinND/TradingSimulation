@@ -78,11 +78,6 @@ trait RemotingDeployment {
    * List of hosts on which to deploy the systems
    */
   def availableHosts: Seq[RemoteHost]
-  
-  /**
-   * Target number of Trader instances to deploy (may not be respected exactly)
-   */
-  def maxInstances: Int
 }
 
 abstract class AbstractForexExample extends AbstractExample {

@@ -2,7 +2,6 @@ package ch.epfl.ts.optimization
 
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
-
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.RealNumberParameter
@@ -11,6 +10,9 @@ import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.example.AbstractOptimizationExample
 import ch.epfl.ts.traders.MovingAverageTrader
+import ch.epfl.ts.example.RemotingDeployment
+import ch.epfl.ts.component.StartSignal
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * Runs a main() method that creates all remote systems
@@ -20,10 +22,10 @@ import ch.epfl.ts.traders.MovingAverageTrader
  *
  * @see {@link ch.epfl.ts.optimization.RemotingWorker}
  */
-object RemotingMasterRunner extends AbstractOptimizationExample {
+object RemotingMasterRunner extends AbstractOptimizationExample with RemotingDeployment {
 
-  override val maximumRunDuration = None
-  
+  override val maximumRunDuration: Option[FiniteDuration] = None
+
   val availableHosts = {
     val availableWorkers = List(
       "ts-1-021qv44y.cloudapp.net",
@@ -46,7 +48,7 @@ object RemotingMasterRunner extends AbstractOptimizationExample {
   }
 
   val symbol = (Currency.USD, Currency.CHF)
-  
+
   val useLiveData = false
   val replaySpeed = 4000.0
   val startDate = "201304"
@@ -65,5 +67,37 @@ object RemotingMasterRunner extends AbstractOptimizationExample {
         MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
         MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 day),
         MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002))
+  }
+
+  override def main(args: Array[String]): Unit = {
+    println("Going to distribute " + parameterizations.size + " traders over " + availableHosts.size + " worker machines.")
+
+    // ----- Create instances over many hosts
+    def distributed = factory.distributeOverHosts(availableHosts, parameterizations)
+    lazy val deployments = distributed.map({ case (host, parameters) =>
+      println("Creating " + parameters.size + " instances of " + strategy.getClass.getSimpleName + " on host " + host)
+      factory.createDeployment(host, strategy, parameterizations, traderNames)
+    })
+
+    // ----- Connections
+    deployments.foreach(makeConnections(_))
+
+    // ----- Start
+    // Make sure brokers are started before the traders
+    supervisorActor.get.ar ! StartSignal
+    for(d <- deployments) d.broker.ar ! StartSignal
+    builder.start
+
+    // ----- Registration to the supervisor
+    // Register each new trader to the master
+    for(d <- deployments; e <- d.evaluators) {
+      supervisorActor.get.ar ! e.ar
+    }
+
+    // ----- Controlled duration (optional)
+    maximumRunDuration match {
+      case Some(duration) => terminateOptimizationAfter(duration, supervisorActor.get.ar)
+      case None =>
+    }
   }
 }
