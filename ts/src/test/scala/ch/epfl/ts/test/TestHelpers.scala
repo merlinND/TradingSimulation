@@ -70,7 +70,7 @@ class SimpleBrokerWrapped(market: ActorRef) extends StandardBroker {
 class FxMarketWrapped(uid: Long, rules: ForexMarketRules) extends MarketFXSimulator(uid, new FxMarketRulesWrapper(rules)) {
   import context.dispatcher
   override def send[T: ClassTag](t: T) {
-    val brokerSelection = context.actorSelection("../Broker")
+    val brokerSelection = context.actorSelection("/user/brokers/*")
     implicit val timeout = new Timeout(100 milliseconds)
     val broker = Await.result(brokerSelection.resolveOne(), timeout.duration)
     println("Tried to get Broker: " + broker)

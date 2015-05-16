@@ -8,7 +8,9 @@ name := "TradingSimProject"
 version in ThisBuild := "0.1"
 
 scalaVersion in ThisBuild := "2.11.6"
+
 autoScalaLibrary in ThisBuild := true
+
 ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 
 scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature")
