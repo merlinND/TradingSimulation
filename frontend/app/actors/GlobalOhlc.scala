@@ -26,10 +26,10 @@ import scala.collection.mutable.HashMap
 
 /**
  * Computes OHLC for each currency based on the quote data fetched in the TradingSimulation backend
- * 
+ *
  * Since each trader in the backend instantiates its own indicators, we simply compute a global
  * OHLC to display on a graph in the frontend
- * Starts a child actor for each symbol and converts the result to JSON which included the symbol 
+ * Starts a child actor for each symbol and converts the result to JSON which included the symbol
  */
 class GlobalOhlc(out: ActorRef) extends Actor {
   implicit val formats = DefaultFormats
@@ -49,32 +49,19 @@ class GlobalOhlc(out: ActorRef) extends Actor {
     case q: Quote =>
       val symbol: Symbol = (q.whatC, q.withC)
       val worker = workers.getOrElseUpdate(symbol,
-        context.actorOf(Props(classOf[GlobalOhlcWorker], q.marketId, symbol, ohlcPeriod, self)))
+        context.actorOf(Props(classOf[OhlcIndicator], q.marketId, symbol, ohlcPeriod)))
       worker ! q
 
-    case ohlc: SymbolOhlc =>
-      out ! write(ohlc)
-
-    case _ =>
-  }
-
-}
-
-/**
- * Computes the OHLC for a single symbol and sends the result combined with the symbol to the parent actor
- */
-class GlobalOhlcWorker(marketId: Long, symbol: (Currency, Currency), ohlcPeriod: FiniteDuration, parent: ActorRef) extends Actor {
-  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, symbol, ohlcPeriod))
-
-  def receive() = {
-    case q: Quote =>
-      ohlcIndicator ! q
-      
     case ohlc: OHLC =>
-      parent ! SymbolOhlc(symbol._1, symbol._2, ohlc)
-      
+      workers.find(_._2 == sender) match {
+        case Some((symbol: Symbol, _)) =>
+          out ! write(SymbolOhlc(symbol._1, symbol._2, ohlc))
+        case _ =>
+      }
+
     case _ =>
   }
+
 }
 
 case class SymbolOhlc(whatC: Currency, withC: Currency, ohlc: OHLC)
