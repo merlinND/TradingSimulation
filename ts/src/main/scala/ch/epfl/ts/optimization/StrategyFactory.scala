@@ -36,6 +36,17 @@ class QuoteTag extends ClassTag[Quote] with Serializable {
 }
 
 /**
+ * Contains concrete references to instances created remotely (or locally just as well, actually).
+ * An instance of this class contains references to all components
+ * that were instantiated on a host.
+ *
+ * @param evaluators Can be used just as a reference to a Trader (messages will be forwarded)
+ */
+class SystemDeployment(val fetcher: ComponentRef, val market: ComponentRef, val broker: ComponentRef,
+                       val evaluators: Set[ComponentRef],
+                       val printer: Option[ComponentRef] = None)
+
+/**
  * This trait defines abstract methods and fields with everything that is needed
  * for a trading system (market, broker, data fetcher, traders, ...).
  * We implement here what can be done generically, but otherwise this trait
@@ -90,18 +101,6 @@ trait StrategyFactory {
       Props(classOf[HistDataCSVFetcher], workingDirectory, currencyPair, startDate, endDate, speed)
     }
   }
-
-
-  /**
-   * Contains concrete references to instances created remotely (or locally just as well, actually).
-   * An instance of this class contains references to all components
-   * that were instantiated on a host.
-   *
-   * @param evaluators Can be used just as a reference to a Trader (messages will be forwarded)
-   */
-  class SystemDeployment(val fetcher: ComponentRef, val market: ComponentRef, val broker: ComponentRef,
-                         val evaluators: Set[ComponentRef],
-                         val printer: Option[ComponentRef] = None)
 
 
   /**

@@ -4,7 +4,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
-
 import akka.actor.ActorRef
 import akka.actor.Props
 import akka.actor.actorRef2Scala
@@ -30,6 +29,9 @@ import ch.epfl.ts.engine.GetWalletFunds
 import ch.epfl.ts.engine.Wallet
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.traders.MovingAverageTrader
+import ch.epfl.ts.example.AbstractExample
+import ch.epfl.ts.component.ComponentRef
+import ch.epfl.ts.example.AbstractForexExample
 
 /**
  * Runs a main() method that creates all remote systems
@@ -39,7 +41,7 @@ import ch.epfl.ts.traders.MovingAverageTrader
  *
  * @see {@link ch.epfl.ts.optimization.RemotingWorker}
  */
-object RemotingMasterRunner {
+object RemotingMasterRunner extends AbstractForexExample {
 
   val availableHosts = {
     val availableWorkers = List(
@@ -63,30 +65,50 @@ object RemotingMasterRunner {
     })
   }
 
-  /**
-   * Use this if we need to terminate early regardless of the data being fetched
-   */
-  def terminateOptimizationAfter(delay: FiniteDuration, supervisor: ActorRef)(implicit builder: ComponentBuilder) =
-    builder.system.scheduler.scheduleOnce(delay) {
-      println("---------- Terminating optimization after a fixed duration of " + delay)
-      supervisor ! EndOfFetching(System.currentTimeMillis())
-    }
-
-
-  def main(args: Array[String]): Unit = {
-
-    implicit val builder = new ComponentBuilder()
-
-    // ----- Supervisor actor
-    val master = builder.createRef(Props(classOf[OptimizationSupervisor]), "MasterActor")
-
-    // ----- Factory: class responsible for creating the components
+  val symbol = (Currency.USD, Currency.CHF)
+  
+  val factory: StrategyFactory = {
+      // ----- Factory: class responsible for creating the components
     val speed = 200000.0
-    val symbol = (Currency.USD, Currency.CHF)
     val start = "201411"
     val end = "201411"
-    val factory = new ForexReplayStrategyFactory(10 seconds, symbol._2, symbol, speed, start, end)
+    
+    new ForexReplayStrategyFactory(10 seconds, symbol._2, symbol, speed, start, end)
+  }
+  
+  override lazy val supervisorActor: Option[ComponentRef] = Some({
+    builder.createRef(Props(classOf[OptimizationSupervisor]), "MasterActor")
+  })
+  
+  
+  def makeConnections(d: SystemDeployment): Unit = {
+    val master = supervisorActor.get
+    
+    d.fetcher -> (d.market, classOf[Quote])
+    d.fetcher -> (Seq(d.market, master), classOf[EndOfFetching])
+    d.market -> (d.broker, classOf[Quote], classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
+    // TODO: make sure to support all order types
+    d.broker -> (d.market, classOf[LimitBidOrder], classOf[LimitAskOrder], classOf[MarketBidOrder], classOf[MarketAskOrder])
 
+    for(e <- d.evaluators) {
+      d.fetcher -> (e, classOf[EndOfFetching])
+      e -> (d.broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds])
+      e -> (d.broker, classOf[LimitBidOrder], classOf[LimitAskOrder], classOf[MarketBidOrder], classOf[MarketAskOrder])
+      d.market -> (e, classOf[Quote], classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
+      d.market -> (e, classOf[Transaction])
+
+      e -> (master, classOf[EvaluationReport])
+    }
+
+    for(printer <- d.printer) {
+      d.market -> (printer, classOf[Transaction])
+      d.fetcher -> (printer, classOf[EndOfFetching])
+
+      for(e <- d.evaluators) e -> (printer, classOf[EvaluationReport])
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
 
     // ----- Generate candidate parameterizations
     val strategyToOptimize = MovingAverageTrader
@@ -117,40 +139,17 @@ object RemotingMasterRunner {
     })
 
     // ----- Connections
-    deployments.foreach(d => {
-      d.fetcher -> (d.market, classOf[Quote])
-      d.fetcher -> (Seq(d.market, master), classOf[EndOfFetching])
-      d.market -> (d.broker, classOf[Quote], classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
-      // TODO: make sure to support all order types
-      d.broker -> (d.market, classOf[LimitBidOrder], classOf[LimitAskOrder], classOf[MarketBidOrder], classOf[MarketAskOrder])
-
-      for(e <- d.evaluators) {
-        d.fetcher -> (e, classOf[EndOfFetching])
-        e -> (d.broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds])
-        e -> (d.broker, classOf[LimitBidOrder], classOf[LimitAskOrder], classOf[MarketBidOrder], classOf[MarketAskOrder])
-        d.market -> (e, classOf[Quote], classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
-        d.market -> (e, classOf[Transaction])
-
-        e -> (master, classOf[EvaluationReport])
-      }
-
-      for(printer <- d.printer) {
-        d.market -> (printer, classOf[Transaction])
-        d.fetcher -> (printer, classOf[EndOfFetching])
-
-        for(e <- d.evaluators) e -> (printer, classOf[EvaluationReport])
-      }
-    })
+    deployments.foreach(makeConnections(_))
 
     // Make sure brokers are started before the traders
-    master.ar ! StartSignal
+    supervisorActor.get.ar ! StartSignal
     for(d <- deployments) d.broker.ar ! StartSignal
     builder.start
 
     // ----- Registration to the supervisor
     // Register each new trader to the master
     for(d <- deployments; e <- d.evaluators) {
-      master.ar ! e.ar
+      supervisorActor.get.ar ! e.ar
     }
 
     // Use this if we need to terminate early regardless of the data being fetched
@@ -158,4 +157,13 @@ object RemotingMasterRunner {
 
     // TODO: fix actor names including the full path to the host system (even though it is actually created in the remote system)
   }
+  
+  /**
+   * Use this if we need to terminate early regardless of the data being fetched
+   */
+  def terminateOptimizationAfter(delay: FiniteDuration, supervisor: ActorRef)(implicit builder: ComponentBuilder) =
+    builder.system.scheduler.scheduleOnce(delay) {
+      println("---------- Terminating optimization after a fixed duration of " + delay)
+      supervisor ! EndOfFetching(System.currentTimeMillis())
+    }
 }
