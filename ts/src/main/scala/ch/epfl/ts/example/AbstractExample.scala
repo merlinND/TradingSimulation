@@ -20,13 +20,13 @@ abstract class AbstractExample {
   implicit val builder: ComponentBuilder = new ComponentBuilder
   
   /** The default host is a simple local actor system (no remoting) */
-  val localHost: HostActorSystem = new HostActorSystem()
+  def localHost: HostActorSystem = new HostActorSystem()
   
   /** Factory to use in order to create a deployment */
-  val factory: StrategyFactory
+  def factory: StrategyFactory
   
   /** List of IDs of the market being traded on */
-  val marketIds: Seq[Long]
+  def marketIds: Seq[Long]
   
   /**
    * Connect the various components of a system deployment
@@ -64,15 +64,15 @@ abstract class AbstractExample {
  */
 trait TraderEvaluation {
   /** Emit evaluation reports every `evaluationPeriod` */
-  val evaluationPeriod: FiniteDuration
+  def evaluationPeriod: FiniteDuration
   /** Assess the value of traders' wallet using this currency */
-  val referenceCurrency: Currency
+  def referenceCurrency: Currency
 }
 
 abstract class AbstractForexExample extends AbstractExample {
   
-  val marketIds = Seq(MarketNames.FOREX_ID)
+  lazy val marketIds = Seq(MarketNames.FOREX_ID)
   
   /** Main symbol (currency pair) being traded */
-  val symbol: (Currency, Currency)
+  def symbol: (Currency, Currency)
 }

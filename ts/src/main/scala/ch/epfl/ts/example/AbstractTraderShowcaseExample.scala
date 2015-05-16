@@ -27,17 +27,17 @@ import ch.epfl.ts.traders.TraderCompanion
  */
 abstract class AbstractTraderShowcaseExample extends AbstractForexExample with TraderEvaluation {
 
-  val useLiveData: Boolean
+  def useLiveData: Boolean
   /** If using historical data, use this replay speed */
-  val replaySpeed: Double
+  def replaySpeed: Double
   /** If using historical data, fetch between these dates (format: YYYYMM) */
-  val startDate: String
-  val endDate: String
+  def startDate: String
+  def endDate: String
 
-  val evaluationPeriod = (10 seconds)
-  val referenceCurrency = symbol._2
+  def evaluationPeriod = (10 seconds)
+  def referenceCurrency = symbol._2
 
-  val factory = {
+  lazy val factory = {
     if(useLiveData) new ForexLiveStrategyFactory(evaluationPeriod, referenceCurrency)
     else new ForexReplayStrategyFactory(evaluationPeriod, referenceCurrency, symbol, replaySpeed, startDate, endDate)
   }
@@ -62,10 +62,10 @@ abstract class AbstractTraderShowcaseExample extends AbstractForexExample with T
   }
 
   /** The single strategy to showcase */
-  val strategy: TraderCompanion
+  def strategy: TraderCompanion
 
   /** A single parameterization for this strategy */
-  val parameterization: StrategyParameters
+  def parameterization: StrategyParameters
 
   def main(args: Array[String]): Unit = {
     // ----- Creating actors
