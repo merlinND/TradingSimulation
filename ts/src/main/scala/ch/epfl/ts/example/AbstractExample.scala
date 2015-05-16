@@ -59,14 +59,6 @@ abstract class AbstractExample {
   }
 }
 
-abstract class AbstractForexExample extends AbstractExample {
-  
-  val marketIds = Seq(MarketNames.FOREX_ID)
-  
-  /** Main symbol (currency pair) being traded */
-  val symbol: (Currency, Currency)
-}
-
 /**
  * Use this trait if your example uses evaluation
  */
@@ -75,4 +67,12 @@ trait TraderEvaluation {
   val evaluationPeriod: FiniteDuration
   /** Assess the value of traders' wallet using this currency */
   val referenceCurrency: Currency
+}
+
+abstract class AbstractForexExample extends AbstractExample {
+  
+  val marketIds = Seq(MarketNames.FOREX_ID)
+  
+  /** Main symbol (currency pair) being traded */
+  val symbol: (Currency, Currency)
 }
