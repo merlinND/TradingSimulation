@@ -20,7 +20,7 @@ import ch.epfl.ts.data._
 case class EvaluationReport(traderId: Long, traderName: String, wallet: Map[Currency, Double],
                             currency: Currency, initial: Double, current: Double, totalReturns: Double,
                             volatility: Double, drawdown: Double, sharpeRatio: Double)
-                           extends Ordered[EvaluationReport] with Serializable {
+                           extends Ordered[EvaluationReport] with Streamable {
 
   /** Compares two evaluation reports by total returns
     *
@@ -106,12 +106,12 @@ class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: 
     case q: Quote =>
       updatePrice(q)
       trader forward q
-      
+
     case 'Report =>
       if (canReport) report
     case _: EndOfFetching =>
       if (canReport) report
-      
+
     case TraderIdentity(_, _, companion, parameters) if initialWallet.isEmpty =>
       initialWallet = parameters.get[Wallet.Type](companion.INITIAL_FUNDS)
       initialWallet.foreach { case (currency, amount) =>
@@ -121,7 +121,7 @@ class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: 
       if(canReport) {
         lastValue = Some(valueOfWallet(wallet.toMap))
       }
-      
+
     // All other messages, we just pass along
     case m => trader forward m
   }

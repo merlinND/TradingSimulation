@@ -22,7 +22,7 @@ object Currency extends Serializable {
   val AUD = Currency("aud")
   val CAD = Currency("cad")
 
-  // Fallback ("default")
+  /** Fallback currency ("default") */
   val DEF = Currency("def")
 
   def values = Seq(BTC, LTC, USD, CHF, RUR, EUR, JPY, GBP, AUD, CAD, DEF)
@@ -30,10 +30,8 @@ object Currency extends Serializable {
 
   def fromString(s: String): Currency = {
     this.values.find(v => v.toString().toLowerCase() == s.toLowerCase()) match {
-      case Some(currency) => Currency(currency.toString())
-      case None => {
-        throw new UnsupportedOperationException("Currency " + s + " is not supported.")
-      }
+      case Some(currency) => currency
+      case None => throw new UnsupportedOperationException("Currency " + s + " is not supported.")
     }
   }
 

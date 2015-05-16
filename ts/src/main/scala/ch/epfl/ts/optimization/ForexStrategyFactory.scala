@@ -15,8 +15,7 @@ import scala.concurrent.duration.FiniteDuration
 import ch.epfl.ts.data.Currency
 
 /**
- * StrategyFactory allowing to test Forex traders.
- * Concrete factories 
+ * StrategyFactory allowing to use Forex traders.
  */
 abstract class ForexStrategyFactory(override val evaluationPeriod: FiniteDuration,
                                     override val referenceCurrency: Currency)
@@ -30,11 +29,11 @@ abstract class ForexStrategyFactory(override val evaluationPeriod: FiniteDuratio
       val rules = new FxMarketRulesWrapper()
       Props(classOf[MarketFXSimulator], marketIds(0), rules)
     }
-    
+
     def broker = {
       Props(classOf[StandardBroker])
     }
-    
+
     // Printer
     override def printer = Some(Props(classOf[Printer], "MyPrinter"))
   }
@@ -44,13 +43,13 @@ class ForexLiveStrategyFactory(evaluationPeriod: FiniteDuration, referenceCurren
     extends ForexStrategyFactory(evaluationPeriod, referenceCurrency) {
   override def commonProps = new ForexCommonProps with LiveFetcher
 }
-    
+
 class ForexReplayStrategyFactory(evaluationPeriod: FiniteDuration, referenceCurrency: Currency,
                                  val symbol: (Currency, Currency),
                                  val speed: Double, val start: String, val end: String,
                                  val workingDirectory: String = "./data")
     extends ForexStrategyFactory(evaluationPeriod, referenceCurrency) { self =>
-  
+
 	override def commonProps = new ForexCommonProps with HistoricalFetcher {
     val symbol = self.symbol
     val speed = self.speed

@@ -15,6 +15,7 @@ import akka.util.Timeout
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.data.CoefficientParameter
 import ch.epfl.ts.data.ConfirmRegistration
+import ch.epfl.ts.data.Streamable
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.MarketAskOrder
@@ -39,7 +40,7 @@ import ch.epfl.ts.indicators.RangeIndic
 /**
  * @note This needs to be on top level for serializability
  */
-private case class GotWalletFunds(wallet : Try[WalletFunds]) extends Serializable
+private case class GotWalletFunds(wallet : Try[WalletFunds]) extends Streamable
 
 
 /**

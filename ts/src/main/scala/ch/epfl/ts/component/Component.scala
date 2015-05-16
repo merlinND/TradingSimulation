@@ -22,28 +22,28 @@ case object StopSignal
 case class ComponentRegistration(ar: ActorRef, ct: Class[_], name: String)
 
 /**
- * Supervising actor that waits for Actors termination
+ * Supervising actor that waits for Actors' termination
  * @see http://letitcrash.com/post/30165507578/shutdown-patterns-in-akka-2
  */
 private class Reaper extends Actor with ActorLogging {
   var watched = ArrayBuffer.empty[ActorRef]
-  
+
   var promise: Option[Promise[Unit]] = None
-  
+
   def onDone = promise match {
     case None => log.warning("Reaper tried to complete a non-existing promise")
     case Some(p) => p.success(Unit)
   }
-  
+
   override def receive = {
     case StartKilling(bodies) => {
       bodies.foreach(c => {
         context.watch(c)
         c ! PoisonPill
-        
+
         watched += c
       })
-      
+
       // This promise will be completed when all watched have died
       val p = Promise[Unit]
       val respondTo = sender
@@ -51,10 +51,10 @@ private class Reaper extends Actor with ActorLogging {
         respondTo ! Unit
       })
       promise = Some(p)
-      
+
       if(bodies.isEmpty) onDone
     }
-    
+
     case Terminated(ref) => {
       watched -= ref
       if(watched.isEmpty) onDone
@@ -63,7 +63,6 @@ private class Reaper extends Actor with ActorLogging {
 }
 /**
  * @param references List of components that need to be watched
- * @param onAllDead Callback function to call when all watched actors have been terminated
  */
 private case class StartKilling(references: List[ActorRef])
 
@@ -76,19 +75,19 @@ final class ComponentBuilder(val system: ActorSystem) {
   def this(name: String) {
     this(ActorSystem(name, ConfigFactory.load()))
   }
-  
+
   def this(myName: String, config: Config) {
     this(ActorSystem(myName, config))
   }
 
-  
+
   type ComponentProps = akka.actor.Props
   var graph = Map[ComponentRef, List[(ComponentRef, Class[_])]]()
   var instances = List[ComponentRef]()
-  
+
   private val reaper = system.actorOf(Props(classOf[Reaper]), "Reaper")
-    
-  
+
+
   def add(src: ComponentRef, dest: ComponentRef, data: Class[_]) {
     println("Connecting " + src.ar + " to " + dest.ar + " for type " + data.getSimpleName)
     graph = graph + (src -> ((dest, data) :: graph.getOrElse(src, List[(ComponentRef, Class[_])]())))
@@ -115,35 +114,35 @@ final class ComponentBuilder(val system: ActorSystem) {
     instances = new ComponentRef(system.actorOf(props, name), props.clazz, name, this) :: instances
     instances.head
   }
-  
+
   /**
    * Gracefully stop all managed components.
    * When all stops are successful, we clear the `instances` list.
-   * 
+   *
    * @note This differs from the `stop` in that here, actors get killed for good,
    *       and cannot get restarted.
-   * 
+   *
    * @return A future which completes when *all* managed actors have shut down.
    */
   def shutdownManagedActors(timeout: FiniteDuration = 10 seconds): Future[Unit] = {
+    // This allows the user of this function to be notified when shutdown is complete
     val externalPromise = Promise[Unit]()
-    
+
     implicit val tt = new Timeout(timeout)
-    //implicit val sender = system.actorSelection("/user").resolveOne()
     val p: Future[Any] = (reaper ? StartKilling(instances.map(_.ar)))
-    
+
     p.onSuccess({ case _ =>
-    	instances = List[ComponentRef]()
+      instances = List[ComponentRef]()
       externalPromise.success(Unit)
     })
-    
+
     externalPromise.future
   }
 }
 
 /** Encapsulates [[akka.actor.ActorRef]] to facilitate connection of components
-  * TODO(sygi): support sending messages to ComponentRefs through !
-  */
+ * TODO(sygi): support sending messages to ComponentRefs through !
+ */
 class ComponentRef(val ar: ActorRef, val clazz: Class[_], val name: String, cb: ComponentBuilder) extends Serializable {
   /** Connects current component to the destination component
     *
@@ -216,7 +215,7 @@ abstract class Component extends Receiver {
 
   /* TODO: Dirty hack, componentReceive giving back unmatched to rematch in receiver using a andThen */
   override def receive = componentReceive orElse receiver
-  
+
   def send[T: ClassTag](t: T) = dest.get(t.getClass).map(_.map (_ ! t)) //TODO(sygi): support superclasses
   def send[T: ClassTag](t: List[T]) = t.map( elem => dest.get(elem.getClass).map(_.map(_ ! elem)))
 }
