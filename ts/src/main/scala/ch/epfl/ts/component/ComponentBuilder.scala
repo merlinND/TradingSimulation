@@ -24,6 +24,8 @@ import ch.epfl.ts.engine.MarketSimulator
 import ch.epfl.ts.evaluation.Evaluator
 import ch.epfl.ts.traders.Trader
 import ch.epfl.ts.component.fetch.FetchingComponent
+import ch.epfl.ts.brokers.Broker
+import ch.epfl.ts.component.utils.Timekeeper
 
 case object StartSignal
 case object StopSignal
@@ -60,8 +62,10 @@ final class ComponentBuilder(val system: ActorSystem) {
     val rootNames = Seq(
       classOf[Trader] -> "traders",
       classOf[Evaluator] -> "evaluators",
+      classOf[Broker] -> "brokers",
       classOf[FetchingComponent] -> "fetchers",
       classOf[MarketSimulator] -> "markets",
+      classOf[Timekeeper] -> "timekeepers",
       classOf[Any] -> "other"
     )
     

@@ -34,9 +34,11 @@ import ch.epfl.ts.data.LimitShortOrder
 import ch.epfl.ts.data.LimitShortOrder
 import ch.epfl.ts.data.MarketAskOrder
 
+abstract class Broker extends Component
+
 /**
  */
-class StandardBroker extends Component with ActorLogging {
+class StandardBroker extends Broker with ActorLogging {
   import context.dispatcher
   var mapping = Map[Long, ActorRef]()
   val dummyReturn: PartialFunction[Any, Unit] = { case _ => {} }
