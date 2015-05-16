@@ -45,7 +45,7 @@ final class ComponentBuilder(val system: ActorSystem) {
 
 
   def add(src: ComponentRef, dest: ComponentRef, data: Class[_]) {
-    println("Connecting " + src.ar + " to " + dest.ar + " for type " + data.getSimpleName)
+    log.debug("Connecting " + src.ar + " to " + dest.ar + " for type " + data.getSimpleName)
     graph = graph + (src -> ((dest, data) :: graph.getOrElse(src, List[(ComponentRef, Class[_])]())))
     src.ar ! ComponentRegistration(dest.ar, data, dest.name)
   }
@@ -54,7 +54,7 @@ final class ComponentBuilder(val system: ActorSystem) {
 
   def start = instances.map(cr => {
     cr.ar ! StartSignal
-    println("Sending start Signal to " + cr.ar)
+    log.debug("Sending start Signal to " + cr.ar)
   })
 
   /**
@@ -63,7 +63,7 @@ final class ComponentBuilder(val system: ActorSystem) {
    */
   def stop = instances.map(cr => {
     cr.ar ! StopSignal
-    println("Sending stop Signal to " + cr.ar)
+    log.debug("Sending stop Signal to " + cr.ar)
   })
 
   def createRef(props: ComponentProps, name: String) = {
@@ -82,7 +82,7 @@ final class ComponentBuilder(val system: ActorSystem) {
    */
   def shutdownManagedActors(timeout: FiniteDuration = 10 seconds): Future[Unit] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    
+
     // This allows the user of this function to be notified when shutdown is complete
     val externalPromise = Promise[Unit]()
 
@@ -135,15 +135,15 @@ abstract class Component extends Receiver {
   final def componentReceive: PartialFunction[Any, Unit] = {
     case ComponentRegistration(ar, ct, name) =>
       connect(ar, ct, name)
-      println("Received destination " + this.getClass.getSimpleName + ": from " + ar + " to " + ct.getSimpleName)
+      log.debug("Received destination " + this.getClass.getSimpleName + ": from " + ar + " to " + ct.getSimpleName)
     case StartSignal => stopped = false
       start
-      println("Received Start " + this.getClass.getSimpleName)
+      log.debug("Received Start " + this.getClass.getSimpleName)
     case StopSignal => context.stop(self)
       stop
-      println("Received Stop " + this.getClass.getSimpleName)
+      log.debug("Received Stop " + this.getClass.getSimpleName)
       stopped = true
-    case y if stopped => println("Received data when stopped " + this.getClass.getSimpleName + " of type " + y.getClass )
+    case y if stopped => log.warning("Received data when stopped " + this.getClass.getSimpleName + " of type " + y.getClass )
   }
 
   /**
