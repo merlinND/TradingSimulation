@@ -1,0 +1,10 @@
+%!TEX root = ../guide.tex
+
+\section{Distributed setup}
+
+One main characteristic of the Akka actor model is that each actor is solely responsible for maintaining its state, which is completely insulated from the external world. This way, we protect ourselves from synchronization problems and are allowed to run highly parallelized code.\\
+Moreover, Akka has built-in \textit{remoting}\footnote{\url{http://doc.akka.io/docs/akka/snapshot/scala/remoting.html}} capabilities: actors can be instantiated remotely while maintaining referential transparency. Therefore, with minimal modifications to our initial codebase, we were able to run a distributed deployment of our system.\\
+
+We demonstrate this feature using eight virtual machines (VM) from the \textit{Microsoft Azure}\footnote{\url{https://azure.microsoft.com/}} cloud. Each VM has very little requirements, as it needs only be accessible from the exterior world through the network and be able to run the Java Runtime Environment. The short script \texttt{vm-prepare.sh} contains all that is needed to make a mint Ubuntu system ready to run our code.
+
+Finally, \texttt{workerctl.sh} provides useful commands for worker control, such as start / stop / restart. Executing \texttt{workerctl.sh start} will start a host actor system which will wait to receive commands from a master system. The latter can be started simply from your own machine, e.g. by running \texttt{ch.epfl.ts.optimization.RemotingMasterRunner}. Components are created and watched from the master onto the workers, which is responsible in this case for tracking the performance of each Trader instance and picking the best one at the end of the run.
