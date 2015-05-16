@@ -106,8 +106,8 @@ object MovingAverageFXExample {
 
     // ----- Connecting actors
     fxQuoteFetcher -> (forexMarket, classOf[Quote])
-    forexMarket -> (Seq(broker, trader), classOf[Quote])
-
+    forexMarket -> (Seq(broker, evaluator), classOf[Quote])
+    
     evaluator -> (printer, classOf[EvaluationReport])
     evaluator -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
     broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
