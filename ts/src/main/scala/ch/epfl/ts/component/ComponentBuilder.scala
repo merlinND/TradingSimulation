@@ -1,24 +1,29 @@
 package ch.epfl.ts.component
 
-import scala.language.existentials
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import scala.concurrent.blocking
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
+import scala.language.existentials
 import scala.language.postfixOps
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.actor.actorRef2Scala
 import akka.pattern.ask
 import akka.util.Timeout
+import ch.epfl.ts.component.utils.ParentActor
 import ch.epfl.ts.component.utils.Reaper
 import ch.epfl.ts.component.utils.StartKilling
+import ch.epfl.ts.engine.MarketSimulator
+import ch.epfl.ts.evaluation.Evaluator
+import ch.epfl.ts.traders.Trader
+import ch.epfl.ts.component.fetch.FetchingComponent
 
 case object StartSignal
 case object StopSignal
@@ -47,6 +52,32 @@ final class ComponentBuilder(val system: ActorSystem) {
   private val reaper = system.actorOf(Props(classOf[Reaper]), "Reaper")
 
   /**
+   * "Builder" actors that are empty but useful to create instances
+   * under their name. This way, we create automatically an easy-to-query
+   * actor hierarchy based on concrete Actor type.
+   */
+  private lazy val roots: Seq[(Class[_], ActorRef)] = {
+    val rootNames = Seq(
+      classOf[Trader] -> "traders",
+      classOf[Evaluator] -> "evaluators",
+      classOf[FetchingComponent] -> "fetchers",
+      classOf[MarketSimulator] -> "markets",
+      classOf[Any] -> "other"
+    )
+    
+    rootNames.map({
+      case (clazz, name) => clazz -> system.actorOf(Props(classOf[ParentActor]), name)
+    })
+  }
+  
+  def getRootForClass(clazz: Class[_]): ActorRef = {
+    val opt = roots.find(p => p._1.isAssignableFrom(clazz))
+  	// Should not fail since we have an `Any` entry in `roots`
+    opt.get._2
+  }
+  
+  
+  /**
    * Connect `src` to `dest` on the given type of messages
    */
   def add(src: ComponentRef, dest: ComponentRef, data: Class[_]) {
@@ -71,8 +102,26 @@ final class ComponentBuilder(val system: ActorSystem) {
     println("Sending stop Signal to " + cr.ar)
   })
 
-  def createRef(props: ComponentProps, name: String) = {
-    instances = new ComponentRef(system.actorOf(props, name), props.clazz, name, this) :: instances
+  /**
+   * Create a new component with the given name using the `props`.
+   * Certain types of components such as `Trader`s, `Evaluator`s, `Market`s, etc
+   * are automatically created under an empty root actor corresponding to their class.
+   * This allows us to query the actor hierarchy easily for given types.
+   * 
+   * @warning Current implementation is blocking
+   * @TODO Any way to make this non-blocking?
+   */
+  def createRef(props: ComponentProps, name: String) = blocking {
+    // Determine the root actor to use for this class
+    val root = getRootForClass(props.actorClass())
+
+    // Ask the relevant root actor to make an instance for us
+    implicit val timeout = new Timeout(1 second)
+    val future = (root ? ParentActor.Create(props, name)).mapTo[ParentActor.Done]
+    val ref = Await.result(future, timeout.duration).ref
+    
+    // Wrap it into a ComponentRef
+    instances = new ComponentRef(ref, props.actorClass(), name, this) :: instances
     instances.head
   }
 
