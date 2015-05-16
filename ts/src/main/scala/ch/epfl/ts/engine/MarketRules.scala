@@ -23,6 +23,11 @@ case class Commission(limitOrderFee: Double, marketOrderFee: Double)
 class MarketRules extends Serializable {
   val commission = Commission(0, 0)
 
+  var lastBidPrice = 1.0
+  var lastAskPrice = 1.0
+  var withC = Currency.DEF
+  var whatC = Currency.DEF
+
   // when used on TreeSet, head() and iterator() provide increasing order
   def asksOrdering = new Ordering[Order] {
     def compare(first: Order, second: Order): Int =
@@ -69,6 +74,8 @@ class MarketRules extends Serializable {
                        oldTradingPrice: Double,
                        enqueueOrElse: (Order, PartialOrderBook) => Unit): Double = {
     var result = -1.0
+    if (withC == Currency.DEF) withC = newOrder.withC // make sure these are set
+    if (whatC == Currency.DEF) whatC = newOrder.whatC
 
     if (bestMatchesBook.isEmpty) {
       println("MS: matching orders book empty")
@@ -140,6 +147,14 @@ class MarketRules extends Serializable {
         result = oldTradingPrice
       }
     }
+
+    newOrder match {
+      case _ @ (_:MarketBidOrder | _:LimitBidOrder) =>
+        lastBidPrice = result
+      case _ @ (_:MarketAskOrder | _:LimitAskOrder) =>
+        lastAskPrice = result
+    }
+
     generateQuote(marketId, newOrdersBook, bestMatchesBook, newOrder.timestamp, send)
     result
   }
@@ -157,7 +172,12 @@ class MarketRules extends Serializable {
       val q = Quote(marketId, timestamp, topAsk.whatC, topAsk.withC, topBid.price, topAsk.price)
       println("MR: generating quote " + q)
       send(q)
-    } else
-      println("MR: can't generate quote")
+    } else {
+      if (whatC != Currency.DEF && withC != Currency.DEF) {
+        val q = Quote(marketId, timestamp, whatC, withC, lastBidPrice, lastAskPrice)
+        println("MR: can't generate new quote but using old one: " + q)
+        send(q)
+      }
+    }
   }
 }

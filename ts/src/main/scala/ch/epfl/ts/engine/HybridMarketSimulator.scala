@@ -64,13 +64,13 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
   val spread = 0.1
   def playMarketMaker() = {
     val asksEmpty = if (book.asks.isEmpty) 1 else 0
-    val bidsEmpty = if (book.asks.isEmpty) 1 else 0
+    val bidsEmpty = if (book.bids.isEmpty) 1 else 0
     if (asksEmpty + bidsEmpty == 1){
       val order = if (asksEmpty == 1){
         val topBid = book.bids.head
         LimitAskOrder(1, -1, topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price * (1 + spread))
       } else {
-        val topAsk = book.bids.head
+        val topAsk = book.asks.head
         LimitBidOrder(1, -1, topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price * (1 - spread))
       }
       receiver(order)
