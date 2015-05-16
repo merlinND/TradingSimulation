@@ -66,10 +66,8 @@ trait StrategyFactory {
   }
 
   trait LiveFetcher {
-    def fetcher: Props = {
-      val fetcher = new TrueFxFetcher
-      Props(classOf[PullFetchComponent[Quote]], fetcher, new QuoteTag)
-    }
+    def getFetcherInstance
+    def fetcher: Props = Props(classOf[PullFetchComponent[Quote]], getFetcherInstance, new QuoteTag)
   }
 
   /**

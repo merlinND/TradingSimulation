@@ -13,6 +13,7 @@ import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 import ch.epfl.ts.traders.TraderCompanion
 import scala.concurrent.duration.FiniteDuration
 import ch.epfl.ts.data.Currency
+import ch.epfl.ts.component.fetch.TrueFxFetcher
 
 /**
  * StrategyFactory allowing to use Forex traders.
@@ -41,7 +42,9 @@ abstract class ForexStrategyFactory(override val evaluationPeriod: FiniteDuratio
 
 class ForexLiveStrategyFactory(evaluationPeriod: FiniteDuration, referenceCurrency: Currency)
     extends ForexStrategyFactory(evaluationPeriod, referenceCurrency) {
-  override def commonProps = new ForexCommonProps with LiveFetcher
+  override def commonProps = new ForexCommonProps with LiveFetcher {
+    def getFetcherInstance = new TrueFxFetcher
+  }
 }
 
 class ForexReplayStrategyFactory(evaluationPeriod: FiniteDuration, referenceCurrency: Currency,
