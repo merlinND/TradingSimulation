@@ -19,6 +19,7 @@ import akka.actor.Actor
 import akka.actor.ActorSystem
 import akka.actor.Props
 import com.typesafe.config.ConfigFactory
+import ch.epfl.ts.evaluation.EvaluationReport
 
 object Application extends Controller {
   val config = ConfigFactory.load()
@@ -51,6 +52,12 @@ object Application extends Controller {
 
   def traderParameters = WebSocket.acceptWithActor[String, String] { request =>
     out => Props(classOf[TraderParameters], out)
+  }
+
+  def evaluationReport = WebSocket.acceptWithActor[String, String] { request =>
+    out => 
+      Props(classOf[MessageToJson[EvaluationReport]], out,
+        config.getString("akka.backend.evaluationActorSelection"), implicitly[ClassTag[EvaluationReport]])
   }
 
 }

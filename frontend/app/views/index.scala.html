@@ -38,6 +38,43 @@
 		    </tbody>
 	  	</table>
   	</tab>
+  	
+  	<tab heading="Statistics" data-ng-controller="EvaluationReportController">
+  		<small>All currencies converted to {{ referenceCurrency }}</small>
+	    <table datatable="" class="table table-striped">
+		    <thead>
+		    <tr>
+		        <th>ID</th>
+		        <th>Name</th>
+		        <th>Initial funds</th>
+		        <th>Current funds</th>
+		        <th>Total returns</th>
+		        <th>Volatility</th>
+		        <th>Drawdown</th>
+		        <th>Sharpe ratio</th>
+		        <th>Wallet contents</th>
+		    </tr>
+		    </thead>
+		    <tbody>
+	        <tr data-ng-repeat="report in evaluationReports track by report.traderId">
+	            <td>{{ report.traderId }}</td>
+	            <td>{{ report.traderName }}</td>
+	            <td>{{ report.initial | number: 2 }}</td>
+	            <td>{{ report.current | number: 2 }}</td>
+	            <td>{{ report.totalReturns | number: 2 }}</td>
+	            <td>{{ report.volatility | number: 2 }}</td>
+	            <td>{{ report.drawdown | number: 2 }}</td>
+	            <td>{{ report.sharpeRatio | number: 2 }}</td>
+	            <td>
+	            	<ul>
+	            		<li data-ng-repeat="(currency, value) in report.wallet">{{ currency }} : {{ value | number: 2 }}</li>
+	            	</ul>
+	            </td>
+	        </tr>
+		    </tbody>
+	  	</table>
+  	</tab>
+  	
   	<tab heading="Traders" data-ng-controller="TraderController">
 	    <table datatable="" class="table table-striped">
 		    <thead>

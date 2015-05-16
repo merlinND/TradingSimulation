@@ -20,7 +20,6 @@
 
     ws.onmessage = function(event) {
       var traderParameters = JSON.parse(event.data);
-      console.log(traderParameters);
       traders[traderParameters.id] = traderParameters;
     };
 
