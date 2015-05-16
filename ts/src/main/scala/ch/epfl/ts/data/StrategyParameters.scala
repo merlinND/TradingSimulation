@@ -199,9 +199,9 @@ object CoefficientParameter extends ParameterTrait {
    */
   def isValid(v: Double): Boolean = (v >= 0.0) && (v <= 1.0)
 
-  // TODO: handle user-selected resolution for these values
   def validValues: Iterable[Double] = {
-    val resolution = 0.01
+	  // TODO: handle user-selected resolution for these values
+    val resolution = 0.1
     for {
       n <- 0 to (1 / resolution).toInt
     } yield (n * resolution)
@@ -255,7 +255,7 @@ object RealNumberParameter extends ParameterTrait {
   def isValid(v: Double): Boolean = true
 
   // TODO: how should we enumerate all Reals?
-  def validValues: Iterable[Double] = Stream.from(0).map(x => x / 100.0)
+  def validValues: Iterable[Double] = Stream.from(0).map(x => x / 10.0)
 
   def defaultValue = 0.0
 }

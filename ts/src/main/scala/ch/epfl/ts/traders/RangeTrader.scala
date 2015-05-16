@@ -71,7 +71,6 @@ object RangeTrader extends TraderCompanion {
  * The resistance is considered as a ceiling and when prices are close to it we sell since we expect prices to go back to normal
  * The support is considered as a floor ans when pricess are close to it is a good time to buy. But note that if prices breaks the
  * support then we liquidate our position. We avoid the risk that prices will crash.
- * @param volume the volume that we want to buy
  */
 class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParameters)
     extends Trader(uid, marketIds, parameters) {
