@@ -67,9 +67,10 @@ object DemoExample extends AbstractOptimizationExample {
     makeConnections(d)
 
     // ----- Start
-    // Make sure brokers are started before the traders
+    // Give an early start to important components
     supervisorActor.get.ar ! StartSignal
     d.broker.ar ! StartSignal
+    d.market.ar ! StartSignal
     builder.start
 
     // ----- Registration to the supervisor

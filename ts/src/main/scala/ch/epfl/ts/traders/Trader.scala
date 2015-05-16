@@ -76,9 +76,6 @@ abstract class Trader(val uid: Long, marketIds: List[Long], val parameters: Stra
    *   - Put initial funds into our wallet
    */
   final override def start = {
-    
-    println("Common start function received")
-    
     // Register with the broker we are connected to
     send(Register(uid))
     // Fund the wallet using the provided currency

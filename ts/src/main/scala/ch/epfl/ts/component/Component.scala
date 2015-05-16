@@ -45,7 +45,7 @@ final class ComponentBuilder(val system: ActorSystem) {
 
 
   def add(src: ComponentRef, dest: ComponentRef, data: Class[_]) {
-    log.debug("Connecting " + src.ar + " to " + dest.ar + " for type " + data.getSimpleName)
+    //println("Connecting " + src.ar + " to " + dest.ar + " for type " + data.getSimpleName)
     graph = graph + (src -> ((dest, data) :: graph.getOrElse(src, List[(ComponentRef, Class[_])]())))
     src.ar ! ComponentRegistration(dest.ar, data, dest.name)
   }
@@ -54,7 +54,7 @@ final class ComponentBuilder(val system: ActorSystem) {
 
   def start = instances.map(cr => {
     cr.ar ! StartSignal
-    log.debug("Sending start Signal to " + cr.ar)
+    //println("Sending start Signal to " + cr.ar)
   })
 
   /**
@@ -63,7 +63,7 @@ final class ComponentBuilder(val system: ActorSystem) {
    */
   def stop = instances.map(cr => {
     cr.ar ! StopSignal
-    log.debug("Sending stop Signal to " + cr.ar)
+    //println("Sending stop Signal to " + cr.ar)
   })
 
   def createRef(props: ComponentProps, name: String) = {
