@@ -27,7 +27,6 @@ object MovingAverageFXExample extends AbstractTraderShowcaseExample {
 
   val strategy: TraderCompanion = MovingAverageTrader
   val parameterization = {
-    val traderId = 123L
     val periods = List(2, 6)
     val initialFunds: Wallet.Type = Map(Currency.CHF -> 5000.0)
     new StrategyParameters(
