@@ -8,6 +8,8 @@ import akka.actor.ActorRef
 import ch.epfl.ts.component.ComponentRef
 import ch.epfl.ts.optimization.StrategyFactory
 import ch.epfl.ts.data.Currency
+import ch.epfl.ts.component.fetch.MarketNames
+import ch.epfl.ts.optimization.HostActorSystem
 
 
 /**
@@ -17,8 +19,14 @@ abstract class AbstractExample {
 
   implicit val builder: ComponentBuilder = new ComponentBuilder
   
+  /** The default host is a simple local actor system (no remoting) */
+  val localHost: HostActorSystem = new HostActorSystem()
+  
   /** Factory to use in order to create a deployment */
   val factory: StrategyFactory
+  
+  /** List of IDs of the market being traded on */
+  val marketIds: Seq[Long]
   
   /**
    * Connect the various components of a system deployment
@@ -52,6 +60,19 @@ abstract class AbstractExample {
 }
 
 abstract class AbstractForexExample extends AbstractExample {
+  
+  val marketIds = Seq(MarketNames.FOREX_ID)
+  
   /** Main symbol (currency pair) being traded */
   val symbol: (Currency, Currency)
+}
+
+/**
+ * Use this trait if your example uses evaluation
+ */
+trait TraderEvaluation {
+  /** Emit evaluation reports every `evaluationPeriod` */
+  val evaluationPeriod: FiniteDuration
+  /** Assess the value of traders' wallet using this currency */
+  val referenceCurrency: Currency
 }

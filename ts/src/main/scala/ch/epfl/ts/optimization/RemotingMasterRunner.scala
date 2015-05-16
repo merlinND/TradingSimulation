@@ -32,6 +32,8 @@ import ch.epfl.ts.traders.MovingAverageTrader
 import ch.epfl.ts.example.AbstractExample
 import ch.epfl.ts.component.ComponentRef
 import ch.epfl.ts.example.AbstractForexExample
+import ch.epfl.ts.example.TraderEvaluation
+import ch.epfl.ts.example.TraderEvaluation
 
 /**
  * Runs a main() method that creates all remote systems
@@ -41,7 +43,7 @@ import ch.epfl.ts.example.AbstractForexExample
  *
  * @see {@link ch.epfl.ts.optimization.RemotingWorker}
  */
-object RemotingMasterRunner extends AbstractForexExample {
+object RemotingMasterRunner extends AbstractForexExample with TraderEvaluation {
 
   val availableHosts = {
     val availableWorkers = List(
@@ -66,6 +68,8 @@ object RemotingMasterRunner extends AbstractForexExample {
   }
 
   val symbol = (Currency.USD, Currency.CHF)
+  val evaluationPeriod = (10 seconds)
+  val referenceCurrency = symbol._2
   
   val factory: StrategyFactory = {
       // ----- Factory: class responsible for creating the components
@@ -73,7 +77,7 @@ object RemotingMasterRunner extends AbstractForexExample {
     val start = "201411"
     val end = "201411"
     
-    new ForexReplayStrategyFactory(10 seconds, symbol._2, symbol, speed, start, end)
+    new ForexReplayStrategyFactory(evaluationPeriod, referenceCurrency, symbol, speed, start, end)
   }
   
   override lazy val supervisorActor: Option[ComponentRef] = Some({
