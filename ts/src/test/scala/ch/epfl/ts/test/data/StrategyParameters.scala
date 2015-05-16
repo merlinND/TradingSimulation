@@ -37,7 +37,7 @@ class StrategyParametersTests extends FunSuite {
   val validWallet3: Wallet.Type = Map()
   val invalidWallet1: Wallet.Type = Map(Currency.CHF -> 1000.0, Currency.USD -> 0.0, Currency.BTC -> -50.0)
 
-  private type CurrencyPair = (Currency.Currency, Currency.Currency)
+  private type CurrencyPair = (Currency, Currency)
 
   /** Generic function to test basic functionality expected from Parameter subclasses */
   def testConcreteParameter[V](parameterTrait: ParameterTrait{ type T = V}, validValues: Iterable[V], invalidValues: Iterable[V]) = {

@@ -2,21 +2,27 @@ package ch.epfl.ts.test
 
 import scala.language.postfixOps
 import scala.concurrent.duration.DurationInt
-import akka.actor.ActorSystem
-import com.typesafe.config.ConfigFactory
-import akka.testkit.TestKit
-import org.scalatest.WordSpecLike
-import org.scalatest.BeforeAndAfterAll
-import ch.epfl.ts.engine.MarketFXSimulator
-import ch.epfl.ts.brokers.StandardBroker
-import ch.epfl.ts.engine.ForexMarketRules
 import scala.reflect.ClassTag
+
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.WordSpecLike
+
+import com.typesafe.config.ConfigFactory
+
 import akka.actor.ActorRef
+import akka.actor.ActorSystem
+import akka.actor.actorRef2Scala
+import akka.testkit.TestKit
 import akka.util.Timeout
+import ch.epfl.ts.brokers.StandardBroker
 import ch.epfl.ts.component.ComponentBuilder
+import scala.concurrent.Await
+import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
+import ch.epfl.ts.engine.{MarketFXSimulator, ForexMarketRules}
+
 
 object TestHelpers {
-
   def makeTestActorSystem(name: String = "TestActorSystem") =
     ActorSystem(name, ConfigFactory.parseString(
       """
@@ -24,7 +30,6 @@ object TestHelpers {
       akka.loggers = ["akka.testkit.TestEventListener"]
       """
     ).withFallback(ConfigFactory.load()))
-  
 }
 
 /**
@@ -34,15 +39,16 @@ object TestHelpers {
 abstract class ActorTestSuite(val name: String)
   extends TestKit(TestHelpers.makeTestActorSystem(name))
   with WordSpecLike
-  with BeforeAndAfterAll {
+  with BeforeAndAfterAll
+  with BeforeAndAfterEach {
   
   implicit val builder = new ComponentBuilder(system)
   
+  val shutdownTimeout = 3 seconds
+  
 	/** After all tests have run, shut down the system */
   override def afterAll() = {
-    // TODO: use system.terminate (for some reason, doesn't compile in SBT)
-    system.shutdown()
-    system.awaitTermination()
+    TestKit.shutdownActorSystem(system, shutdownTimeout)
   }
   
 }
@@ -61,13 +67,14 @@ class SimpleBrokerWrapped(market: ActorRef) extends StandardBroker {
 /**
  * A bit dirty hack to allow ComponentRef-like communication between components, while having them in Test ActorSystem
  */
-class FxMarketWrapped(uid: Long, rules: ForexMarketRules) extends MarketFXSimulator(uid, rules) {
+class FxMarketWrapped(uid: Long, rules: ForexMarketRules) extends MarketFXSimulator(uid, new FxMarketRulesWrapper(rules)) {
   import context.dispatcher
   override def send[T: ClassTag](t: T) {
-    val broker = context.actorSelection("../Broker")
+    val brokerSelection = context.actorSelection("../Broker")
     implicit val timeout = new Timeout(100 milliseconds)
-    for (res <- broker.resolveOne()) {
-      res ! t
-    }
+    val broker = Await.result(brokerSelection.resolveOne(), timeout.duration)
+    println("Tried to get Broker: " + broker)
+    println("Market sent to Broker ONLY: " + t)
+    broker ! t
   }
 }

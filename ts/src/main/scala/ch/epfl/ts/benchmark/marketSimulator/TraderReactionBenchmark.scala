@@ -3,21 +3,21 @@ package ch.epfl.ts.benchmark.marketSimulator
 import akka.actor.Props
 import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.component.persist.TransactionPersistor
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.{DelOrder, LimitAskOrder, LimitBidOrder, MarketAskOrder, MarketBidOrder, Order, Transaction}
 import ch.epfl.ts.component.utils.BackLoop
 
 /**
- * The goal of this test is to measure the time it takes for a trader's order to be executed 
- * since the moment when the order that will trigger the trader's action is sent directly to 
+ * The goal of this test is to measure the time it takes for a trader's order to be executed
+ * since the moment when the order that will trigger the trader's action is sent directly to
  * the MarketSimulator.
  */
 object TraderReactionBenchmark {
 
   def main(args: Array[String]) {
     var orders: List[Order] = Nil
-    orders = MarketAskOrder(0L, 0L, System.currentTimeMillis(), BTC, USD, 50.0, 0.0) :: orders
-    orders = LimitBidOrder(0L, 0L, System.currentTimeMillis(), BTC, USD, 50.0, 50.0) :: orders
+    orders = MarketAskOrder(0L, 0L, System.currentTimeMillis(), Currency.BTC, Currency.USD, 50.0, 0.0) :: orders
+    orders = LimitBidOrder(0L, 0L, System.currentTimeMillis(), Currency.BTC, Currency.USD, 50.0, 50.0) :: orders
 
     // create factory
     val builder = new ComponentBuilder("MarketSimulatorBenchmarkSystem")

@@ -1,20 +1,26 @@
 package ch.epfl.ts.evaluation
 
+import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.collection.mutable.{Map => MMap, MutableList => MList}
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.concurrent.duration.FiniteDuration
+
+import akka.actor.ActorLogging
 import akka.actor.{ActorRef, Cancellable}
+import akka.pattern.{ ask, pipe }
+import akka.util.Timeout
+import ch.epfl.ts.engine.{Wallet, TraderIdentity, GetTraderParameters}
 import ch.epfl.ts.component.{ComponentRegistration, Component, ComponentRef}
 import ch.epfl.ts.data._
-import ch.epfl.ts.data.Currency._
 
 /**
  * Represents metrics of a strategy
  */
 case class EvaluationReport(traderId: Long, traderName: String, wallet: Map[Currency, Double],
                             currency: Currency, initial: Double, current: Double, totalReturns: Double,
-                            volatility: Double, drawdown: Double, sharpeRatio: Double) extends Ordered[EvaluationReport] {
+                            volatility: Double, drawdown: Double, sharpeRatio: Double)
+                           extends Ordered[EvaluationReport] with Streamable {
 
   /** Compares two evaluation reports by total returns
     *
@@ -50,22 +56,25 @@ case class EvaluationReport(traderId: Long, traderName: String, wallet: Map[Curr
   *
   * @param trader the reference to the trader component
   * @param traderId the id of the trader
-  * @param initial the initial seed money
-  * @param currency currency of the initial seed money
+  * @param traderName the name of the trader
+  * @param currency the reference currency for reporting and calculation
   * @param period the time period to send evaluation report
   */
-class Evaluator(trader: ComponentRef, traderId: Long, initial: Double, currency: Currency, period: FiniteDuration) extends Component {
-  // for usage of scheduler
+class Evaluator(trader: ActorRef, traderId: Long, traderName: String, currency: Currency, period: FiniteDuration)
+    extends Component with ActorLogging {
+  // For usage of Scheduler
   import context._
+
+  // Initial values
+  private var initialValueReceived = false
+  private var initialWallet: Map[Currency, Double] = Map.empty
+  private val wallet = MMap[Currency, Double]()
 
   private var schedule: Cancellable = null
   private val returnsList = MList[Double]()
   private val priceTable = MMap[(Currency, Currency), Double]()
-  
-  // TODO: use the initial funds known by the actor (INITIAL_FUNDS parameter)
-  private val wallet = MMap[Currency, Double](currency -> initial)
 
-  private var lastValue = initial
+  private var lastValue: Option[Double] = None
   private var maxProfit = 0.0
 
   /** Max loss as a positive value
@@ -79,7 +88,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, initial: Double, currency:
     if (ct.equals(classOf[EvaluationReport]))
       super.connect(ar, ct, name)
     else
-      trader.ar ! ComponentRegistration(ar, ct, name)
+      trader ! ComponentRegistration(ar, ct, name)
   }
 
   /**
@@ -90,11 +99,31 @@ class Evaluator(trader: ComponentRef, traderId: Long, initial: Double, currency:
       buy(t)
     case t: Transaction if t.sellerId == traderId =>  // sell
       sell(t)
+
+    case t: Transaction => // Nothing to do
+       // Let's not forward unrelated transactions to our poor busy Trader
+
     case q: Quote =>
       updatePrice(q)
+      trader forward q
+
     case 'Report =>
       if (canReport) report
-    case m => trader.ar ! m
+    case _: EndOfFetching =>
+      if (canReport) report
+
+    case TraderIdentity(_, _, companion, parameters) if initialWallet.isEmpty =>
+      initialWallet = parameters.get[Wallet.Type](companion.INITIAL_FUNDS)
+      initialWallet.foreach { case (currency, amount) =>
+        wallet += currency -> (wallet.getOrElse(currency, 0.0) + amount)
+      }
+      initialValueReceived = true
+      if(canReport) {
+        lastValue = Some(valueOfWallet(wallet.toMap))
+      }
+
+    // All other messages, we just pass along
+    case m => trader forward m
   }
 
   /**
@@ -109,7 +138,7 @@ class Evaluator(trader: ComponentRef, traderId: Long, initial: Double, currency:
   /**
    *  Returns the total money of the wallet converted to the given currency
    */
-  private def value(in: Currency = currency): Double = {
+  private def valueOfWallet(wallet: Map[Currency, Double], in: Currency = currency): Double = {
     (wallet :\ 0.0) { case ((c, amount), acc) => acc + ratio(c, in) * amount }
   }
 
@@ -136,6 +165,10 @@ class Evaluator(trader: ComponentRef, traderId: Long, initial: Double, currency:
     val Quote(_, _, whatC, withC, bid, ask) = q
     priceTable.put(whatC -> withC, bid)
     priceTable.put(withC -> whatC, 1/ask)
+
+    if(lastValue.isEmpty) {
+      lastValue = Some(valueOfWallet(wallet.toMap))
+    }
   }
 
   /**
@@ -150,33 +183,35 @@ class Evaluator(trader: ComponentRef, traderId: Long, initial: Double, currency:
    * Updates the statistics
    */
   private def report: Unit = {
-    val curVal = value()
+    val initial = valueOfWallet(initialWallet)
+    val curVal = valueOfWallet(wallet.toMap)
 
     val profit = curVal - initial
     if (profit > maxProfit) maxProfit = profit
     else if (profit < 0 && 0 - profit > maxLoss) maxLoss = 0 - profit
 
-    returnsList += (curVal - lastValue) / lastValue
+    returnsList += (curVal - lastValue.get) / lastValue.get
 
-    lastValue = curVal
+    lastValue = Some(curVal)
 
     // Generate report
-    //TODO find appropriate value for risk free rate
+    // TODO: Find appropriate value for risk free rate
     val riskFreeRate = 0.03
-    val totalReturns = (value() - initial) / initial
+    val totalReturns = (curVal - initial) / initial
     val volatility = computeVolatility
     val drawdown = maxLoss / initial
     val sharpeRatio = (totalReturns - riskFreeRate) / volatility
 
-    send(EvaluationReport(traderId, trader.name, wallet.toMap, currency, initial, curVal, totalReturns, volatility, drawdown, sharpeRatio))
+    send(EvaluationReport(traderId, traderName, wallet.toMap, currency, initial, curVal, totalReturns, volatility, drawdown, sharpeRatio))
   }
 
   /**
    * Tells whether it's OK to report
-   * @return True if and only if each currency appearing in the wallet also appears in the price table.
+   * @return True if each currency appearing in the wallet also appears in the price table
+   *         and we have received the initial funds from the trader we are evaluating.
    * */
   private def canReport: Boolean = {
-    if (priceTable.size == 0) false
+    if (priceTable.size == 0 || !initialValueReceived || lastValue.isEmpty) false
     else wallet.keys.forall(c => c == currency || priceTable.contains(c -> currency))
   }
 
@@ -184,8 +219,12 @@ class Evaluator(trader: ComponentRef, traderId: Long, initial: Double, currency:
    * Starts the scheduler and trader
    */
   override def start = {
-    schedule = context.system.scheduler.schedule(2000.milliseconds, period, self, 'Report)
-  }
+    schedule = context.system.scheduler.schedule(2 seconds, period, self, 'Report)
+
+    // Query trader for the initial wallet
+    implicit val timeout = Timeout(2 seconds)
+    (trader ? GetTraderParameters).mapTo[TraderIdentity] pipeTo self
+ }
 
   /**
    * Stops the scheduler and trader

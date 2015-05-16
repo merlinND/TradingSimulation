@@ -5,6 +5,7 @@ import scala.reflect
 import scala.reflect.ClassTag
 import scala.concurrent.duration.DurationInt
 import akka.actor.Props
+import akka.actor.Deploy
 import ch.epfl.ts.component.Component
 import ch.epfl.ts.component.ComponentBuilder
 import ch.epfl.ts.component.ComponentRef
@@ -15,6 +16,10 @@ import ch.epfl.ts.engine.FundWallet
 import ch.epfl.ts.data.Register
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.WalletParameter
+import akka.actor.ActorLogging
+import ch.epfl.ts.engine.GetTraderParameters
+import ch.epfl.ts.engine.TraderIdentity
+import ch.epfl.ts.data.TheTimeIs
 
 case class RequiredParameterMissingException(message: String) extends RuntimeException(message)
 
@@ -26,8 +31,13 @@ case class RequiredParameterMissingException(message: String) extends RuntimeExc
  * 
  * It will throw a `RequiredParameterMissingException` on instantiation if any of the
  * required parameters have not been provided (or have the wrong type).
+ * 
+ * @param marketIds List of market IDs that this trader trades on.
+ *  This could be useful if the trader wants to receive indicators from various markets.
  */
-abstract class Trader(val uid: Long, val parameters: StrategyParameters) extends Component {
+
+abstract class Trader(val uid: Long, marketIds: List[Long], val parameters: StrategyParameters)
+    extends Component with ActorLogging {
   /** Gives a handle to the companion object */
   def companion: TraderCompanion
   
@@ -37,8 +47,28 @@ abstract class Trader(val uid: Long, val parameters: StrategyParameters) extends
   
   /** Default timeout to use when Asking another component asynchronously */
   val askTimeout = 500 milliseconds
+  var currentTimeMillis: Long = 0L
   
-  val initialFunds = parameters.get[Map[Currency.Currency, Double]]("InitialFunds")
+  val initialFunds = parameters.get[Map[Currency, Double]]("InitialFunds")
+  
+  /**
+   * @note We *do not* catch everything, we leave this partial function undefined
+   *       for all messages we cannot handle explicitly here so that concrete Traders
+   *       may handle them their own way using their `receiver` function.
+   */
+  // TODO: move all common Trader behaviors to this receiver
+  final def traderReceive: PartialFunction[Any, Unit] = {
+    case GetTraderParameters => {
+      sender ! TraderIdentity(self.path.name, uid, companion, parameters)
+    }
+    
+    case TheTimeIs(t) => {
+      currentTimeMillis = t
+    }
+  }
+  
+  override def receive = (traderReceive orElse super.receive)
+  
   
   /**
    * Initialization common to all trading strategies:
@@ -79,7 +109,7 @@ abstract class Trader(val uid: Long, val parameters: StrategyParameters) extends
  * The user should not have to specify the parameter names as strings, but rather
  * be able to use the keys exposed by the strategy's companion object.
  */
-trait TraderCompanion {
+trait TraderCompanion extends Serializable {
   type Key = String
   
   /**
@@ -100,19 +130,24 @@ trait TraderCompanion {
    * 
    * This is the preferred method to instantiate a Trader, as it will perform parameter checking first. 
    */
-  final def getInstance(uid: Long, parameters: StrategyParameters, name: String)(implicit builder: ComponentBuilder): ComponentRef = {
+  final def getInstance(uid: Long, marketIds : List[Long], parameters: StrategyParameters,
+                        name: String, deploy: Option[Deploy] = None)
+                       (implicit builder: ComponentBuilder): ComponentRef = {
     verifyParameters(parameters)
-    getConcreteInstance(builder, uid, parameters, name)
+    val props = deploy match { 
+      case Some(d) => getProps(uid, marketIds, parameters).withDeploy(d)
+      case None => getProps(uid, marketIds, parameters)
+    }
+    
+    builder.createRef(props, name)
   }
   
   /**
-   * Provide a new instance of the concrete trading strategy using these parameters.
+   * Provide props in order to build a new instance of the concrete trading strategy using these parameters.
    * Can be overriden by concrete TraderCompanion, but the generic implementation should be sufficient.
    */
-  protected def getConcreteInstance(builder: ComponentBuilder,
-                                    uid: Long, parameters: StrategyParameters,
-                                    name: String) = {
-    builder.createRef(Props(concreteTraderTag.runtimeClass, uid, parameters), name)
+  def getProps(uid: Long, marketIds : List[Long], parameters: StrategyParameters) = {
+    Props(concreteTraderTag.runtimeClass, uid, marketIds, parameters)
   }
   
   /**

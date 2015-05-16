@@ -1,22 +1,24 @@
 package ch.epfl.ts.component.fetch
 
-import ch.epfl.ts.data.Quote
-import ch.epfl.ts.data.Currency
-import ch.epfl.ts.component.persist.QuotePersistor
-import ch.epfl.ts.component.fetch.MarketNames._
-import scala.util.parsing.combinator._
-import scala.io.Source
-import scala.concurrent.duration._
 import java.util.Date
 import java.util.Calendar
 import java.util.Timer
 import java.util.TimerTask
+import scala.language.postfixOps
+import scala.util.parsing.combinator._
+import scala.io.Source
+import scala.concurrent.duration.DurationInt
+import ch.epfl.ts.data.Quote
+import ch.epfl.ts.data.Currency
+import ch.epfl.ts.data.EndOfFetching
+import ch.epfl.ts.component.persist.QuotePersistor
+import ch.epfl.ts.component.fetch.MarketNames._
 
 /**
  * HistDataCSVFetcher class reads data from csv source and converts it to Quotes.
  * For every Quote it has read from disk, it calls the function callback(q: Quote),
  * simulating the past by waiting for a certain time t after each call. By default
- * t is the original (historical) time difference between the quote that was last sent 
+ * it is the original (historical) time difference between the quote that was last sent 
  * and the next quote to be sent.
  * 
  * @param dataDir       A directory path containing data files the fetcher can read. Which files are
@@ -37,8 +39,10 @@ import java.util.TimerTask
  *                      in the data file for April 2013 (as if start was set to 2013-04-01 00:00).
  *
  * @param end           Until when to read. Behaves analogous to start, i.e. if end is set to 2013-06-24 14:34
- *                      the fetcher will still read and send all data in June 2013, as if end was set to 2013-06-30 24:00 
- *
+ *                      the fetcher will still read and send all data in June 2013, as if end was set to 2013-06-30 24:00.
+ *                      Note this end date includes the whole corresponding month. To fetch a sigle month, pass the same
+ *                      date as both start and end.
+ * 
  * @param speed         The speed at which the fetcher will fetch quotes. Defaults to 1 (which means quotes are replayed
  *                      as they were recorded). Can be set e.g. to 2 (time runs twice as fast) or 60 (one hour of historical
  *                      quotes is sent in one minute), etc. Time steps are dT = int(1/speed * dT_historical), in milliseconds.
@@ -59,6 +63,12 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
   val askPref = "DAT_NT_" + currencyPair.toUpperCase() + "_T_ASK_"
   
   /**
+   * Initial delay before starting to send quotes in order to let the system
+   * get each component started.
+   */
+  val initialDelay = (1 second)
+  
+  /**
    * The centerpiece of this class, where we actually load the data.
    * It contains all quotes this fetcher reads from disk, ready to be fetch()ed.
    * 
@@ -77,8 +87,7 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
   }
   
   /**
-   * Index of the next month to be fetched, incremented whenever a month has been fetched.
-   * And the index for the quotes in that month, updated whenever a quote was sent.
+   * Current and next quotes to be sent, updated whenever a quote was sent.
    */
   var currentQuote = allQuotes.next()
   var nextQuote = allQuotes.next()
@@ -90,21 +99,27 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
    * t = (time when next quote was recorded) - (time when current quote was recorded)
    */
   val timer = new Timer()
-  timer.schedule(new SendQuotes, 0)
+  timer.schedule(new SendQuotes, initialDelay.toMillis)
   class SendQuotes extends java.util.TimerTask {
     
     def run() {
-      // Get the current quote and send it
-      callback(currentQuote)
+      // Get the currentQuote and send it
+      send(currentQuote)
+      
+      // Schedule sending the nextQuote
+      timer.schedule(new SendQuotes(), (1 / speed * (nextQuote.timestamp - currentQuote.timestamp)).toInt)
   
       if (allQuotes.hasNext) {
-        // If there is a next quote, schedule the next call
+        // If there are more quotes to send, move forward
         currentQuote = nextQuote
         nextQuote = allQuotes.next
-        timer.schedule(new SendQuotes(), (1 / speed * (nextQuote.timestamp - currentQuote.timestamp)).toInt)
+      } else if (currentQuote == nextQuote) {
+        // Or maybe we already sent the last quote
+        send(EndOfFetching(currentQuote.timestamp))
+        timer.cancel()
       } else {
-        // Nothing more to do here, boys!
-        timer.cancel() 
+        // Next scheduled call will send the last quote
+        currentQuote = nextQuote
       }
     }
     
@@ -193,7 +208,10 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
         Quote(q.marketId, q.timestamp, whatC, withC, q.bid, q.ask)
       })
   }
-  
+
+  override def stop = {
+    timer.cancel()
+  }
 }
 
 /**

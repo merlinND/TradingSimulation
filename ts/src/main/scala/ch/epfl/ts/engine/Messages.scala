@@ -1,13 +1,15 @@
 package ch.epfl.ts.engine
 
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.Order
 import akka.actor.ActorRef
+import ch.epfl.ts.data.StrategyParameters
+import ch.epfl.ts.traders.TraderCompanion
+import ch.epfl.ts.data.Streamable
 
 /*
  * Definition of the Simulator's internal messages.
  */
-
 
 /* *****************************
  * Order
@@ -34,18 +36,26 @@ case class ExecutedAskOrder(val oid: Long, val uid: Long, val timestamp: Long, v
   extends Order
 
 object ExecutedBidOrder {
-  def apply(o: Order,price:Double): ExecutedBidOrder = ExecutedBidOrder(o.oid, o.uid, o.timestamp, o.whatC, o.withC, o.volume, price)
+  def apply(o: Order, price: Double): ExecutedBidOrder = ExecutedBidOrder(o.oid, o.uid, o.timestamp, o.whatC, o.withC, o.volume, price)
 }
 object ExecutedAskOrder {
-  def apply(o: Order,price:Double): ExecutedAskOrder = ExecutedAskOrder(o.oid, o.uid, o.timestamp, o.whatC, o.withC, o.volume, price)
+  def apply(o: Order, price: Double): ExecutedAskOrder = ExecutedAskOrder(o.oid, o.uid, o.timestamp, o.whatC, o.withC, o.volume, price)
 }
-//TODO(sygi): change this messages and actually use them to communicate broker -> trader
 
+/* *****************************
+ * Traders
+ */
+abstract class TraderMessage extends Streamable
+/**
+ * Send this message when needing to retrieve a trader's strategy parameters
+ */
+case object GetTraderParameters extends TraderMessage
+case class TraderIdentity(name: String, uid: Long, strategy: TraderCompanion, parameters: StrategyParameters) extends TraderMessage
 
 /* *****************************
  * Wallet
  */
-abstract class WalletState(val uid: Long)
+abstract class WalletState(val uid: Long) extends Streamable
 
 /* Getter */
 
@@ -53,7 +63,7 @@ abstract class WalletState(val uid: Long)
  * @param ref To enable using the ask pattern while keeping reliable verification of the GetWalletFund sender
  *            Should be a reference to the trader asking for the funds.
  */
-case class GetWalletFunds(override val uid: Long,ref:ActorRef) extends WalletState(uid)
+case class GetWalletFunds(override val uid: Long, ref: ActorRef) extends WalletState(uid)
 
 case class GetWalletAllOrders(override val uid: Long) extends WalletState(uid)
 
@@ -78,13 +88,13 @@ case class WalletClosedOrders(override val uid: Long, clO: List[Order]) extends 
 case class WalletCanceledOrders(override val uid: Long, caO: List[Order]) extends WalletState(uid)
 
 /* Actions */
-case class FundWallet(override val uid: Long, c: Currency, q: Double) extends WalletState(uid)
+case class FundWallet(override val uid: Long, c: Currency, q: Double, allowNegative: Boolean = false) extends WalletState(uid)
 //TODO(sygi): remove unnecessary messages
 
 /* *****************************
  * Matcher
  */
-abstract class MatcherState()
+abstract class MatcherState() extends Streamable
 
 /* Getter */
 case class GetMatcherOrderBook(count: Int) extends MatcherState

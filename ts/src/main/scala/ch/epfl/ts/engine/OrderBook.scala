@@ -3,9 +3,11 @@ package ch.epfl.ts.engine
 import ch.epfl.ts.data.Order
 
 import scala.collection.mutable.{HashMap => MHashMap, TreeSet => MTreeSet}
+import scala.collection.mutable
 
 /**
- * Container for the Order Book
+ * Container for the Order Book.
+ * It contains the ordered set of pending Order for one symbol, for either bid or ask.
  * The implementation has a HashMap with the orderIds matching the orders
  * because the naive implementation that required to execute a find() with
  * a predicate on the TreeSet to acquire the Order reference was executed 
@@ -25,7 +27,7 @@ class PartialOrderBook(val comparator: Ordering[Order]) {
   }
 
   /**
-   * insert order in book
+   * insert order in book.
    */
   def insert(o: Order): Unit = {
     bookMap update(o.oid, o)
@@ -37,6 +39,14 @@ class PartialOrderBook(val comparator: Ordering[Order]) {
   def head = book.head
 
   def size = book.size
+
+  override def toString :String = {
+    val sb = new mutable.StringBuilder
+    for(i <- book){
+      sb.append(i.toString + "\n")
+    }
+    sb.toString()
+  }
 }
 
 class OrderBook(val bids: PartialOrderBook, val asks: PartialOrderBook) {

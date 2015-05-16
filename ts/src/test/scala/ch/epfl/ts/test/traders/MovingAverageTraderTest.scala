@@ -4,10 +4,8 @@ import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
 import scala.math.floor
 import scala.reflect.ClassTag
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-
 import akka.actor.ActorRef
 import akka.actor.Props
 import akka.actor.actorRef2Scala
@@ -24,11 +22,13 @@ import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.engine.ForexMarketRules
 import ch.epfl.ts.engine.Wallet
-import ch.epfl.ts.indicators.SMA
 import ch.epfl.ts.test.ActorTestSuite
 import ch.epfl.ts.test.FxMarketWrapped
 import ch.epfl.ts.test.SimpleBrokerWrapped
 import ch.epfl.ts.traders.MovingAverageTrader
+import ch.epfl.ts.data.OHLC
+import ch.epfl.ts.data.NaturalNumberParameter
+import ch.epfl.ts.indicators.SMA
 
 /**
  * @warning Some of the following tests are dependent and should be executed in the specified order.
@@ -46,23 +46,24 @@ class MovingAverageTraderTest
   val parameters = new StrategyParameters(
     MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
     MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
-    MovingAverageTrader.SHORT_PERIOD -> new TimeParameter(periods(0)),
-    MovingAverageTrader.LONG_PERIOD -> new TimeParameter(periods(1)),
+    MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 minute),
+    MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
+    MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
     MovingAverageTrader.TOLERANCE -> RealNumberParameter(tolerance),
     MovingAverageTrader.WITH_SHORT -> BooleanParameter(false))
 
   val marketID = 1L
-  val market = system.actorOf(Props(classOf[FxMarketWrapped], marketID, new ForexMarketRules()), MarketNames.FOREX_NAME)
-  val broker: ActorRef = system.actorOf(Props(classOf[SimpleBrokerWrapped], market), "Broker")
-  val trader = system.actorOf(Props(classOf[MovingAverageTraderWrapped], traderId, parameters, broker), "Trader")
+  val market = builder.createRef(Props(classOf[FxMarketWrapped], marketID, new ForexMarketRules()), MarketNames.FOREX_NAME)
+  val broker = builder.createRef(Props(classOf[SimpleBrokerWrapped], market.ar), "Broker")
+  val trader = builder.createRef(Props(classOf[MovingAverageTraderWrapped], traderId,List(marketID),parameters, broker.ar), "Trader")
 
-  market ! StartSignal
-  broker ! StartSignal
+  market.ar ! StartSignal
+  broker.ar ! StartSignal
 
   val (bidPrice, askPrice) = (0.90, 0.95)
   val testQuote = Quote(marketID, System.currentTimeMillis(), symbol._1, symbol._2, bidPrice, askPrice)
-  market ! testQuote
-  broker ! testQuote
+  market.ar ! testQuote
+  broker.ar ! testQuote
 
   val initWallet = initialFunds;
   var cash = initialFunds(Currency.CHF)
@@ -73,8 +74,8 @@ class MovingAverageTraderTest
     "register" in {
       within(1 second) {
         EventFilter.debug(message = "MATrader: Broker confirmed", occurrences = 1) intercept {
-          trader ! StartSignal
-          trader ! testQuote
+          trader.ar ! StartSignal
+          trader.ar ! testQuote
         }
       }
     }
@@ -82,7 +83,8 @@ class MovingAverageTraderTest
     "buy (20,3)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 1) intercept {
-          trader ! SMA(Map(5 -> 20.0, 30 -> 3.0))
+
+          trader.ar ! SMA(Map(5 -> 20.0, 30 -> 3.0))
         }
       }
       cash -= volume * askPrice
@@ -91,7 +93,8 @@ class MovingAverageTraderTest
     "sell(3,20)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 1) intercept {
-          trader ! SMA(Map(5 -> 3.0, 30 -> 20.0))
+
+          trader.ar ! SMA(Map(5 -> 3.0, 30 -> 20.0))
         }
       }
       cash += volume * bidPrice
@@ -101,7 +104,8 @@ class MovingAverageTraderTest
     "not buy(10.001,10)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 0) intercept {
-          trader ! SMA(Map(5 -> 10.001, 30 -> 10.0))
+
+          trader.ar ! SMA(Map(5 -> 10.001, 30 -> 10.0))
         }
       }
     }
@@ -110,7 +114,8 @@ class MovingAverageTraderTest
     "buy(10.002,10)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 1) intercept {
-          trader ! SMA(Map(5 -> 10.002, 30 -> 10))
+          trader.ar ! SMA(Map(5 -> 10.002, 30 -> 10))
+
         }
       }
       cash -= volume * askPrice
@@ -119,7 +124,8 @@ class MovingAverageTraderTest
     "not buy(10.003,10) (already hold a position)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._2 + " volume: " + volume, occurrences = 0) intercept {
-          trader ! SMA(Map(5 -> 10.003, 30 -> 10))
+
+          trader.ar ! SMA(Map(5 -> 10.003, 30 -> 10))
         }
       }
     }
@@ -127,7 +133,8 @@ class MovingAverageTraderTest
     "sell(9.9999,10)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 1) intercept {
-          trader ! SMA(Map(5 -> 9.9999, 30 -> 10))
+
+          trader.ar ! SMA(Map(5 -> 9.9999, 30 -> 10))
         }
       }
       cash += volume * bidPrice
@@ -137,23 +144,11 @@ class MovingAverageTraderTest
     "not sell(9.9999,10) (no holding)" in {
       within(1 second) {
         EventFilter.debug(message = "Accepted order costCurrency: " + symbol._1 + " volume: " + volume, occurrences = 0) intercept {
-          trader ! SMA(Map(5 -> 9.9999, 30 -> 10))
+
+          trader.ar ! SMA(Map(5 -> 9.9999, 30 -> 10))
         }
       }
     }
   }
-}
-/**
- * A bit dirty hack to allow ComponentRef-like communication between components, while having them in Test ActorSystem
- * @param uid traderID
- * @param StrategyParameters parameters
- * @param broker ActorRef
- */
-class MovingAverageTraderWrapped(uid: Long, parameters: StrategyParameters, broker: ActorRef)
-  extends MovingAverageTrader(uid, parameters) {
-  override def send[T: ClassTag](t: T) {
-    broker ! t
-  }
-  override def send[T: ClassTag](t: List[T]) = t.map(broker ! _)
 }
 
