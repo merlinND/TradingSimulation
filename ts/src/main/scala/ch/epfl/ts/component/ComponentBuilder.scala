@@ -68,24 +68,24 @@ final class ComponentBuilder(val system: ActorSystem) {
       classOf[Timekeeper] -> "timekeepers",
       classOf[Any] -> "other"
     )
-    
+
     rootNames.map({
       case (clazz, name) => clazz -> system.actorOf(Props(classOf[ParentActor]), name)
     })
   }
-  
+
   def getRootForClass(clazz: Class[_]): ActorRef = {
     val opt = roots.find(p => p._1.isAssignableFrom(clazz))
   	// Should not fail since we have an `Any` entry in `roots`
     opt.get._2
   }
-  
-  
+
+
   /**
    * Connect `src` to `dest` on the given type of messages
    */
   def add(src: ComponentRef, dest: ComponentRef, data: Class[_]) {
-    println("Connecting " + src.ar + " to " + dest.ar + " for type " + data.getSimpleName)
+    //println("Connecting " + src.ar + " to " + dest.ar + " for type " + data.getSimpleName)
     graph = graph + (src -> ((dest, data) :: graph.getOrElse(src, List[(ComponentRef, Class[_])]())))
     src.ar ! ComponentRegistration(dest.ar, data, dest.name)
   }
@@ -94,7 +94,7 @@ final class ComponentBuilder(val system: ActorSystem) {
 
   def start = instances.map(cr => {
     cr.ar ! StartSignal
-    println("Sending start Signal to " + cr.ar)
+    //println("Sending start Signal to " + cr.ar)
   })
 
   /**
@@ -103,7 +103,7 @@ final class ComponentBuilder(val system: ActorSystem) {
    */
   def stop = instances.map(cr => {
     cr.ar ! StopSignal
-    println("Sending stop Signal to " + cr.ar)
+    //println("Sending stop Signal to " + cr.ar)
   })
 
   /**
@@ -111,7 +111,6 @@ final class ComponentBuilder(val system: ActorSystem) {
    * Certain types of components such as `Trader`s, `Evaluator`s, `Market`s, etc
    * are automatically created under an empty root actor corresponding to their class.
    * This allows us to query the actor hierarchy easily for given types.
-   * 
    * @warning Current implementation is blocking
    * @TODO Any way to make this non-blocking?
    */
@@ -123,7 +122,7 @@ final class ComponentBuilder(val system: ActorSystem) {
     implicit val timeout = new Timeout(1 second)
     val future = (root ? ParentActor.Create(props, name)).mapTo[ParentActor.Done]
     val ref = Await.result(future, timeout.duration).ref
-    
+
     // Wrap it into a ComponentRef
     instances = new ComponentRef(ref, props.actorClass(), name, this) :: instances
     instances.head
@@ -140,7 +139,7 @@ final class ComponentBuilder(val system: ActorSystem) {
    */
   def shutdownManagedActors(timeout: FiniteDuration = 10 seconds): Future[Unit] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    
+
     // This allows the user of this function to be notified when shutdown is complete
     val externalPromise = Promise[Unit]()
 

@@ -4,7 +4,6 @@ import scala.collection.mutable.{HashMap => MHashMap}
 import scala.concurrent.duration.FiniteDuration
 import scala.math.abs
 import scala.math.floor
-
 import akka.actor.ActorLogging
 import akka.actor.ActorRef
 import akka.actor.Props
@@ -36,6 +35,8 @@ import ch.epfl.ts.engine.WalletFunds
 import ch.epfl.ts.indicators.EmaIndicator
 import ch.epfl.ts.indicators.MovingAverage
 import ch.epfl.ts.indicators.OhlcIndicator
+import ch.epfl.ts.engine.WalletConfirm
+import ch.epfl.ts.engine.WalletFunds
 
 /**
  * MovingAverageTrader companion object
@@ -157,9 +158,13 @@ class MovingAverageTrader(uid: Long, marketIds: List[Long], parameters: Strategy
     case eb: ExecutedBidOrder    => log.debug("executed bid volume: " + eb.volume)
     case ea: ExecutedAskOrder    => log.debug("executed ask volume: " + ea.volume)
 
+    case _: WalletFunds =>
+    case _: WalletConfirm =>
+    
     case whatever if !registered => println("MATrader: received while not registered [check that you have a Broker]: " + whatever)
     case whatever                => println("MATrader: received unknown : " + whatever)
   }
+
   def decideOrder = {
     implicit val timeout = new Timeout(askTimeout)
 
