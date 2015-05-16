@@ -22,7 +22,7 @@ import akka.actor.ActorLogging
 object MadTrader extends TraderCompanion {
   type ConcreteTrader = MadTrader
   override protected val concreteTraderTag = scala.reflect.classTag[MadTrader]
-  
+
   /** Interval between two random trades (in ms) */
   val INTERVAL = "interval"
 
@@ -51,8 +51,7 @@ object MadTrader extends TraderCompanion {
 /**
  * Trader that gives just random ask and bid orders alternatively
  */
-class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters)
-    with ActorLogging {
+class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   import context._
   override def companion = MadTrader
 
@@ -71,12 +70,12 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   // TODO: make wallet-aware
   var price = 1.0
   override def receiver = {
-    
+
     case q: Quote => {
       currentTimeMillis = q.timestamp
       price = q.bid
     }
-    
+
     case 'SendMarketOrder => {
       // Randomize volume and price
       val variation = volumeVariation * (r.nextDouble() - 0.5) * 2.0
