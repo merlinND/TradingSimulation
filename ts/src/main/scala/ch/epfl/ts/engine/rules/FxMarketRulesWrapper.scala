@@ -56,7 +56,7 @@ class FxMarketRulesWrapper(val rules :ForexMarketRules = new ForexMarketRules())
             //TODO(sygi): we put the topBid price, but it won't be used, as we ALWAYS sell/buy at the market price (from Quote))
             //TODO(sygi): Order type casting
             val order = MarketBidOrder(topBid.oid, topBid.uid, topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price)
-            book.asks.delete(topBid)
+            book.bids.delete(topBid)
             processOrder(order, marketId, book, tradingPrices, send)
             checkPendingOrders(marketId, book, tradingPrices, send)
           }
