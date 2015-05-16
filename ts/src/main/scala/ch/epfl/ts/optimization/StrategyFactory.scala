@@ -194,7 +194,7 @@ trait StrategyFactory {
    * @TODO Less naive repartition
    * @TODO This could actually be a very generic function
    */
-  def distributeOverHosts(hosts: List[RemoteHost], parameterizations: Set[StrategyParameters]): Map[RemoteHost, Set[StrategyParameters]] = {
+  def distributeOverHosts(hosts: Seq[RemoteHost], parameterizations: Set[StrategyParameters]): Map[RemoteHost, Set[StrategyParameters]] = {
     // Prepare parameters for worker actors (there will be one actor per parameter value)
     val nPerHost = (parameterizations.size / hosts.length.toDouble).ceil.toInt
 

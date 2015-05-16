@@ -10,6 +10,7 @@ import ch.epfl.ts.optimization.StrategyFactory
 import ch.epfl.ts.data.Currency
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.optimization.HostActorSystem
+import ch.epfl.ts.optimization.RemoteHost
 
 
 /**
@@ -67,6 +68,21 @@ trait TraderEvaluation {
   def evaluationPeriod: FiniteDuration
   /** Assess the value of traders' wallet using this currency */
   def referenceCurrency: Currency
+}
+
+/**
+ * Use this trait if your example uses remoting
+ */
+trait RemotingDeployment {
+  /**
+   * List of hosts on which to deploy the systems
+   */
+  def availableHosts: Seq[RemoteHost]
+  
+  /**
+   * Target number of Trader instances to deploy (may not be respected exactly)
+   */
+  def maxInstances: Int
 }
 
 abstract class AbstractForexExample extends AbstractExample {

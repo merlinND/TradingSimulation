@@ -27,6 +27,7 @@ import ch.epfl.ts.traders.TraderCompanion
  */
 abstract class AbstractTraderShowcaseExample extends AbstractForexExample with TraderEvaluation {
 
+  // ----- Data
   def useLiveData: Boolean
   /** If using historical data, use this replay speed */
   def replaySpeed: Double
@@ -34,6 +35,7 @@ abstract class AbstractTraderShowcaseExample extends AbstractForexExample with T
   def startDate: String
   def endDate: String
 
+  // ----- Evaluation
   def evaluationPeriod = (10 seconds)
   def referenceCurrency = symbol._2
 
@@ -65,6 +67,9 @@ abstract class AbstractTraderShowcaseExample extends AbstractForexExample with T
   /** Parameterizations to instantiate for this strategy (may be a singleton) */
   def parameterizations: Set[StrategyParameters]
 
+  /** Optional: give names to your traders */
+  def traderNames: Set[String] = Set()
+  
   def main(args: Array[String]): Unit = {
     // ----- Creating actors
     val d = factory.createDeployment(localHost, strategy, parameterizations)
