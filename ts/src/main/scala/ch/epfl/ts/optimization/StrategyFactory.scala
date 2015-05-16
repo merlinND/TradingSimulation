@@ -175,8 +175,7 @@ trait StrategyFactory {
         if(i < names.size) "Trader-" + names(i)
         else "Trader-" + i
       }
-
-      // TODO: create all traders / evaluators under a 'root' actor
+      
       // Trader
       val traderId = i.toLong
       val traderProps = strategyToOptimize.getProps(traderId, commonProps.marketIds, parameterization)
