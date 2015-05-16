@@ -21,23 +21,21 @@ import ch.epfl.ts.engine.{
 }
 import scala.Some
 import ch.epfl.ts.data.{ Register, ConfirmRegistration, Order }
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import scala.collection.mutable.{ HashMap => MHashMap }
 import ch.epfl.ts.data.Quote
-import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.LimitBidOrder
 import ch.epfl.ts.data.LimitAskOrder
 import ch.epfl.ts.data.MarketShortOrder
-import ch.epfl.ts.data.MarketAskOrder
-import ch.epfl.ts.data.LimitShortOrder
 import ch.epfl.ts.data.LimitShortOrder
 import ch.epfl.ts.data.MarketAskOrder
 
+abstract class Broker extends Component
+
 /**
- * Created by sygi on 03.04.15.
  */
-class StandardBroker extends Component with ActorLogging {
+class StandardBroker extends Broker with ActorLogging {
   import context.dispatcher
   var mapping = Map[Long, ActorRef]()
   val dummyReturn: PartialFunction[Any, Unit] = { case _ => {} }
@@ -85,33 +83,11 @@ class StandardBroker extends Component with ActorLogging {
       })
     }
 
-    case e: ExecutedBidOrder => {
-      if (mapping.contains(e.uid)) {
-        val replyTo = mapping.getOrElse(e.uid, null)
-        executeForWallet(e.uid, FundWallet(e.uid, e.whatC, e.volume), {
-          case WalletConfirm(uid) => {
-            log.debug("Broker: Transaction executed")
-            println("going to send execut bid to : "+replyTo)
-            replyTo ! e
-          }
-          case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
-        })
-      }
-    }
-    case e: ExecutedAskOrder => {
-      if (mapping.contains(e.uid)) {
-        val replyTo = mapping.getOrElse(e.uid, null)
-        executeForWallet(e.uid, FundWallet(e.uid, e.withC, e.volume * e.price), {
-          case WalletConfirm(uid) => {
-            log.debug("Broker: Transaction executed")
-            println("going to send execut ask to : "+replyTo)
+    case e: ExecutedBidOrder =>
+      finishExecutedOrder(e, e.whatC, e.volume)
 
-            replyTo ! e
-          }
-          case p => log.debug("Broker: A wallet replied with an unexpected message: " + p)
-        })
-      }
-    }
+    case e: ExecutedAskOrder =>
+      finishExecutedOrder(e, e.withC, e.volume * e.price)
 
     //TODO(sygi): refactor charging the wallet/placing an order
     case o: Order => {
@@ -129,7 +105,7 @@ class StandardBroker extends Component with ActorLogging {
         case _: MarketShortOrder | _: LimitShortOrder => true
         case _                                        => false
       }
-      
+
       val placementCost = o match {
         case _: MarketBidOrder   => o.volume * tradingPrices(o.whatC, o.withC)._2 // we buy at ask price
         case _: MarketAskOrder   => o.volume

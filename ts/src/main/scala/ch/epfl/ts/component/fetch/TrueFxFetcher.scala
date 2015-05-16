@@ -12,7 +12,7 @@ import ch.epfl.ts.data.OHLC
  *
  * @see TrueFX dev documentation: http://www.truefx.com/dev/data/TrueFX_MarketDataWebAPI_DeveloperGuide.pdf
  */
-class TrueFxFetcher(symbols: List[(Currency.Currency, Currency.Currency)] = List())
+class TrueFxFetcher(symbols: List[(Currency, Currency)] = List())
     extends PullFetch[Quote]
     with Serializable {
 

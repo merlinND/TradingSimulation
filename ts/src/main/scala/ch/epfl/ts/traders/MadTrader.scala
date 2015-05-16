@@ -14,6 +14,7 @@ import ch.epfl.ts.data.ParameterTrait
 import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.Quote
+import akka.actor.ActorLogging
 
 /**
  * Required and optional parameters used by this strategy
@@ -21,7 +22,7 @@ import ch.epfl.ts.data.Quote
 object MadTrader extends TraderCompanion {
   type ConcreteTrader = MadTrader
   override protected val concreteTraderTag = scala.reflect.classTag[MadTrader]
-  
+
   /** Interval between two random trades (in ms) */
   val INTERVAL = "interval"
 
@@ -54,8 +55,6 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   import context._
   override def companion = MadTrader
 
-  private case object SendMarketOrder
-
   // TODO: this initial order ID should be unique in the system
   var orderId = 4567
 
@@ -63,7 +62,7 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   val interval = parameters.get[FiniteDuration](MadTrader.INTERVAL)
   val volume = parameters.get[Int](MadTrader.ORDER_VOLUME)
   val volumeVariation = parameters.getOrElse[Double](MadTrader.ORDER_VOLUME_VARIATION, 0.1)
-  val currencies = parameters.get[(Currency.Currency, Currency.Currency)](MadTrader.CURRENCY_PAIR)
+  val currencies = parameters.get[(Currency, Currency)](MadTrader.CURRENCY_PAIR)
 
   var alternate = 0
   val r = new Random
@@ -71,8 +70,13 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
   // TODO: make wallet-aware
   var price = 1.0
   override def receiver = {
-    
-    case SendMarketOrder => {
+
+    case q: Quote => {
+      currentTimeMillis = q.timestamp
+      price = q.bid
+    }
+
+    case 'SendMarketOrder => {
       // Randomize volume and price
       val variation = volumeVariation * (r.nextDouble() - 0.5) * 2.0
       val theVolume = ((1 + variation) * volume).toInt
@@ -80,19 +84,14 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
       val dummyPrice = price * (1 + 1e-3 * variation)
 
       if (alternate % 2 == 0) {
-        println("MadTrader: sending limit ask order")
         send[Order](LimitAskOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       } else {
-        println("MadTrader: sending limit bid order")
         send[Order](LimitBidOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
       }
       alternate = alternate + 1
       orderId = orderId + 1
     }
-    case q: Quote => {
-      currentTimeMillis = q.timestamp
-      price = q.bid
-    }
+
     case t => println("MadTrader: received unknown " + t)
   }
 
@@ -100,6 +99,6 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
    * When simulation is started, plan ahead the next random trade
    */
   override def init = {
-    system.scheduler.schedule(initialDelay, interval, self, SendMarketOrder)
+    system.scheduler.schedule(initialDelay, interval, self, 'SendMarketOrder)
   }
 }

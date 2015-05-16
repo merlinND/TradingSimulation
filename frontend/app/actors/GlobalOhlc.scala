@@ -18,7 +18,6 @@ import com.typesafe.config.ConfigFactory
 import ch.epfl.ts.data.Quote
 import ch.epfl.ts.indicators.OhlcIndicator
 import ch.epfl.ts.data.Currency
-import ch.epfl.ts.data.Currency.Currency
 import scala.collection.mutable.Set
 import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.OHLC

@@ -36,17 +36,17 @@ import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
 
 
 object RangeExample {
-  
+
   def main(args: Array[String]): Unit = {
     implicit val builder = new ComponentBuilder("simpleFX")
     val marketForexId = MarketNames.FOREX_ID
 
     // ----- Creating actors
     // Fetcher
-   
+
     //val fetcherFx: TrueFxFetcher = new TrueFxFetcher
     //val fetcher = builder.createRef(Props(classOf[PullFetchComponent[Quote]], fetcherFx, implicitly[ClassTag[Quote]]), "trueFxFetcher")
-    
+
      val dateFormat = new java.text.SimpleDateFormat("yyyyMM")
      val startDate = dateFormat.parse("201411")
      val endDate   = dateFormat.parse("201411")
@@ -57,14 +57,14 @@ object RangeExample {
     // Market
     val rulesWrapper = new FxMarketRulesWrapper()
     val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], marketForexId, rulesWrapper), MarketNames.FOREX_NAME)
-    
+
     // Persistor
     val dummyPersistor = new DummyPersistor()
-    
+
     // Backloop
-    val backloop = builder.createRef(Props(classOf[BackLoop], marketForexId, dummyPersistor), "backloop")
-    
-    // Trader: range trader. 
+    //val backloop = builder.createRef(Props(classOf[BackLoop], marketForexId, dummyPersistor), "backloop")
+
+    // Trader: range trader.
     val traderId: Long = 123L
     val initialFunds: Wallet.Type = Map(Currency.CHF -> 10000000.0)
     val parameters = new StrategyParameters(
@@ -73,39 +73,40 @@ object RangeExample {
       RangeTrader.VOLUME -> RealNumberParameter(10.0),
       RangeTrader.ORDER_WINDOW -> CoefficientParameter(0.20)
     )
-    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, List(marketForexId),parameters), "RangeTrader")
-   
+    val traderName = "RangeTrader"
+    val trader = builder.createRef(Props(classOf[RangeTrader], traderId, List(marketForexId),parameters), traderName)
+
     // Indicator
     // specify period over which we build the OHLC (from quotes)
     val period : Long = 5
-  
-    
+
+
     // Evaluator
     val periodEvaluator : FiniteDuration  = 2000 milliseconds
     val currency = Currency.CHF
-    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, currency, periodEvaluator), "evaluator")
-    
-    
+    val evaluator = builder.createRef(Props(classOf[Evaluator], trader.ar, traderId, traderName, currency, periodEvaluator), "Evaluator")
+
+
     //printer
     val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")
-    
+
     //Broker
     val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
-   
-    
+
+
     // ----- Connecting actors
-    
+
    // fetcher -> (Seq(forexMarket, evaluator, ohlcIndicator), classOf[Quote])
-    
+
     //evaluator -> (broker, classOf[Register], classOf[FundWallet],classOf[GetWalletFunds], classOf[MarketBidOrder], classOf[MarketAskOrder])
     //evaluator -> (printer, classOf[EvaluationReport])
-    
+
     //fetcher->(Seq(forexMarket, ohlcIndicator), classOf[Quote])
-    
-    fetcher -> (Seq(forexMarket, evaluator, trader, broker), classOf[Quote])  
-    
+
+    fetcher -> (Seq(forexMarket, evaluator, trader, broker), classOf[Quote])
+
     trader -> (broker, classOf[Register], classOf[FundWallet], classOf[GetWalletFunds], classOf[MarketAskOrder], classOf[MarketBidOrder])
-    forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])   
+    forexMarket -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
     broker -> (forexMarket, classOf[MarketAskOrder], classOf[MarketBidOrder])
 
     builder.start

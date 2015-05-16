@@ -1,6 +1,6 @@
 package ch.epfl.ts.engine
 
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.{ DelOrder, LimitAskOrder, LimitBidOrder, MarketAskOrder, MarketBidOrder, Order, Streamable, Transaction }
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.data.MarketBidOrder
@@ -28,7 +28,6 @@ class ForexMarketRules extends MarketRules {
 
     newOrder match {
       case mbid: MarketBidOrder =>
-        println("Receive MBID order")
         // TODO: meaningful seller order & trader ids
         val sellOrderId = -1
         val sellerTraderId = -1
@@ -39,9 +38,8 @@ class ForexMarketRules extends MarketRules {
               newOrder.uid, newOrder.oid,
               sellerTraderId, sellOrderId))
         send(ExecutedBidOrder.apply(mbid,currentTradingPrice))
-        
+
       case mask: MarketAskOrder =>
-        println("Receive MASK order")
         // TODO: meaningful buyer order & trader ids
         val buyOrderId = -1
         val buyerTraderId = -1

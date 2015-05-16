@@ -1,6 +1,5 @@
 package ch.epfl.ts.data
 
-import ch.epfl.ts.data.Currency.Currency
 import scala.concurrent.duration.{ TimeUnit, FiniteDuration, DurationLong, MILLISECONDS => MillisecondsUnit }
 import scala.reflect.ClassTag
 import ch.epfl.ts.engine.MarketRules
@@ -20,6 +19,11 @@ class StrategyParameters(params: (String, Parameter)*) extends Serializable {
   type Key = String
   val parameters = params.toMap
 
+  override def equals(o: Any) = o match {
+    case that: StrategyParameters => that.parameters.equals(this.parameters)
+    case _ => false
+  }
+  
   /**
    * @return True only if the key is available in `parameters`
    */
@@ -290,7 +294,7 @@ object TimeParameter extends ParameterTrait {
 
   // TODO: user-selected resolution
   def validValues: Iterable[FiniteDuration] =
-    Stream.from(0) map { n => (100L * n) milliseconds }
+    Stream.from(1) map { n => (500L * n) milliseconds }
 
   def defaultValue = (0L milliseconds)
 }

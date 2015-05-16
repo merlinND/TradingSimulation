@@ -3,7 +3,6 @@ package ch.epfl.ts.indicators
 import ch.epfl.ts.component.Component
 import ch.epfl.ts.data.{ OHLC, Transaction, Quote }
 import ch.epfl.ts.data.Currency
-import ch.epfl.ts.data.Currency.Currency
 import scala.collection.mutable.MutableList
 import akka.actor.Actor
 import akka.event.Logging

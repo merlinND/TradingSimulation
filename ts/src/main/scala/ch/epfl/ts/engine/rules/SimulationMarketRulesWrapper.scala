@@ -2,7 +2,7 @@ package ch.epfl.ts.engine.rules
 
 import ch.epfl.ts.engine.{OrderBook, MarketRules}
 import ch.epfl.ts.data._
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.LimitBidOrder
 import ch.epfl.ts.data.MarketAskOrder
@@ -57,4 +57,5 @@ class SimulationMarketRulesWrapper(val rules: MarketRules = new MarketRules()) e
         tradingPrices((marketAsk.withC, marketAsk.whatC)) = (currentPrice._1, newAskPrice)
     }
   }
+  override def initQuotes(q: Quote) = rules.initQuotes(q)
 }
