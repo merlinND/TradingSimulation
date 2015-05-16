@@ -111,7 +111,6 @@ final class ComponentBuilder(val system: ActorSystem) {
    * Certain types of components such as `Trader`s, `Evaluator`s, `Market`s, etc
    * are automatically created under an empty root actor corresponding to their class.
    * This allows us to query the actor hierarchy easily for given types.
-   *
    * @warning Current implementation is blocking
    * @TODO Any way to make this non-blocking?
    */
