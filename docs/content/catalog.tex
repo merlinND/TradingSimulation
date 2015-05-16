@@ -194,7 +194,13 @@ Note that all the fetchers in the table above are not components themselves, exc
 
 \subsubsection{HistDataCSVFetcher}
 
-This uses historical quote data from the free financial data provider histdata.com\footnote{More specifically http://www.histdata.com/download-free-forex-data/?/ninjatrader/tick-\{ask, bid\}-quotes}. The data we used can be comfortably fetched by using our get-data.sh script, for example like this: \lstinline|scripts/get-data.sh www.histdata.com EURCHF| (gets a set of CSV files to  \lstinline|./data/EURCHF|). HistDataCSVFetcher can take this data and send quotes "replaying" the past. To build a fetcher replaying EUR/CHF data from April 2013 through May 2013 with a speed factor of 60x (i.e. 1 hour is replayed in 1 minute) the following can be done:
+This uses historical quote data from the free financial data provider histdata.com\footnote{More specifically http://www.histdata.com/download-free-forex-data/?/ninjatrader/tick-\{ask, bid\}-quotes}. The data we used can be comfortably fetched by using our get-data.sh script. For example,  following command can be used to get a set of CSV files to  \lstinline|./data/EURCHF|.
+
+\begin{verbatim}
+   scripts/get-data.sh www.histdata.com EURCHF
+\end{verbatim}
+
+HistDataCSVFetcher can take this data and send quotes ``replaying'' the past. To build a fetcher replaying EUR/CHF data from April 2013 through May 2013 with a speed factor of 60x (i.e. 1 hour is replayed in 1 minute) the following can be done:
 
 \begin{lstlisting}[language=Scala]
     // variables for the fetcher
@@ -204,9 +210,9 @@ This uses historical quote data from the free financial data provider histdata.c
     val workingDir = "./data";
     val currencyPair = "EURCHF";
     val speed = 60;
-    
+
     // build fetcher
-    val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, speed),"HistFetcher")    
+    val fetcher = builder.createRef(Props(classOf[HistDataCSVFetcher], workingDir, currencyPair, startDate, endDate, speed),"HistFetcher")
 \end{lstlisting}
 
 The fetcher reads the data from the local file system directly. It looks for directories named after the currency pair that's being fetched in the directory you supply to it. In the example above the source directory is \lstinline|data| and should be structured something like the following:
@@ -216,18 +222,14 @@ data/
 *- EURCHF/
 |   ...
 |   *- DAT_NT_EURCHF_T_ASK_201304.csv
-|   *- DAT_NT_EURCHF_T_ASK_201304.txt
 |   *- DAT_NT_EURCHF_T_ASK_201305.csv
 |   ...
 *- USDCHF/
     *- DAT_NT_USDCHF_T_ASK_200301.csv
-    *- DAT_NT_USDCHF_T_ASK_200301.txt
     *- DAT_NT_USDCHF_T_ASK_200302.csv
     ...
     *- DAT_NT_USDCHF_T_BID_200306.csv
-    *- DAT_NT_USDCHF_T_BID_200306.txt
     *- DAT_NT_USDCHF_T_BID_200307.csv
-    *- DAT_NT_USDCHF_T_BID_200307.txt
     ...
 *- ...
 \end{lstlisting}
