@@ -15,6 +15,8 @@ import net.liftweb.json._
 import net.liftweb.json.Serialization.write
 import com.typesafe.config.ConfigFactory
 import utils.TradingSimulationActorSelection
+import utils.MapSerializer
+import utils.DoubleSerializer
 
 /**
  * Receives Messages of a given Class Tag from the Trading Simulation backend (ts)
@@ -25,7 +27,7 @@ import utils.TradingSimulationActorSelection
  */
 class MessageToJson[T <: AnyRef: ClassTag](out: ActorRef, actorSelection: String) extends Actor {
   val clazz = implicitly[ClassTag[T]].runtimeClass
-  implicit val formats = DefaultFormats
+  implicit val formats = DefaultFormats + MapSerializer + DoubleSerializer
 
   val actors = new TradingSimulationActorSelection(context, actorSelection).get
 
