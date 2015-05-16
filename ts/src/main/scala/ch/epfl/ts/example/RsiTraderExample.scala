@@ -25,7 +25,7 @@ object RsiTraderExample extends AbstractTraderShowcaseExample {
   val symbol = (Currency.EUR, Currency.CHF)
 
   val strategy: TraderCompanion = RsiTrader
-  val parameterization = {
+  val parameterizations = Set({
     val initialFunds: Wallet.Type = Map(Currency.CHF -> 100000.0)
     new StrategyParameters(
       RsiTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
@@ -37,6 +37,6 @@ object RsiTraderExample extends AbstractTraderShowcaseExample {
       RsiTrader.WITH_SMA_CONFIRMATION->BooleanParameter(true),
       RsiTrader.LONG_SMA_PERIOD->new NaturalNumberParameter(20)
     )
-  }
+  })
 
 }

@@ -170,7 +170,7 @@ trait StrategyFactory {
       strategyToOptimize.verifyParameters(parameterization)
 
       val name = {
-        if(i < names.size) "Trader-" + names(i)
+        if(i < names.size) names(i)
         else "Trader-" + i
       }
 
@@ -194,7 +194,7 @@ trait StrategyFactory {
    * @TODO Less naive repartition
    * @TODO This could actually be a very generic function
    */
-  def distributeOverHosts(hosts: List[RemoteHost], parameterizations: Set[StrategyParameters]): Map[RemoteHost, Set[StrategyParameters]] = {
+  def distributeOverHosts(hosts: Seq[RemoteHost], parameterizations: Set[StrategyParameters]): Map[RemoteHost, Set[StrategyParameters]] = {
     // Prepare parameters for worker actors (there will be one actor per parameter value)
     val nPerHost = (parameterizations.size / hosts.length.toDouble).ceil.toInt
 
@@ -207,9 +207,21 @@ trait StrategyFactory {
   /**
    * Sanitize a string into a valid actor name
    *
-   * @TODO Make more complete (many cases are not covered here)
+   * @TODO Make more complete (most cases are not covered here)
    */
   def sanitizeActorName(s: String): String = {
-    s.replace("Öéèüçäà- ", "Oeeucaa__")
+    val replacements = Map(
+      "Ö" -> "O",
+      "é" -> "e",
+      "è" -> "e",
+      "ü" -> "u",
+      "ç" -> "c",
+      "ä" -> "a",
+      "à" -> "a",
+      " " -> "-"
+    )
+    replacements.foldLeft(s)({
+      case (string, (from, to)) => string.replaceAll(from, to)
+    })
   }
 }
