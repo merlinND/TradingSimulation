@@ -1,6 +1,8 @@
+%!TEX root = ../guide.tex
+
 \section{Simulation}
 Besides the opportunity to tune strategies on historical and live data we aim to
-create our own market simulation, meaning that prices are no longer defined 
+create our own market simulation, meaning that prices are no longer defined
 externally but evolve as a result of interplays between the entities we implemented.
 The purpose of this feature is to provide users with the opportunity to construct
 complete and running ecosystems.
@@ -16,9 +18,9 @@ simplifications:
         \footnote{Referring to \url{http://www.newyorkfed.org/fxc/volumesurvey/explanatory_notes.html},
         instruments
         are product types available on the forex market, namely spot transactions, outright
-        forwards, foreign exchange swaps and currency options. \textit{Spot transactions are single 
-        outright transactions that involve the exchange of two currencies at a rate agreed 
-        to on the date of the contract for value or delivery within two business days, including 
+        forwards, foreign exchange swaps and currency options. \textit{Spot transactions are single
+        outright transactions that involve the exchange of two currencies at a rate agreed
+        to on the date of the contract for value or delivery within two business days, including
         U.S. dollar-Canadian dollar (USD-CAD) transactions delivered within one day).}
 
         All the other instruments involve contracts over a longer period of time and are
@@ -33,12 +35,12 @@ simplifications:
 
 \subsection{Initial Parameters}
 Finding appropriate parameters to configure a simulation that reflects the
-true market has become a difficult task since existing statistics focus on 
+true market has become a difficult task since existing statistics focus on
 the effects of the market meaning the daily turnover or distribution of market
 shares by symbol, trading center or large financial customers. These statistics
 are to be seen as results of trading activities. However, this does not allow
 us to infer the cause of trading activity. In order to configure a market
-simulation in a way that it would reflect the evolution of a real market we 
+simulation in a way that it would reflect the evolution of a real market we
 need to find the cause of activities and therefore we have to answer key questions
 such as ``how many people are involved?'' or ``what are their funds?''.
 
@@ -46,7 +48,7 @@ Since we are not able to answer these questions reliably and also since we canno
 instantiate an infinite number of traders we introduce a different concept to
 initialize a simulation.
 
-We assign money to traders and market makers in a certain currency (e.g. USD) and 
+We assign money to traders and market makers in a certain currency (e.g. USD) and
 they receive the equivalent amount in the currency they need to trade their respective
 symbol as sketched in Algorithm~\ref{alg:initfunds}.
 
@@ -79,7 +81,7 @@ symbol as sketched in Algorithm~\ref{alg:initfunds}.
 
 When our system is running in pure simulation mode, meaning that ask and bid price is
 not defined by historical or live data anymore, prices must also be determined by the
-simulation. 
+simulation.
 
 \subsubsection{Balanced Demand and Offer}
 In general, ask and bid price are determined by limit orders. In the case where there
@@ -87,7 +89,7 @@ exist limit orders on both sides (ask and bid) the current ask price is defined 
 lowest sell offer and the current bid price is defined by the highest buy offer.
 
 \subsubsection{Extreme Situations}
-It might occur that there are no limit orders and traders still want to trade at the 
+It might occur that there are no limit orders and traders still want to trade at the
 current market price. In order to provide a price definition in such extreme scenarios
 a market maker is introduced. Consider the following scenarios.
 
@@ -125,7 +127,7 @@ at init time.
 
 The above covers the extreme scenarios. Still, one particular problem might arise that
 does not occur in reality: given the buyers-only scenario, a single trader changing
-their mind could make the market maker collapse. By introducing the only ask order (for a low volume) at 
+their mind could make the market maker collapse. By introducing the only ask order (for a low volume) at
 a ridiculously low price it would define the ask price naturally and thereby force
 the market maker to sell at this low price and eventually lose all its belongings
 while selling at bad prices.
@@ -137,11 +139,11 @@ overpriced offers.
 
 \subsection{Outline}
 The software developed in this project is designed in a modular way. Hence, it is open
-to adding new strategies and components. Extending the latter is particularly 
+to adding new strategies and components. Extending the latter is particularly
 promising since the complexity of a real market is by far not fully covered yet. The next
-important components are central banks. Since they fix interest rates on currencies 
+important components are central banks. Since they fix interest rates on currencies
 they function as important indicators for strategies. Continuously implementing more
-real actors will make the simulation more realistic and bring it closer to the goal 
+real actors will make the simulation more realistic and bring it closer to the goal
 of reflecting the actual market.
 
 
@@ -180,7 +182,7 @@ of reflecting the actual market.
 %[13] explanation of market makers
 %http://www.forextraders.com/market-maker-forex-brokers.html
 %
-%p.47 
+%p.47
 %- Entity Relationships
 %- Trade Types
 %- run historical data for 300 business days before simulation starts
