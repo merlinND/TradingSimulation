@@ -1,9 +1,9 @@
-## Running a trading simulator setup in the "cloud"
+## Running a trading simulator deployment in the "cloud"
 
-###Basic concepts
+### Basic concepts
 There is a master and several slave nodes. The master runs (_RemotingHostExample_) and the slaves must run (_RemotingActorExample_) which make them listen on TCP port 3333. The master can then sends jobs to the slaves.
 
-###Setting up the slaves
+### Setting up the slaves
 The setup procedure for each VM consisted of:
 
 1. Aquire your VM with SSH and full access
