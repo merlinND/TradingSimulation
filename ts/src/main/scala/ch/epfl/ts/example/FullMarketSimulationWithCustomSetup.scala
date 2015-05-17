@@ -28,7 +28,7 @@ import ch.epfl.ts.traders.MarketMakerTrader
 import ch.epfl.ts.component.utils.Printer
 import ch.epfl.ts.traders.MMwithWallet
 import ch.epfl.ts.traders.TraderCompanion
-import ch.epfl.ts.config.FundsGermany
+import ch.epfl.ts.config._
 import ch.epfl.ts.traders.TraderCompanion
 
 /**
@@ -39,6 +39,7 @@ object FullMarketSimulationWithCustomSetup {
   var consuments = Map[Class[_], List[ComponentRef]]()
 
   /** market configuration */
+  val funds = new FundsGermany
   val symbol = (Currency.EUR, Currency.CHF)
   /**
    * ._1: fund to symbol._1, ._2: fund to  symbol._2
@@ -49,14 +50,16 @@ object FullMarketSimulationWithCustomSetup {
   val exchangeRateFunding = (1.0, 1.0)
 
   /** Trader type -> number of instances */
-//  var traderDistribution = Map[Class[_], Int]() /* trader type -> number of instances */
   var traderDistribution = Map(
     MadTrader -> 5
     // TODO: other relevant trading strategies
   )
-//  var traderList = List[ComponentRef]() /* list of trader instances, to be filled during setup */
   var traderList = List[ComponentRef]() /* list of trader instances, to be filled during setup */
+  
+  var market: ComponentRef = null
+  var fetcher: ComponentRef = null
   var marketMaker: ComponentRef = null /* market maker (who is technically a trader */
+  var marketMakerFunds = (0.0, 0.0)
 
   def setup = {
     // TODO Jakob
@@ -76,47 +79,22 @@ object FullMarketSimulationWithCustomSetup {
     traderList = instantiateTraders(builder)
     
     // connect traders and broker
-  // TODO map trader list to make all the necessary connections
-    //    addConsument(classOf[Quote], trader)
-    //    addConsument(classOf[TheTimeIs], trader)
-    //
-    //    trader->(broker, classOf[Register])
-    //    trader->(broker, classOf[FundWallet])
-    //    connectAllOrders(trader, broker)
-    
-//    traderList = traderDistribution.flatMap(x => x match {
-//      case (key, value) => key match {
-//        case madtrader if madtrader.isAssignableFrom(classOf[MadTrader]) => {
-//          // TODO create value instances of MadTrader
-//          var count = 0
-//          for (count <- 1 to value) {
-//            var parameters = getStrategyParameters(classOf[MadTrader])
-//            var name = "MadTrader" +  count
-//            var trader = MadTrader.getInstance(uid, List(marketId), parameters, name)
-//            uid += 1
-//          }
-//          List[TraderCompanion]()
-//        }
-//        case _ => {
-//          println("Unknown trader class")
-//          List[TraderCompanion]()
-//        }
-  
-  
-  
-  
-  
-
+    traderList.foreach(trader => {
+      addConsument(classOf[Quote], trader)
+      addConsument(classOf[TheTimeIs], trader)
+      trader->(broker, classOf[Register])
+      trader->(broker, classOf[FundWallet])
+      connectAllOrders(trader, broker)
+    })
 
     // market maker
+    val uid_marketMaker = 0L
     val marketMakerParameters = new StrategyParameters(
-      MMwithWallet.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
+      MMwithWallet.INITIAL_FUNDS -> WalletParameter(Map(symbol._1 -> marketMakerFunds._1, symbol._2 -> marketMakerFunds._2)),
       MMwithWallet.SYMBOL -> new CurrencyPairParameter(Currency.EUR, Currency.CHF),
       MMwithWallet.SPREAD -> new RealNumberParameter(0.001))
 
-    val tId_marketMaker = 0L
-
-    marketMaker = MMwithWallet.getInstance(tId_marketMaker, List(marketId), marketMakerParameters, "WalletMarketMakerTrader")
+    marketMaker = MMwithWallet.getInstance(uid_marketMaker, List(marketId), marketMakerParameters, "WalletMarketMakerTrader")
     addConsument(classOf[Quote], marketMaker)
     addConsument(classOf[TheTimeIs], marketMaker)
 
@@ -125,12 +103,12 @@ object FullMarketSimulationWithCustomSetup {
     connectAllOrders(marketMaker, broker)
 
     // Fetcher
-    val fetcher = createFetcher(useLiveData, builder, symbol)
+    fetcher = createFetcher(useLiveData, builder, symbol)
 
     // Hybrid market
     val fetcherRules = new FxMarketRulesWrapper
     val simulationRules = new SimulationMarketRulesWrapper
-    val market = builder.createRef(Props(classOf[HybridMarketSimulator], marketId, fetcherRules, simulationRules), MarketNames.FOREX_NAME)
+    market = builder.createRef(Props(classOf[HybridMarketSimulator], marketId, fetcherRules, simulationRules), MarketNames.FOREX_NAME)
 
     market -> (marketMaker, classOf[MarketBidsEmpty], classOf[MarketAsksEmpty], classOf[MarketEmpty], classOf[ExecutedBidOrder], classOf[ExecutedBidOrder])
     market -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
@@ -142,6 +120,7 @@ object FullMarketSimulationWithCustomSetup {
 
     connectProducersWithConsuments()
 
+    builder // return the builder (this is not beautiful but solved the problem of type ambiguity inside the function
   }
   
   /**
@@ -157,15 +136,24 @@ object FullMarketSimulationWithCustomSetup {
     val marketIds = List(MarketNames.FOREX_ID)
     // TODO: get interesting parameters (in particular, initial funds)
     val emptyParameters = new StrategyParameters
-    
+    var bothFunds1 = (0.0, 0.0)
+    var bothFunds2 = (0.0, 0.0)
     // Instantiate traders of each type
     traderDistribution.flatMap({
-      case (companion, n) => {
-        val traders = List.range(0, n).map(i => {
-          companion.getInstance(uid, marketIds, emptyParameters, "trader-" + uid)
+      case (companion, n) => { // TODO Jakob differentiate strategies
+        val traders1 = List.range(uid, uid + n).map(i => {
+          bothFunds1 = (funds.get * exchangeRateFunding._1, 0.0)
+          marketMakerFunds = (marketMakerFunds._1 + bothFunds1._1, marketMakerFunds._2 + bothFunds1._2)
+          companion.getInstance(i, marketIds, getStrategyParameters(classOf[MadTrader], bothFunds1), "trader-MadTrader-" + i)
         })
-        uid += 1
-        traders
+        uid += n
+        val traders2 = List.range(uid, uid + n).map(i => {
+          bothFunds2 = (0.0, funds.get * exchangeRateFunding._2)
+          marketMakerFunds = (marketMakerFunds._1 + bothFunds2._1, marketMakerFunds._2 + bothFunds2._2)
+          companion.getInstance(i, marketIds, getStrategyParameters(classOf[MadTrader], bothFunds2), "trader-MadTrader-" + i)
+        })
+        uid += n
+        traders1 ++ traders2
       }
     }).toList
     
@@ -176,80 +164,80 @@ object FullMarketSimulationWithCustomSetup {
     
 
   def main(args: Array[String]): Unit = {
-    //TODO(sygi): create functions to build multiple components to slim main down
-    implicit val builder = new ComponentBuilder
-    initProducersAndConsuments()
-
-    val useLiveData = false
-
-    // Trader
-    val parameters = new StrategyParameters(
-      MadTrader.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
-      MadTrader.INTERVAL -> new TimeParameter(1 seconds),
-      MadTrader.ORDER_VOLUME -> NaturalNumberParameter(10),
-      MadTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.EUR, Currency.CHF))
-
-    val tId = 15L
-    val marketId = MarketNames.FOREX_ID
-
-    // TODO: instantiate many traders instead
-    //val traders = instantiateTraders
-    
-    val trader = MadTrader.getInstance(tId, List(marketId), parameters, "OneMadTrader")
-    addConsument(classOf[Quote], trader)
-    addConsument(classOf[TheTimeIs], trader)
-    val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
-    addConsument(classOf[Quote], broker)
-
-    trader -> (broker, classOf[Register])
-    trader -> (broker, classOf[FundWallet])
-    connectAllOrders(trader, broker)
-
-    // MarketMaker
-    val parameters2 = new StrategyParameters(
-      MarketMakerTrader.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
-      MarketMakerTrader.INTERVAL -> new TimeParameter(1 seconds),
-      MarketMakerTrader.ORDER_VOLUME -> NaturalNumberParameter(10),
-      MarketMakerTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.EUR, Currency.CHF))
-
-    val marketMakerParameters = new StrategyParameters(
-      MMwithWallet.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
-      MMwithWallet.SYMBOL -> new CurrencyPairParameter(Currency.EUR, Currency.CHF),
-      MMwithWallet.SPREAD -> new RealNumberParameter(0.001))
-
-    val tId2 = 100L
-
-    //    val marketMaker = MarketMakerTrader.getInstance(tId2, List(marketId), parameters2, "OneMarketMakerTrader")
-    val marketMaker = MMwithWallet.getInstance(tId2, List(marketId), marketMakerParameters, "WalletMarketMakerTrader")
-    addConsument(classOf[Quote], marketMaker)
-    addConsument(classOf[TheTimeIs], marketMaker)
-
-    marketMaker -> (broker, classOf[Register])
-    marketMaker -> (broker, classOf[FundWallet])
-    connectAllOrders(marketMaker, broker)
-
-    // Fetcher
-    val fetcher = createFetcher(useLiveData, builder, symbol)
-
-    // Hybrid market
-    val fetcherRules = new FxMarketRulesWrapper
-    val simulationRules = new SimulationMarketRulesWrapper
-    val market = builder.createRef(Props(classOf[HybridMarketSimulator], marketId, fetcherRules, simulationRules), MarketNames.FOREX_NAME)
-    fetcher -> (market, classOf[Quote])
-
-    addProducer(classOf[Quote], market)
-    addProducer(classOf[TheTimeIs], market)
-    connectAllOrders(broker, market)
-    market -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
-
-    // for the market maker
-    //    connectAllOrders(marketMaker, market) // TODO use broker inbetween
-    market -> (marketMaker, classOf[MarketBidsEmpty], classOf[MarketAsksEmpty], classOf[MarketEmpty], classOf[ExecutedBidOrder], classOf[ExecutedBidOrder])
-
-    connectProducersWithConsuments()
-
+//    //TODO(sygi): create functions to build multiple components to slim main down
+//    implicit val builder = new ComponentBuilder
+//    initProducersAndConsuments()
+//
+//    val useLiveData = false
+//
+//    // Trader
+//    val parameters = new StrategyParameters(
+//      MadTrader.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
+//      MadTrader.INTERVAL -> new TimeParameter(1 seconds),
+//      MadTrader.ORDER_VOLUME -> NaturalNumberParameter(10),
+//      MadTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.EUR, Currency.CHF))
+//
+//    val tId = 15L
+//    val marketId = MarketNames.FOREX_ID
+//
+//    // TODO: instantiate many traders instead
+//    //val traders = instantiateTraders
+//    
+//    val trader = MadTrader.getInstance(tId, List(marketId), parameters, "OneMadTrader")
+//    addConsument(classOf[Quote], trader)
+//    addConsument(classOf[TheTimeIs], trader)
+//    val broker = builder.createRef(Props(classOf[StandardBroker]), "Broker")
+//    addConsument(classOf[Quote], broker)
+//
+//    trader -> (broker, classOf[Register])
+//    trader -> (broker, classOf[FundWallet])
+//    connectAllOrders(trader, broker)
+//
+//    // MarketMaker
+//    val parameters2 = new StrategyParameters(
+//      MarketMakerTrader.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
+//      MarketMakerTrader.INTERVAL -> new TimeParameter(1 seconds),
+//      MarketMakerTrader.ORDER_VOLUME -> NaturalNumberParameter(10),
+//      MarketMakerTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.EUR, Currency.CHF))
+//
+//    val marketMakerParameters = new StrategyParameters(
+//      MMwithWallet.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
+//      MMwithWallet.SYMBOL -> new CurrencyPairParameter(Currency.EUR, Currency.CHF),
+//      MMwithWallet.SPREAD -> new RealNumberParameter(0.001))
+//
+//    val tId2 = 100L
+//
+//    //    val marketMaker = MarketMakerTrader.getInstance(tId2, List(marketId), parameters2, "OneMarketMakerTrader")
+//    val marketMaker = MMwithWallet.getInstance(tId2, List(marketId), marketMakerParameters, "WalletMarketMakerTrader")
+//    addConsument(classOf[Quote], marketMaker)
+//    addConsument(classOf[TheTimeIs], marketMaker)
+//
+//    marketMaker -> (broker, classOf[Register])
+//    marketMaker -> (broker, classOf[FundWallet])
+//    connectAllOrders(marketMaker, broker)
+//
+//    // Fetcher
+//    val fetcher = createFetcher(useLiveData, builder, symbol)
+//
+//    // Hybrid market
+//    val fetcherRules = new FxMarketRulesWrapper
+//    val simulationRules = new SimulationMarketRulesWrapper
+//    val market = builder.createRef(Props(classOf[HybridMarketSimulator], marketId, fetcherRules, simulationRules), MarketNames.FOREX_NAME)
+//    fetcher -> (market, classOf[Quote])
+//
+//    addProducer(classOf[Quote], market)
+//    addProducer(classOf[TheTimeIs], market)
+//    connectAllOrders(broker, market)
+//    market -> (broker, classOf[ExecutedBidOrder], classOf[ExecutedAskOrder])
+//
+//    // for the market maker
+//    //    connectAllOrders(marketMaker, market) // TODO use broker inbetween
+//    market -> (marketMaker, classOf[MarketBidsEmpty], classOf[MarketAsksEmpty], classOf[MarketEmpty], classOf[ExecutedBidOrder], classOf[ExecutedBidOrder])
+//
+//    connectProducersWithConsuments()
+    implicit val builder = setup
     builder.start
-    val delay = 20 * 1000 //in ms
+    val delay = 1 * 1000 //in ms
     scheduleChange(fetcher, market, delay)
   }
 
@@ -312,13 +300,13 @@ object FullMarketSimulationWithCustomSetup {
     }
   }
 
-  def getStrategyParameters(ttype: Class[_]) = {
+  def getStrategyParameters(ttype: Class[_], funds : (Double,Double)) = {
     ttype match {
       case madtrader if madtrader.isAssignableFrom(classOf[MadTrader]) => new StrategyParameters(
-        MadTrader.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)), // TODO introduce random values
+        MadTrader.INITIAL_FUNDS -> WalletParameter(Map(symbol._1 -> funds._1, symbol._2 -> funds._2)),
         MadTrader.INTERVAL -> new TimeParameter(1 seconds),
         MadTrader.ORDER_VOLUME -> NaturalNumberParameter(10),
-        MadTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.EUR, Currency.CHF))
+        MadTrader.CURRENCY_PAIR -> new CurrencyPairParameter(symbol._1, symbol._2))
       case _ => {
         println("getStrategyParameters failed")
         null

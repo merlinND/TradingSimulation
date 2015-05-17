@@ -74,6 +74,7 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
    * This helps keeping the simulation running, mostly by adding
    * liquidity to the system.
    */
+  // TODO JAKOB this has been changed back for some unknown reason...
   def playMarketMaker() = {
     val asksEmpty = if (book.asks.isEmpty) 1 else 0
     val bidsEmpty = if (book.bids.isEmpty) 1 else 0
