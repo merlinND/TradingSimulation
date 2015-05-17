@@ -74,7 +74,8 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
 
     case q: Quote => {
       currentTimeMillis = q.timestamp
-      price = q.bid
+      askPrice = q.ask
+      bidPrice = q.bid
     }
 
     case 'SendMarketOrder => {
@@ -86,9 +87,9 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
       val dummyBidPrice = bidPrice * (1 + 1e-3 * variation)
 
       if (alternate % 2 == 0) {
-        send[Order](LimitAskOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
+        send[Order](LimitAskOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyAskPrice))
       } else {
-        send[Order](LimitBidOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyPrice))
+        send[Order](LimitBidOrder(orderId, uid, currentTimeMillis, currencies._1, currencies._2, theVolume, dummyBidPrice))
       }
       alternate = alternate + 1
       orderId = orderId + 1

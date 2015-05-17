@@ -1,38 +1,40 @@
 package ch.epfl.ts.traders
 
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
+
 import akka.actor.ActorLogging
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
-import ch.epfl.ts.data.ConfirmRegistration
-import ch.epfl.ts.data.Currency.CHF
-import ch.epfl.ts.data.Currency.Currency
-import ch.epfl.ts.data.Currency.USD
-import ch.epfl.ts.data.MarketBidOrder
-import ch.epfl.ts.data.MarketOrder
-import ch.epfl.ts.data.Order
-import ch.epfl.ts.data.Quote
-import ch.epfl.ts.data.Register
-import ch.epfl.ts.data.StrategyParameters
-import ch.epfl.ts.engine.{GetWalletFunds, WalletConfirm, FundWallet, WalletFunds, ExecutedAskOrder, AcceptedOrder, RejectedOrder}
-import ch.epfl.ts.engine.ExecutedBidOrder
-import ch.epfl.ts.engine.Wallet
-import ch.epfl.ts.data.ParameterTrait
-import ch.epfl.ts.data.CurrencyPairParameter
-import ch.epfl.ts.data.NaturalNumberParameter
-import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.CoefficientParameter
-import scala.concurrent.duration.FiniteDuration
+import ch.epfl.ts.data.ConfirmRegistration
 import ch.epfl.ts.data.Currency
-import ch.epfl.ts.engine.MarketAsksEmpty
-import ch.epfl.ts.engine.MarketBidsEmpty
-import ch.epfl.ts.engine.MarketMakerNotification
+import ch.epfl.ts.data.Currency.CHF
+import ch.epfl.ts.data.Currency.USD
+import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.LimitAskOrder
 import ch.epfl.ts.data.LimitBidOrder
-import ch.epfl.ts.engine.MarketMakerNotification
+import ch.epfl.ts.data.MarketBidOrder
+import ch.epfl.ts.data.MarketOrder
+import ch.epfl.ts.data.NaturalNumberParameter
+import ch.epfl.ts.data.Order
+import ch.epfl.ts.data.ParameterTrait
+import ch.epfl.ts.data.StrategyParameters
+import ch.epfl.ts.data.TimeParameter
+import ch.epfl.ts.engine.AcceptedOrder
+import ch.epfl.ts.engine.ExecutedAskOrder
+import ch.epfl.ts.engine.ExecutedBidOrder
+import ch.epfl.ts.engine.FundWallet
+import ch.epfl.ts.engine.GetWalletFunds
+import ch.epfl.ts.engine.MarketAsksEmpty
+import ch.epfl.ts.engine.MarketBidsEmpty
 import ch.epfl.ts.engine.MarketEmpty
+import ch.epfl.ts.engine.RejectedOrder
+import ch.epfl.ts.engine.Wallet
+import ch.epfl.ts.engine.WalletConfirm
+import ch.epfl.ts.engine.WalletFunds
 
 /**
  * MarketMakerTrader companion object
@@ -96,7 +98,7 @@ class MarketMakerTrader(uid: Long, marketIds: List[Long], parameters: StrategyPa
   val interval = parameters.get[FiniteDuration](MarketMakerTrader.INTERVAL)
   val volume = parameters.get[Int](MarketMakerTrader.ORDER_VOLUME)
   val volumeVariation = parameters.getOrElse[Double](MarketMakerTrader.ORDER_VOLUME_VARIATION, 0.1)
-  val currencies = parameters.get[(Currency.Currency, Currency.Currency)](MarketMakerTrader.CURRENCY_PAIR)
+  val currencies = parameters.get[(Currency, Currency)](MarketMakerTrader.CURRENCY_PAIR)
   val spread = parameters.getOrElse[Double](MarketMakerTrader.SPREAD, 0.1)
 
 
