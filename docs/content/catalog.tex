@@ -118,7 +118,7 @@ val forexMarket = builder.createRef(Props(classOf[MarketFXSimulator], MarketName
 
 \subsection{Indicators}
 
-Indicators measure the activities of the market. Traders depend on indicators to make sell or buy decisions. Currently TradingSimulation provides following indicators:\\
+Indicators measure the activities of the market. Traders depend on indicators to make sell or buy decisions. Currently TradingSimulation provides the following indicators:\\
 
 \noindent
 \begin{tabularx}{\textwidth}{|c|X|}
@@ -137,7 +137,7 @@ Normally you don't have the need to create indicators, as the traders automatica
 
 \subsection{Traders}
 
-Traders buy or sell in the virtual market. Different types of traders use different trading strategies. The same strategy may take different parameters thus perform differently. Currently TradingSimulation provides following indicators:\\
+Traders buy or sell in the virtual market. Different types of traders use different trading strategies. The same strategy may take different parameters thus perform differently. Currently TradingSimulation provides the following trading strategies:\\
 
 \noindent
 \begin{tabularx}{\textwidth}{|c|X|}
@@ -154,9 +154,13 @@ Traders buy or sell in the virtual market. Different types of traders use differ
   \hline
   TransactionVwapTrader & the \emph{volume weighted average price} strategy  \\
   \hline
-  SimpleTrader & a simple trader \\
+  MovingAverageTrader & the \emph{cross moving-average} strategy \\
   \hline
-  SimpleFXtrader & a simple Forex trader \\
+  MadTrader & a trader placing seemingly random orders (useful to debug or simulate market noise) \\
+  \hline
+  RangeTrader & the \emph{mean reversion} strategy \\
+  \hline
+  RsiTrader & the \emph{relative strength index} strategy \\
   \hline
 \end{tabularx}
 
