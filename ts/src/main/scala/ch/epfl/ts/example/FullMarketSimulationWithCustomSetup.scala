@@ -145,9 +145,6 @@ object FullMarketSimulationWithCustomSetup {
 
   }
   
-  /** Market maker (who is technically a trader */
-  var marketMaker: TraderCompanion = null
-  
   /**
    * @return References to the traders that were instantiated
    */
