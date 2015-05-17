@@ -25,7 +25,7 @@ object Dependencies {
     "org.webjars" % "bootswatch-superhero" % "3.3.1+2",
     "org.webjars" % "angularjs" % "1.2.16-2" exclude ("org.webjars", "jquery"),
     "org.webjars" % "angular-ui-bootstrap" % "0.12.1-1",
-    "org.webjars" % "angular-datatables" % "0.4.2",
+    "org.webjars" % "ng-table" % "0.3.3",
     "net.liftweb" %% "lift-json" % "2.5.0"
   )
 

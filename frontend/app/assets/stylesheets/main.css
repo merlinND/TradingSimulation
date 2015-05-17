@@ -1,0 +1,19 @@
+
+/**
+ * ngTable styles
+ **/
+.ng-table th.sortable {
+	cursor: pointer;
+}
+
+.ng-table th.sortable.sort-asc:before {
+	content: '\25B2';
+}
+.ng-table th.sortable.sort-desc:before {
+	content: '\25BC';
+}
+
+.ng-table th.sortable div {
+	display: inline
+}
+
