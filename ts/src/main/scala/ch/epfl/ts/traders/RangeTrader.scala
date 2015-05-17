@@ -15,7 +15,8 @@ import akka.util.Timeout
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.data.CoefficientParameter
 import ch.epfl.ts.data.ConfirmRegistration
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Streamable
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
@@ -34,7 +35,13 @@ import ch.epfl.ts.engine.WalletFunds
 import ch.epfl.ts.indicators.OhlcIndicator
 import ch.epfl.ts.indicators.RangeIndicator
 import ch.epfl.ts.indicators.RangeIndic
+import ch.epfl.ts.engine.WalletConfirm
 
+
+/**
+ * @note This needs to be on top level for serializability
+ */
+private case class GotWalletFunds(wallet : Try[WalletFunds]) extends Streamable
 
 
 /**
@@ -64,15 +71,13 @@ object RangeTrader extends TraderCompanion {
  * The resistance is considered as a ceiling and when prices are close to it we sell since we expect prices to go back to normal
  * The support is considered as a floor ans when pricess are close to it is a good time to buy. But note that if prices breaks the
  * support then we liquidate our position. We avoid the risk that prices will crash.
- * @param volume the volume that we want to buy
  */
 class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParameters)
-    extends Trader(uid, marketIds, parameters) with ActorLogging{
+    extends Trader(uid, marketIds, parameters) {
 
   override def companion = RangeTrader
 
   val (whatC, withC) = parameters.get[(Currency, Currency)](RangeTrader.SYMBOL)
-  //val volume = parameters.get[Double](RangeTrader.VOLUME)
   val orderWindow = parameters.get[Double](RangeTrader.ORDER_WINDOW)
   var recomputeRange : Boolean = true
   var resistance : Double = Double.MaxValue
@@ -81,15 +86,13 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
   var currentPrice: Double = 0.0
   var volume : Double = 0
 
- /**Define the height of the range the buy/sell window will be define as a percentage of this range */
+  /** Define the height of the range the buy/sell window will be define as a percentage of this range */
   var rangeSize : Double = 0.0
 
   val marketId = MarketNames.FOREX_ID
-  val oneHour : FiniteDuration = 60*60*1000 milliseconds
-  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), oneHour),"ohlcIndicator")
-  println(ohlcIndicator.path)
+  val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, (whatC, withC), 1 hour),"ohlcIndicator")
 
-  //number of past OHLC that we used to compute support and range
+  /** Number of past OHLC that we use to compute support and range */
   val timePeriod = 48
   val tolerance = 1
   val rangeIndicator = context.actorOf(Props(classOf[RangeIndicator], timePeriod, tolerance), "rangeIndicator")
@@ -118,8 +121,6 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
     case GotWalletFunds(wallet) => wallet match {
       case Success(WalletFunds(id, funds: Map[Currency, Double])) => {
         val cashWith = funds.getOrElse(withC, 0.0)
-        println("we receive the new information from our broker holdings: "+holdings+" and volume: "+volume)
-        println("askPrice ="+askPrice)
         holdings = funds.getOrElse(whatC, 0.0)
         volume = Math.floor(cashWith / askPrice)
         decideOrder
@@ -160,19 +161,14 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
       rangeReady = true
     }
 
-//    case didBrokerAcceptOrder(order) => {
-//      println("broker respond with order :"+ order.getClass)
-//    }
-
-
     case _: ExecutedBidOrder => log.debug("RangeTrader: bid executed")
     case _: ExecutedAskOrder => log.debug("RangeTrader: ask executed")
+    case _: WalletFunds =>
+    case _: WalletConfirm =>
     case o => log.info("RangeTrader received unknown: " + o)
   }
 
   def decideOrder = {
-    println("holdings : "+holdings)
-
     /** We receive a sell signal */
     if(currentPrice >= resistance - (rangeSize * orderWindow) && holdings > 0.0) {
       oid += 1
@@ -195,7 +191,6 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
        oid += 1
        recomputeRange = false
        placeOrder(MarketBidOrder(oid, uid, currentTimeMillis, whatC, withC, volume, -1))
-       println("we just buy : "+volume+" to price "+currentPrice+" and support "+support + " sellingwindow "+(support + (rangeSize * orderWindow)))
        log.debug("buy")
     }
 
@@ -219,20 +214,17 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
     log.debug("range trader start")
   }
 
-  private case class GotWalletFunds(wallet : Try[WalletFunds])
   import context.dispatcher
   def prepareOrder = {
     implicit val timeout = new Timeout(askTimeout)
     val f: Future[WalletFunds] = (broker ? GetWalletFunds(uid, this.self)).mapTo[WalletFunds]
+    // TODO: is this really needed? Maybe we could catch the `WalletFunds` response directly in the main receiver
+    // TODO: could we simplify this by making a custom "waiting for wallet" receiver? (look into `context become`)
     f.onComplete { walletFund => this.self ! GotWalletFunds(walletFund) }
+    f.onFailure {
+      case e => log.warning("RangeTrader: Wallet command failed: " + e)
+    }
   }
-
-//  private case class didBrokerAcceptOrder(order : Try[Order])
-//  def placeOrder(order: MarketOrder) = {
-//    implicit val timeout = new Timeout(askTimeout)
-//    val f : Future[Order] = (broker ? order).mapTo[Order]
-//    f.onComplete { order => this.self ! didBrokerAcceptOrder(order)}
-//  }
 
   def placeOrder(order: MarketOrder) = {
     implicit val timeout = new Timeout(askTimeout)

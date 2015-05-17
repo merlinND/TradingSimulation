@@ -18,7 +18,6 @@ class RsiIndicator(period : Int) extends Actor with ActorLogging {
   override def receive = {
     case ohlc : OHLC => { 
       log.debug("receive OHLC")
-      println("previousPrice "+previousPrice)
       currentPrice = ohlc.close 
       if(previousPrice != 0.0) {
         if(countPeriod == 0){
@@ -33,7 +32,6 @@ class RsiIndicator(period : Int) extends Actor with ActorLogging {
             U += 0.0
           } 
         log.debug("send RSI")
-        println("rsi : "+computeRsi)
         sender() ! RSI(computeRsi)  
         }
           else{

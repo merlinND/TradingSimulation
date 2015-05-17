@@ -1,7 +1,7 @@
 package ch.epfl.ts.traders
 
 import ch.epfl.ts.component.Component
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.{DelOrder, LimitAskOrder, LimitBidOrder, Order, Transaction}
 import ch.epfl.ts.engine.{MarketRules, OrderBook}
 import scala.collection.mutable.TreeSet
@@ -20,7 +20,7 @@ import ch.epfl.ts.data.MarketRulesParameter
 object SobiTrader extends TraderCompanion {
   type ConcreteTrader = SobiTrader
   override protected val concreteTraderTag = scala.reflect.classTag[SobiTrader]
-   
+
   /**
    * Difference in price
    */
@@ -45,7 +45,7 @@ object SobiTrader extends TraderCompanion {
    * Market rules of the market we are trading on
    */
   val MARKET_RULES = "MarketRules"
-  
+
   override def strategyRequiredParameters = Map(
     THETA -> RealNumberParameter,
     PRICE_DELTA -> RealNumberParameter,
@@ -61,17 +61,16 @@ object SobiTrader extends TraderCompanion {
  */
 class SobiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   import context._
-  case object PossibleOrder
 
   override def companion = SobiTrader
-  
+
   val theta = parameters.get[Double](SobiTrader.THETA)
   val priceDelta = parameters.get[Double](SobiTrader.PRICE_DELTA)
   val volume = parameters.get[Int](SobiTrader.VOLUME)
   val interval = parameters.get[FiniteDuration](SobiTrader.INTERVAL)
   val quartiles = parameters.get[Int](SobiTrader.QUARTILES)
   val rules = parameters.get[MarketRules](SobiTrader.MARKET_RULES)
-  
+
   val book = OrderBook(rules.bidsOrdering, rules.asksOrdering)
   var tradingPrice = 188700.0 // for finance.csv
 
@@ -85,20 +84,20 @@ class SobiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameter
     case delete: DelOrder         => removeOrder(delete)
     case transaction: Transaction => tradingPrice = transaction.price
 
-    case PossibleOrder => {
+    case 'PossibleOrder => {
       bi = computeBiOrSi(book.bids.book)
       si = computeBiOrSi(book.asks.book)
       if ((si - bi) > theta) {
         currentOrderId = currentOrderId + 1
         //"place an order to buy x shares at (lastPrice-p)"
         println("SobiTrader: making buy order: price=" + (tradingPrice - priceDelta) + ", volume=" + volume)
-        send[Order](LimitBidOrder(currentOrderId, uid, currentTimeMillis, USD, USD, volume, tradingPrice - priceDelta))
+        send[Order](LimitBidOrder(currentOrderId, uid, currentTimeMillis, Currency.USD, Currency.USD, volume, tradingPrice - priceDelta))
       }
       if ((bi - si) > theta) {
         currentOrderId = currentOrderId + 1
         //"place an order to sell x shares at (lastPrice+p)"
         println("SobiTrader: making sell order: price=" + (tradingPrice + priceDelta) + ", volume=" + volume)
-        send[Order](LimitAskOrder(currentOrderId, uid, currentTimeMillis, USD, USD, volume, tradingPrice + priceDelta))
+        send[Order](LimitAskOrder(currentOrderId, uid, currentTimeMillis, Currency.USD, Currency.USD, volume, tradingPrice + priceDelta))
       }
     }
 
@@ -106,7 +105,7 @@ class SobiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameter
   }
 
   override def init = {
-    system.scheduler.schedule(0 milliseconds, interval, self, PossibleOrder)
+    system.scheduler.schedule(0 milliseconds, interval, self, 'PossibleOrder)
   }
 
   def removeOrder(order: Order): Unit = book delete order

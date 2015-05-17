@@ -68,7 +68,7 @@ object RsiTrader extends TraderCompanion {
     LONG_SMA_PERIOD -> NaturalNumberParameter)
 }
 
-class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) with ActorLogging {
+class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   import context.dispatcher
   override def companion = RsiTrader
   val marketId = marketIds(0)
@@ -88,8 +88,7 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
   val ohlcIndicator = context.actorOf(Props(classOf[OhlcIndicator], marketId, symbol, ohlcPeriod))
   val rsiIndicator = context.actorOf(Props(classOf[RsiIndicator], rsiPeriod))
 
-  //TODO do not create if not used
-  val smaIndicator = context.actorOf(Props(classOf[SmaIndicator], List(shortSmaPeriod, longSmaPeriod)))
+  lazy val smaIndicator = context.actorOf(Props(classOf[SmaIndicator], List(shortSmaPeriod, longSmaPeriod)))
   var currentShort = 0.0
   var currentLong = 0.0
 
@@ -134,19 +133,19 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
     case ma: MovingAverage if registered => {
       ma.value.get(shortSmaPeriod) match {
         case Some(x) => currentShort = x
-        case None    => println("Error: Missing indicator with period " + shortSmaPeriod)
+        case None    => log.warning("Error: Missing indicator with period " + shortSmaPeriod)
       }
       ma.value.get(longSmaPeriod) match {
         case Some(x) => currentLong = x
-        case None    => println("Error: Missing indicator with period " + longSmaPeriod)
+        case None    => log.warning("Error: Missing indicator with period " + longSmaPeriod)
       }
     }
 
     case eb: ExecutedBidOrder    => log.debug("executed bid volume: " + eb.volume)
     case ea: ExecutedAskOrder    => log.debug("executed ask volume: " + ea.volume)
 
-    case whatever if !registered => println("RsiTrader: received while not registered [check that you have a Broker]: " + whatever)
-    case whatever                => println("RsiTrader: received unknown : " + whatever)
+    case whatever if !registered => log.warning("RsiTrader: received while not registered [check that you have a Broker]: " + whatever)
+    case whatever                => log.warning("RsiTrader: received unknown : " + whatever)
   }
   def decideOrder(rsi: Double) = {
     implicit val timeout = new Timeout(askTimeout)
@@ -160,7 +159,7 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
           //overbought : time to sell
           if (rsi >= highRsi && holdings > 0.0) {
             placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
-            //oversell : time to buy  
+            //oversell : time to buy
           } else if (rsi <= lowRsi && holdings == 0) {
             val askPrice = tradingPrices(whatC, withC)._2
             val volumeToBuy = floor(cashWith / askPrice)
@@ -171,7 +170,7 @@ class RsiTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters
           //overbought : time to sell
           if (rsi >= highRsi && holdings > 0.0 && currentShort <= currentLong) {
             placeOrder(MarketAskOrder(oid, uid, currentTimeMillis, whatC, withC, holdings, -1))
-            //oversell : time to buy  
+            //oversell : time to buy
           } else if (rsi <= lowRsi && holdings == 0 && currentShort >= currentLong) {
             val askPrice = tradingPrices(whatC, withC)._2
             val volumeToBuy = floor(cashWith / askPrice)

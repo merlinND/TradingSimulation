@@ -23,35 +23,38 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
    * (with high liquidity assumption = all market orders are executed immediately at the market price)
    */
   private var isSimulating = false
-  
+
   /** Most recent time read from historical data (in milliseconds) */
   private var lastHistoricalTime = 0L
   /** Time period at which to emit  */
   private val timekeeperPeriod = (500 milliseconds)
   /** keep track of last quote before simulating */
   private var lastQuote = Quote(marketId, -1, Currency.DEF, Currency.DEF, -1, -1)
-  
+
+  /** When playing the role of a market maker, apply this spread */
+  // TODO: tweak value
+  val spread = 0.1
+
+
   override def receiver: PartialFunction[Any, Unit] = {
     case o: Order => {
       getCurrentRules.processOrder(o, marketId, book, tradingPrices, this.send[Streamable])
-      
       if (isSimulating)
         playMarketMaker()
     }
-    
+
     case 'ChangeMarketRules => {
       log.info("Hybrid market: changing rules")
       changeRules
-      // TODO make sure that market prices are defined when simulating!
-      
+
       // We now enter full simulation mode, and we need an actor
       // to take care of the keeping of the time
       context.actorOf(Props(classOf[Timekeeper], self, lastHistoricalTime, timekeeperPeriod), "SimulationTimekeeper")
     }
-    
+
     case t: TheTimeIs =>
       send(t)
-    
+
     case q: Quote if (!isSimulating) => {
     	log.debug("HybridMarket: got quote: " + q)
 
@@ -61,30 +64,28 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
       lastQuote = q
       send(q)
     }
-     
+
     case q: Quote if (isSimulating) =>
       log.warning("HybridMarket received a quote when in simulation mode")
   }
 
+  /**
+   * Quick & dirty way of simulating a market maker.
+   * This helps keeping the simulation running, mostly by adding
+   * liquidity to the system.
+   */
   def playMarketMaker() = {
     val asksEmpty = if (book.asks.isEmpty) 1 else 0
     val bidsEmpty = if (book.bids.isEmpty) 1 else 0
-    if (asksEmpty + bidsEmpty >= 1){
-      val msg = if (asksEmpty == 1 && bidsEmpty == 0){
+    if (asksEmpty + bidsEmpty == 1){
+      val order = if (asksEmpty == 1){
         val topBid = book.bids.head
-        MarketAsksEmpty(topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price)
-      } else if (bidsEmpty == 1 && asksEmpty == 0){
-        val topAsk = book.asks.head
-        MarketBidsEmpty(topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price)
+        LimitAskOrder(1, -1, topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price * (1 + spread))
       } else {
-        MarketEmpty()
-        /* Jakob: this case might occur but there is no offer from the market maker needed
-         * BUT: if we want to allow the market maker to influence the market in this state (for its own advantage)
-         * we could notify it
-         */
-        
+        val topAsk = book.asks.head
+        LimitBidOrder(1, -1, topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price * (1 - spread))
       }
-      send(msg)
+      receiver(order)
     }
   }
 

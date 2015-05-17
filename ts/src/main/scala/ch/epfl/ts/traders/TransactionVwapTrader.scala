@@ -4,7 +4,7 @@ import scala.language.postfixOps
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration.DurationInt
 import ch.epfl.ts.component.Component
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.{MarketAskOrder, MarketBidOrder, Transaction}
 import ch.epfl.ts.data.{StrategyParameters, TimeParameter, NaturalNumberParameter, ParameterTrait}
 
@@ -33,8 +33,6 @@ class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: Strate
   import context._
   override def companion = TransactionVwapTrader
 
-  case object Tick
-
   val timeFrame = parameters.get[FiniteDuration](TransactionVwapTrader.TIME_FRAME)
   val volumeToTrade = parameters.get[Int](TransactionVwapTrader.VOLUME)
 
@@ -58,17 +56,17 @@ class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: Strate
 
   def receiver = {
     case t: Transaction => transactions = t :: transactions
-    case Tick => {
+    case 'Tick => {
       computeVWAP
       if (tradingPrice > vwap) {
         // sell
         println("TransactionVWAPTrader: sending market ask order")
-        send(MarketAskOrder(oid, uid, currentTimeMillis, USD, USD, volumeToTrade, 0))
+        send(MarketAskOrder(oid, uid, currentTimeMillis, Currency.USD, Currency.USD, volumeToTrade, 0))
         oid = oid + 1
       } else {
         // buy
         println("TransactionVWAPTrader: sending market bid order")
-        send(MarketBidOrder(oid, uid, currentTimeMillis, USD, USD, volumeToTrade, 0))
+        send(MarketBidOrder(oid, uid, currentTimeMillis, Currency.USD, Currency.USD, volumeToTrade, 0))
         oid = oid + 1
       }
     }
@@ -91,6 +89,6 @@ class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: Strate
 
   override def init = {
     println("TransactionVwapTrader: Started")
-    system.scheduler.schedule(0 milliseconds, timeFrame, self, Tick)
+    system.scheduler.schedule(0 milliseconds, timeFrame, self, 'Tick)
   }
 }

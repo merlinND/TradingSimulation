@@ -2,7 +2,7 @@ package ch.epfl.ts.engine.rules
 
 import ch.epfl.ts.engine.{OrderBook, ForexMarketRules}
 import ch.epfl.ts.data._
-import ch.epfl.ts.data.Currency.Currency
+import ch.epfl.ts.data.Currency
 import scala.collection.mutable
 import scala.Some
 import ch.epfl.ts.data.MarketBidOrder
@@ -56,7 +56,9 @@ class FxMarketRulesWrapper(val rules :ForexMarketRules = new ForexMarketRules())
             //TODO(sygi): we put the topBid price, but it won't be used, as we ALWAYS sell/buy at the market price (from Quote))
             //TODO(sygi): Order type casting
             val order = MarketBidOrder(topBid.oid, topBid.uid, topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price)
+            book.bids.delete(topBid)
             processOrder(order, marketId, book, tradingPrices, send)
+            checkPendingOrders(marketId, book, tradingPrices, send)
           }
         }
         case None => println("FMRW: dont have info about topBid " + topBid.withC + " " + topBid.whatC + " pair price")
@@ -69,11 +71,15 @@ class FxMarketRulesWrapper(val rules :ForexMarketRules = new ForexMarketRules())
           val bidPrice = t._2
           if (bidPrice >= topAsk.price) {
             val order = MarketAskOrder(topAsk.oid, topAsk.uid, topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price)
+            book.asks.delete(topAsk)
             processOrder(order, marketId, book, tradingPrices, send)
+            checkPendingOrders(marketId, book, tradingPrices, send)
           }
         }
         case None => println("FMRW: dont have info about " + topAsk.withC + " " + topAsk.whatC + " pair price")
       }
     }
   }
+
+  override def initQuotes(q: Quote): Unit = {}
 }

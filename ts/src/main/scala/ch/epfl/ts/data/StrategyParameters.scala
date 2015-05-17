@@ -1,6 +1,5 @@
 package ch.epfl.ts.data
 
-import ch.epfl.ts.data.Currency.Currency
 import scala.concurrent.duration.{ TimeUnit, FiniteDuration, DurationLong, MILLISECONDS => MillisecondsUnit }
 import scala.reflect.ClassTag
 import ch.epfl.ts.engine.MarketRules
@@ -20,6 +19,11 @@ class StrategyParameters(params: (String, Parameter)*) extends Serializable {
   type Key = String
   val parameters = params.toMap
 
+  override def equals(o: Any) = o match {
+    case that: StrategyParameters => that.parameters.equals(this.parameters)
+    case _ => false
+  }
+  
   /**
    * @return True only if the key is available in `parameters`
    */
@@ -195,9 +199,9 @@ object CoefficientParameter extends ParameterTrait {
    */
   def isValid(v: Double): Boolean = (v >= 0.0) && (v <= 1.0)
 
-  // TODO: handle user-selected resolution for these values
   def validValues: Iterable[Double] = {
-    val resolution = 0.01
+	  // TODO: handle user-selected resolution for these values
+    val resolution = 0.1
     for {
       n <- 0 to (1 / resolution).toInt
     } yield (n * resolution)
@@ -251,7 +255,7 @@ object RealNumberParameter extends ParameterTrait {
   def isValid(v: Double): Boolean = true
 
   // TODO: how should we enumerate all Reals?
-  def validValues: Iterable[Double] = Stream.from(0).map(x => x / 100.0)
+  def validValues: Iterable[Double] = Stream.from(0).map(x => x / 10.0)
 
   def defaultValue = 0.0
 }
@@ -290,7 +294,7 @@ object TimeParameter extends ParameterTrait {
 
   // TODO: user-selected resolution
   def validValues: Iterable[FiniteDuration] =
-    Stream.from(0) map { n => (100L * n) milliseconds }
+    Stream.from(1) map { n => (500L * n) milliseconds }
 
   def defaultValue = (0L milliseconds)
 }

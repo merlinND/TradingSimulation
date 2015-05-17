@@ -1,6 +1,6 @@
 package ch.epfl.ts.engine
 
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data._
 import ch.epfl.ts.component.fetch.MarketNames
 import ch.epfl.ts.data.MarketBidOrder
@@ -27,7 +27,6 @@ class MarketRules extends Serializable {
   var lastAskPrice = 1.0
   var withC = Currency.DEF
   var whatC = Currency.DEF
-  
 
   // when used on TreeSet, head() and iterator() provide increasing order
   def asksOrdering = new Ordering[Order] {
@@ -89,7 +88,7 @@ class MarketRules extends Serializable {
       if (matchExists(bestMatch.price, newOrder.price)) {
 
         bestMatchesBook delete bestMatch
-        send(DelOrder(bestMatch.oid, bestMatch.uid, newOrder.timestamp, DEF, DEF, 0.0, 0.0))
+        send(DelOrder(bestMatch.oid, bestMatch.uid, newOrder.timestamp, Currency.DEF, Currency.DEF, 0.0, 0.0))
 
         // perfect match
         if (bestMatch.volume == newOrder.volume) {
@@ -148,30 +147,14 @@ class MarketRules extends Serializable {
         result = oldTradingPrice
       }
     }
-    
-    // TODO (Jakob) add logic to update price (or can I blindly take each matched order pair as new price?)
-    // OR: we catch quotes during non-simulation to initialize this
-    /*
-     * this part ensures that there quotes can be generated even though the order books are empty
-     * BUT one of the two values is set to the default...
-     * MAYBE: set it very high??
-     * OR: we catch quotes during non-simulation to initialize this
-     */
+
     newOrder match {
-      case limitBid: LimitBidOrder => {
+      case _ @ (_:MarketBidOrder | _:LimitBidOrder) =>
         lastBidPrice = result
-      }
-      case limitAsk: LimitAskOrder => {
+      case _ @ (_:MarketAskOrder | _:LimitAskOrder) =>
         lastAskPrice = result
-      }
-      case marketBid: MarketBidOrder => {
-        lastBidPrice = result
-      } 
-      case marketAsk: MarketAskOrder => {
-        lastAskPrice = result
-      }
     }
-    
+
     generateQuote(marketId, newOrdersBook, bestMatchesBook, newOrder.timestamp, send)
     result
   }
@@ -186,18 +169,16 @@ class MarketRules extends Serializable {
         topAsk = topBid
         topBid = tmp
       }
-      lastBidPrice = topBid.price
-      lastAskPrice = topAsk.price
-      whatC = topAsk.whatC
-      withC = topAsk.withC
       
       val q = Quote(marketId, timestamp, topAsk.whatC, topAsk.withC, topBid.price, topAsk.price)
       println("MR: generating quote " + q)
       send(q)
     } else {
-      val q = Quote(marketId, timestamp, whatC, withC, lastBidPrice, lastAskPrice)
-      println("MR: can't generate new quote but using old one: " + q)
-      send(q)
+      if (whatC != Currency.DEF && withC != Currency.DEF) {
+        val q = Quote(marketId, timestamp, whatC, withC, lastBidPrice, lastAskPrice)
+        println("MR: can't generate new quote but using old one: " + q)
+        send(q)
+      }
     }
   }
   
@@ -207,6 +188,5 @@ class MarketRules extends Serializable {
     withC = q.withC
     whatC = q.whatC
     println("MarketRules: initializing quotes with " + q )
-    0
   }
 }

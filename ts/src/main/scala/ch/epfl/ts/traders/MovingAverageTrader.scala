@@ -11,8 +11,9 @@ import akka.actor.actorRef2Scala
 import akka.pattern.ask
 import akka.util.Timeout
 import ch.epfl.ts.data.BooleanParameter
+import ch.epfl.ts.data.CoefficientParameter
 import ch.epfl.ts.data.ConfirmRegistration
-import ch.epfl.ts.data.Currency.Currency
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.CurrencyPairParameter
 import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
@@ -34,7 +35,8 @@ import ch.epfl.ts.engine.WalletFunds
 import ch.epfl.ts.indicators.EmaIndicator
 import ch.epfl.ts.indicators.MovingAverage
 import ch.epfl.ts.indicators.OhlcIndicator
-import ch.epfl.ts.data.CoefficientParameter
+import ch.epfl.ts.engine.WalletConfirm
+import ch.epfl.ts.engine.WalletFunds
 
 /**
  * MovingAverageTrader companion object
@@ -74,7 +76,7 @@ object MovingAverageTrader extends TraderCompanion {
  * Simple momentum strategy.
  */
 class MovingAverageTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters)
-  extends Trader(uid, marketIds, parameters) with ActorLogging {
+  extends Trader(uid, marketIds, parameters) {
 
   import context.dispatcher
 
@@ -156,9 +158,13 @@ class MovingAverageTrader(uid: Long, marketIds: List[Long], parameters: Strategy
     case eb: ExecutedBidOrder    => log.debug("executed bid volume: " + eb.volume)
     case ea: ExecutedAskOrder    => log.debug("executed ask volume: " + ea.volume)
 
+    case _: WalletFunds =>
+    case _: WalletConfirm =>
+    
     case whatever if !registered => println("MATrader: received while not registered [check that you have a Broker]: " + whatever)
     case whatever                => println("MATrader: received unknown : " + whatever)
   }
+
   def decideOrder = {
     implicit val timeout = new Timeout(askTimeout)
 

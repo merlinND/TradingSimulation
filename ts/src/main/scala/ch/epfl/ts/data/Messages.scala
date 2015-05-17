@@ -1,11 +1,9 @@
 package ch.epfl.ts.data
 
-import ch.epfl.ts.data.Currency._
-
 /**
  * Definition of the System's internal messages.
  */
-trait Streamable
+trait Streamable extends Serializable
 
 /**
  * Message sent out by an actor which takes authority on the system's time.
@@ -181,10 +179,12 @@ case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Curren
 
 /**
  * Signals that the Fetcher component will not send any more messages
+ * 
+ * @param Last timestamp seen (either real or simulated), in milliseconds
  * @example In the case of historical data, this message is sent out when
  *          there are no more quotes to be sent sent.
  */
-case class EndOfFetching() extends Streamable
+case class EndOfFetching(lastTimestamp: Long) extends Streamable
 
 /**
  * Data Transfer Object representing a Tweet
@@ -200,6 +200,6 @@ case class Tweet(timestamp: Long, content: String, sentiment: Int, imagesrc: Str
  * Messages that are used for the communication between broker and its agents
  * TODO(sygi): put this in separate file
  */
-case class Register(traderId: Long)
+case class Register(traderId: Long) extends Streamable
 
-case class ConfirmRegistration()
+case class ConfirmRegistration() extends Streamable

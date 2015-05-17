@@ -22,30 +22,30 @@ abstract class PushFetch[T] extends Fetch[T] {
 }
 
 /* Actor implementation */
-class PullFetchComponent[T: ClassTag](f: PullFetch[T]) extends Component {
+abstract class FetchingComponent extends Component
+
+class PullFetchComponent[T: ClassTag](f: PullFetch[T]) extends FetchingComponent {
   import context._
-  case object Fetch
-  system.scheduler.schedule(10 milliseconds, f.interval() milliseconds, self, Fetch)
+  
+  system.scheduler.schedule(10 milliseconds, f.interval() milliseconds, self, 'DoFetchNow)
 
   override def receiver = {
     // pull and send to each listener
-    case Fetch =>
-      println("PullFetchComponent Fetch " + System.currentTimeMillis())
+    case 'DoFetchNow =>
       f.fetch().map(t => send[T](t))
     case _ =>
   }
 }
 
 /* Actor implementation */
-class PullFetchListComponent[T: ClassTag](f: PullFetch[T]) extends Component {
+class PullFetchListComponent[T: ClassTag](f: PullFetch[T]) extends FetchingComponent {
   import context._
-  case object Fetch
-  system.scheduler.schedule(0 milliseconds, f.interval() milliseconds, self, Fetch)
+  
+  system.scheduler.schedule(0 milliseconds, f.interval() milliseconds, self, 'DoFetchNow)
 
   override def receiver = {
     // pull and send to each listener
-    case Fetch =>
-      println("PullFetchListComponent Fetch " + System.currentTimeMillis())
+    case 'DoFetchNow =>
       send(f.fetch())
     case _ =>
   }
@@ -58,7 +58,7 @@ class PullFetchListComponent[T: ClassTag](f: PullFetch[T]) extends Component {
  * 2. Inside your class use callback(what you want to send) 
  *    to send data to components connected to your fetcher
  */
-class PushFetchComponent[T: ClassTag] extends Component {
+class PushFetchComponent[T: ClassTag] extends FetchingComponent {
   override def receiver = {
     case _ =>
   }

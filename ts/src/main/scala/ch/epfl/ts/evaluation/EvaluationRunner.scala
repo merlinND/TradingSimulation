@@ -2,7 +2,7 @@ package ch.epfl.ts.evaluation
 
 import ch.epfl.ts.component.fetch.{ HistDataCSVFetcher, MarketNames }
 import ch.epfl.ts.component.{ ComponentBuilder, ComponentRef }
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data._
 import ch.epfl.ts.engine.{Wallet, MarketFXSimulator, ForexMarketRules}
 import ch.epfl.ts.indicators.SMA
@@ -52,7 +52,7 @@ object EvaluationRunner {
     // Evaluator
     val period = 10 seconds
     val referenceCurrency = symbol._2
-    val evaluator = builder.createRef(Props(classOf[Evaluator], trader, traderId, referenceCurrency, period), "evaluator")
+    val evaluator = builder.createRef(Props(classOf[Evaluator], trader.ar, traderId, trader.name, referenceCurrency, period), "evaluator")
 
     // Printer
     val printer = builder.createRef(Props(classOf[Printer], "my-printer"), "printer")

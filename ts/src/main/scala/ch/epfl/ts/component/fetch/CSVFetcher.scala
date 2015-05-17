@@ -1,7 +1,7 @@
 package ch.epfl.ts.component.fetch
 
 import ch.epfl.ts.component.persist.OrderPersistor
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import ch.epfl.ts.data.{DelOrder, LimitAskOrder, LimitBidOrder, Order}
 
 import scala.io.Source
@@ -41,9 +41,9 @@ class CSVFetcher {
         counter += 1
         line = s.split(",")
         line(2) match {
-          case "B" => orders = LimitBidOrder(line(1).toLong, 0, line(0).toLong, USD, USD, line(3).toDouble, line(4).toDouble) :: orders
-          case "S" => orders = LimitAskOrder(line(1).toLong, 0, line(0).toLong, USD, USD, line(3).toDouble, line(4).toDouble) :: orders
-          case "D" => orders = DelOrder(line(1).toLong, 0, line(0).toLong, DEF, DEF, 0, 0) :: orders
+          case "B" => orders = LimitBidOrder(line(1).toLong, 0, line(0).toLong, Currency.USD, Currency.USD, line(3).toDouble, line(4).toDouble) :: orders
+          case "S" => orders = LimitAskOrder(line(1).toLong, 0, line(0).toLong, Currency.USD, Currency.USD, line(3).toDouble, line(4).toDouble) :: orders
+          case "D" => orders = DelOrder(line(1).toLong, 0, line(0).toLong, Currency.DEF, Currency.DEF, 0, 0) :: orders
           case _ =>
         }
       }

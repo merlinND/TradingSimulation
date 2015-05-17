@@ -21,20 +21,21 @@ import ch.epfl.ts.engine.{
 }
 import scala.Some
 import ch.epfl.ts.data.{ Register, ConfirmRegistration, Order }
-import ch.epfl.ts.data.Currency._
+import ch.epfl.ts.data.Currency
 import scala.collection.mutable.{ HashMap => MHashMap }
 import ch.epfl.ts.data.Quote
-import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.LimitBidOrder
 import ch.epfl.ts.data.LimitAskOrder
 import ch.epfl.ts.data.MarketShortOrder
-import ch.epfl.ts.data.MarketAskOrder
-import ch.epfl.ts.data.LimitShortOrder
 import ch.epfl.ts.data.LimitShortOrder
 import ch.epfl.ts.data.MarketAskOrder
 
-class StandardBroker extends Component with ActorLogging {
+abstract class Broker extends Component
+
+/**
+ */
+class StandardBroker extends Broker with ActorLogging {
   import context.dispatcher
   var mapping = Map[Long, ActorRef]()
   val dummyReturn: PartialFunction[Any, Unit] = { case _ => {} }
