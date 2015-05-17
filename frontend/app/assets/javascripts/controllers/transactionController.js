@@ -7,47 +7,16 @@
           '$scope',
           '$filter',
           'alertService',
-          'traderList',
+          'transactionList',
           'ngTableParams',
-          function($scope, $filter, alertService, traderList, ngTableParams) {
+          function($scope, $filter, alertService, transactionList,
+              ngTableParams) {
             $scope.alerts = alertService.get();
-            $scope.traders = traderList.get();
-            var transactions = [];
+            var transactions = transactionList.get();
 
-            var ws = new WebSocket('ws://localhost:9000/market/transaction');
-
-            ws.onmessage = function(event) {
-              var transaction = JSON.parse(event.data);
-              $scope.$apply(function() {
-
-                if (transaction.buyerId >= 0) {
-                  traderList.add(transaction.buyerId);
-                } else {
-                  transaction.buyerId = 'external';
-                }
-
-                if (transaction.sellerId >= 0) {
-                  traderList.add(transaction.sellerId);
-                } else {
-                  transaction.sellerId = 'external';
-                }
-
-                transactions.push(transaction);
-                $scope.tableParams.reload();
-              });
-            };
-
-            ws.onclose = function(event) {
-              $scope.$apply(function() {
-                alertService.add('info', 'Closed connection to the backend');
-              });
-            };
-
-            ws.onerror = function(event) {
-              $scope.$apply(function() {
-                alertService.add('danger', 'Lost connection to the backend');
-              });
-            };
+            $scope.$on('transactions:updated', function(event, data) {
+              $scope.tableParams.reload();
+            });
 
             /* jshint ignore:start */
             $scope.tableParams = new ngTableParams({
@@ -59,8 +28,8 @@
               counts : [], // hide page size
               total : transactions.length,
               getData : function($defer, params) {
-                var orderedData = params.sorting() ? $filter('orderBy')(transactions,
-                    params.orderBy()) : transactions;
+                var orderedData = params.sorting() ? $filter('orderBy')(
+                    transactions, params.orderBy()) : transactions;
                 $defer.resolve(orderedData);
               }
             });

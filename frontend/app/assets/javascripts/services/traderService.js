@@ -3,32 +3,34 @@
 
   var app = angular.module('myApp');
 
-  angular.module('myApp').factory('traderList', function() {
-    var service = {};
-    var traders = {};
+  angular.module('myApp').factory('traderList',
+      [ '$rootScope', function($rootScope) {
+        var service = {};
+        var traders = {};
 
-    var ws = new WebSocket('ws://localhost:9000/trader/parameters');
+        var ws = new WebSocket('ws://localhost:9000/trader/parameters');
 
-    ws.onmessage = function(event) {
-      var traderParameters = JSON.parse(event.data);
-      traders[traderParameters.id] = traderParameters;
-    };
-
-    service.get = function() {
-      return traders;
-    };
-
-    service.add = function(traderId) {
-      if (!traders[traderId]) {
-        traders[traderId] = {
-          id : traderId
+        ws.onmessage = function(message) {
+          var traderParameters = JSON.parse(message.data);
+          traders[traderParameters.id] = traderParameters;
+          $rootScope.$broadcast('traders:updated', traderParameters);
         };
-        ws.send('getAllTraderParameters');
-      }
-      return traders;
-    };
 
-    return service;
-  });
+        service.get = function() {
+          return traders;
+        };
+
+        service.add = function(traderId) {
+          if (!traders[traderId]) {
+            traders[traderId] = {
+              id : traderId
+            };
+            ws.send('getAllTraderParameters');
+          }
+          return traders;
+        };
+
+        return service;
+      } ]);
 
 })();
