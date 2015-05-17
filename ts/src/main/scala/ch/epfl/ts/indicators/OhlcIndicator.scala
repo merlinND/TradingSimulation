@@ -14,11 +14,12 @@ import scala.concurrent.duration.FiniteDuration
  * Computes an OHLC tick for a tick frame of the specified duration
  * The OHLCs are identified with the provided marketId.
  */
+
 class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickDuration: FiniteDuration)
     extends Actor with ActorLogging {
 
   val tickSizeMillis = tickDuration.toMillis
-  
+
   /**
    * Stores transactions' price values
    */
@@ -27,7 +28,7 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickDuration: F
   var close: Double = 0.0
   var currentTick: Long = 0
   val (whatC, withC) = symbol
-  
+
   override def receive = {
 
     // We either receive the price from quote (Backtesting/realtime trading) or from transaction (for simulation)
@@ -35,7 +36,7 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickDuration: F
     case t: Transaction => {
       if (whichTick(t.timestamp) > currentTick) {
         // New tick, send OHLC with values stored until now, and reset accumulators (Transaction volume & prices)
-        sender ! computeOHLC
+        sender() ! computeOHLC
         currentTick = whichTick(t.timestamp)
       }
       values += t.price
@@ -43,13 +44,13 @@ class OhlcIndicator(marketId: Long, symbol: (Currency,Currency), tickDuration: F
     }
 
     case q: Quote => {
-      log.debug("olhc just received a quote")
       if(currentTick == 0){
          currentTick = whichTick(q.timestamp)
       }
       if (q.whatC == whatC && q.withC == withC) {
         if (whichTick(q.timestamp) > currentTick) {
-          sender ! computeOHLC
+          sender() ! computeOHLC
+
           currentTick = whichTick(q.timestamp)
         }
         values += q.bid //we consider the price as the bid price

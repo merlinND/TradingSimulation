@@ -22,6 +22,7 @@ object Dependencies {
     "org.webjars" % "highstock" % "2.0.4",
     "org.webjars" % "highcharts-ng" % "0.0.8",
     "org.webjars" % "bootstrap" % "3.2.0" exclude ("org.webjars", "jquery"),
+    "org.webjars" % "bootswatch-superhero" % "3.3.1+2",
     "org.webjars" % "angularjs" % "1.2.16-2" exclude ("org.webjars", "jquery"),
     "org.webjars" % "angular-ui-bootstrap" % "0.12.1-1",
     "org.webjars" % "angular-datatables" % "0.4.2",

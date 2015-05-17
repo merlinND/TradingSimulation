@@ -28,10 +28,12 @@ import ch.epfl.ts.data.MarketAskOrder
 import ch.epfl.ts.data.MarketBidOrder
 import ch.epfl.ts.data.LimitBidOrder
 import ch.epfl.ts.data.LimitAskOrder
+import ch.epfl.ts.data.MarketShortOrder
+import ch.epfl.ts.data.MarketAskOrder
+import ch.epfl.ts.data.LimitShortOrder
+import ch.epfl.ts.data.LimitShortOrder
+import ch.epfl.ts.data.MarketAskOrder
 
-/**
- * Created by sygi on 03.04.15.
- */
 class StandardBroker extends Component with ActorLogging {
   import context.dispatcher
   var mapping = Map[Long, ActorRef]()
@@ -52,10 +54,10 @@ class StandardBroker extends Component with ActorLogging {
       context.actorOf(Props[Wallet], "wallet" + id)
       sender() ! ConfirmRegistration
     }
-    case FundWallet(uid, curr, value) => {
+    case FundWallet(uid, curr, value, allowNegative) => {
       log.debug("Broker: got a request to fund a wallet")
       val replyTo = sender
-      executeForWallet(uid, FundWallet(uid, curr, value), {
+      executeForWallet(uid, FundWallet(uid, curr, value, allowNegative), {
         case WalletConfirm(uid) => {
           log.debug("Broker: Wallet confirmed")
           replyTo ! WalletConfirm(uid)
@@ -73,7 +75,7 @@ class StandardBroker extends Component with ActorLogging {
         log.debug("Broker: someone asks for not - his wallet")
         return dummyReturn
       }
-      executeForWallet(uid, GetWalletFunds(uid,ref), {
+      executeForWallet(uid, GetWalletFunds(uid, ref), {
         case w: WalletFunds => {
           replyTo ! w
         }
@@ -90,23 +92,39 @@ class StandardBroker extends Component with ActorLogging {
     case o: Order => {
       log.debug("Broker: received order")
       val replyTo = sender
-      val uid = o.chargedTraderId()
+
       if (!ableToProceed(o)){
         log.warning("Broker: Unable to proceed MarketBid request before getting first quote")
         replyTo ! RejectedOrder.apply(o)
         return dummyReturn
       }
+
+      val uid = o.chargedTraderId()
+      val allowShort = o match {
+        case _: MarketShortOrder | _: LimitShortOrder => true
+        case _                                        => false
+      }
+
       val placementCost = o match {
-        case _: MarketBidOrder => o.volume * tradingPrices(o.whatC, o.withC)._2 // we buy at ask price
-        case _: MarketAskOrder => o.volume
-        case _: LimitBidOrder  => o.volume * o.price
-        case _: LimitAskOrder  => o.volume
+        case _: MarketBidOrder   => o.volume * tradingPrices(o.whatC, o.withC)._2 // we buy at ask price
+        case _: MarketAskOrder   => o.volume
+        case _: MarketShortOrder => o.volume
+        case _: LimitBidOrder    => o.volume * o.price
+        case _: LimitAskOrder    => o.volume
+        case _: LimitShortOrder  => o.volume
+
       }
       val costCurrency = o.costCurrency()
-      executeForWallet(uid, FundWallet(uid, costCurrency, -placementCost), {
+      val orderToSend = o match {
+        //converting shortOrders
+        case o:MarketShortOrder => MarketAskOrder(o.oid,o.uid,o.timestamp,o.whatC,o.withC,o.volume,o.price)
+        case o:LimitShortOrder => LimitAskOrder(o.oid,o.uid,o.timestamp,o.whatC,o.withC,o.volume,o.price)
+        case _ => o
+      }
+      executeForWallet(uid, FundWallet(uid, costCurrency, -placementCost, allowShort), {
         case WalletConfirm(uid) => {
           log.debug("Broker: Wallet confirmed")
-          send(o)
+          send(orderToSend)
           replyTo ! AcceptedOrder.apply(o) //means: order placed
         }
         case WalletInsufficient(uid) => {
@@ -138,7 +156,7 @@ class StandardBroker extends Component with ActorLogging {
   def executeForWallet(uid: Long, question: WalletState, cb: PartialFunction[Any, Unit]) = {
     context.child("wallet" + uid) match {
       case Some(walletActor) => {
-        implicit val timeout = new Timeout(100 milliseconds)
+        implicit val timeout = new Timeout(1000 milliseconds)
         val future = (walletActor ? question).mapTo[WalletState]
         future onSuccess cb
         future onFailure {

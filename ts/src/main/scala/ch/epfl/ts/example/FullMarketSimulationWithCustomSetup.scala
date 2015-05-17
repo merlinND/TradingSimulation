@@ -40,6 +40,7 @@ object FullMarketSimulationWithCustomSetup {
 
   /** market configuration */
   val symbol = (Currency.EUR, Currency.CHF)
+  val fundDistribution = new FundsGermany
   /**
    * ._1: fund to symbol._1, ._2: fund to  symbol._2
    * Must be hardcoded since the distribution might be given in a different currency and
@@ -144,6 +145,9 @@ object FullMarketSimulationWithCustomSetup {
 
   }
   
+  /** Market maker (who is technically a trader */
+  var marketMaker: TraderCompanion = null
+  
   /**
    * @return References to the traders that were instantiated
    */
@@ -151,7 +155,7 @@ object FullMarketSimulationWithCustomSetup {
     // TODO Jakob
     
     // TODO: is this needed?
-    // val numberOfTraders = traderDistribution.values.sum
+    val numberOfTraders = traderDistribution.values.sum
     
 		var uid = 1L
     val marketIds = List(MarketNames.FOREX_ID)

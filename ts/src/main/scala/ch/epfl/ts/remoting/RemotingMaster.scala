@@ -179,7 +179,7 @@ akka.actor.provider = "akka.remote.RemoteActorRefProvider"
 akka.remote.enabled-transports = ["akka.remote.netty.tcp"]
 akka.remote.netty.tcp.port = 3333
 akka.actor.serialize-creators = on
-""").withFallback(ConfigFactory.load());
+""").withFallback(ConfigFactory.load())
 
     // Build the master actor
     implicit val builder = new ComponentBuilder("host", remotingConfig)

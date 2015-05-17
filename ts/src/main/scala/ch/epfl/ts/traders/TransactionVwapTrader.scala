@@ -14,12 +14,12 @@ import ch.epfl.ts.data.{StrategyParameters, TimeParameter, NaturalNumberParamete
 object TransactionVwapTrader extends TraderCompanion {
   type ConcreteTrader = TransactionVwapTrader
   override protected val concreteTraderTag = scala.reflect.classTag[TransactionVwapTrader]
-  
+
   /** Time frame */
   val TIME_FRAME = "TimeFrame"
   /** Volume to trade */
   val VOLUME = "Volume"
-  
+
   override def strategyRequiredParameters = Map(
     TIME_FRAME -> TimeParameter,
     VOLUME -> NaturalNumberParameter
@@ -32,17 +32,17 @@ object TransactionVwapTrader extends TraderCompanion {
 class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: StrategyParameters) extends Trader(uid, marketIds, parameters) {
   import context._
   override def companion = TransactionVwapTrader
-  
+
   case object Tick
 
   val timeFrame = parameters.get[FiniteDuration](TransactionVwapTrader.TIME_FRAME)
   val volumeToTrade = parameters.get[Int](TransactionVwapTrader.VOLUME)
 
   var transactions: List[Transaction] = Nil
-  var cumulativeTPV: Double = 0.0;
-  var cumulativeVolume: Double = 0.0;
-  var vwap: Double = 0.0;
-  var tradingPrice: Double = 0.0;
+  var cumulativeTPV: Double = 0.0
+  var cumulativeVolume: Double = 0.0
+  var vwap: Double = 0.0
+  var tradingPrice: Double = 0.0
 
   var oid = uid
 
@@ -55,7 +55,7 @@ class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: Strate
     def compare(first: Transaction, second: Transaction): Int =
       if (first.timestamp > second.timestamp) 1 else if (first.timestamp < second.timestamp) -1 else 0
   }
-  
+
   def receiver = {
     case t: Transaction => transactions = t :: transactions
     case Tick => {

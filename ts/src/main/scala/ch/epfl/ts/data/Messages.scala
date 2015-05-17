@@ -6,7 +6,7 @@ import ch.epfl.ts.data.Currency._
  * Definition of the System's internal messages.
  */
 trait Streamable
- 
+
 /**
  * Message sent out by an actor which takes authority on the system's time.
  * This way, we may override both physical time and historical data time if needed.
@@ -35,7 +35,7 @@ case class Transaction(mid: Long, price: Double, volume: Double, timestamp: Long
 trait Chargeable {
   /**
    * The currency with which we pay (withC in a bidOrder , whatC in an Ask order)
-   * 
+   *
    */
   def costCurrency(): Currency
   def chargedTraderId(): Long
@@ -62,6 +62,7 @@ abstract class Order() extends Streamable with Chargeable {
   override def chargedTraderId() = uid
   override def costCurrency() = withC
 }
+
 
 /**
  * Type of orders: You send a bid order if you want to buy a security at a given price.
@@ -99,6 +100,18 @@ case class LimitAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val 
   extends LimitOrder {
   override def costCurrency() = whatC
 }
+
+/**
+ * @param whatC Which currency we are buying
+ * @param withC The currency with which we are buying
+ * Allow shorting of whatC
+ * @see LimitOrder
+ */
+case class LimitShortOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+  extends LimitOrder {
+  override def costCurrency() = whatC
+}
+
 //TODO: remove price from common subclass, as for MarketOrders it doesn't make sense
 abstract class MarketOrder extends Order
 
@@ -109,7 +122,7 @@ abstract class MarketOrder extends Order
  * @see LimitOrder
  */
 case class MarketBidOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
-  extends MarketOrder{
+  extends MarketOrder {
 }
 
 /**
@@ -119,7 +132,17 @@ case class MarketBidOrder(val oid: Long, val uid: Long, val timestamp: Long, val
  * @see LimitOrder
  */
 case class MarketAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
-  extends MarketOrder{
+  extends MarketOrder {
+  override def costCurrency() = whatC
+}
+/**
+ * @param whatC Which currency we are buying
+ * @param withC The currency with which we are buying
+ * Allow shorting of whatC
+ * @see LimitOrder
+ */
+case class MarketShortOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+  extends MarketOrder {
   override def costCurrency() = whatC
 }
 
@@ -130,7 +153,7 @@ case class MarketAskOrder(val oid: Long, val uid: Long, val timestamp: Long, val
  * @see LimitOrder
  */
 case class DelOrder(val oid: Long, val uid: Long, val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
-  extends Order{
+  extends Order {
 }
 
 /**
@@ -153,7 +176,7 @@ case class OHLC(marketId: Long, open: Double, high: Double, low: Double, close: 
  * @see LimitOrder
  */
 case class Quote(marketId: Long, timestamp: Long, whatC: Currency, withC: Currency, bid: Double, ask: Double) extends Streamable {
-  override def toString() = "(" + whatC.toString().toUpperCase() + "/" + withC.toString().toUpperCase() + ") = (" + bid + ", " + ask + ")";
+  override def toString() = "(" + whatC.toString().toUpperCase() + "/" + withC.toString().toUpperCase() + ") = (" + bid + ", " + ask + ")"
 }
 
 /**
