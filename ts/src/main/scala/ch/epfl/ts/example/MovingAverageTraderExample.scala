@@ -19,9 +19,9 @@ import ch.epfl.ts.traders.TraderCompanion
 object MovingAverageTraderExample extends AbstractTraderShowcaseExample {
 
   val useLiveData = false
-  val replaySpeed = 4000.0
+  val replaySpeed = 86400.0
   val startDate = "201304"
-  val endDate = "201404"
+  val endDate = "201504"
   
   val symbol = (Currency.EUR, Currency.CHF)
 
@@ -33,7 +33,7 @@ object MovingAverageTraderExample extends AbstractTraderShowcaseExample {
       MovingAverageTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
       MovingAverageTrader.SYMBOL -> CurrencyPairParameter(symbol),
 
-      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 hour),
+      MovingAverageTrader.OHLC_PERIOD -> new TimeParameter(1 day),
       MovingAverageTrader.SHORT_PERIODS -> NaturalNumberParameter(periods(0)),
       MovingAverageTrader.LONG_PERIODS -> NaturalNumberParameter(periods(1)),
       MovingAverageTrader.TOLERANCE -> RealNumberParameter(0.0002),
