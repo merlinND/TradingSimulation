@@ -12,7 +12,7 @@ In this example, we demonstrate how to use the framework to experiment Bitcoin t
 \noindent
 \includegraphics[width=\textwidth]{img/examples/btce}
 
-The BTC-E fetchers get orders and transactions from \url{btc-e.com}, feed them to the market simulator. The market simulator generates transactions based on the bid and ask orders from the trader. The trader sends bid or ask orders to the market simulator based on the transactions received from the market simulator. The printer prints information about the market in the console.
+The BTC-E fetchers get orders and transactions from \url{http://btc-e.com}, feed them to the market simulator. The market simulator generates transactions based on the bid and ask orders from the trader. The trader sends bid or ask orders to the market simulator based on the transactions received from the market simulator. The printer prints information about the market in the console.
 
 \subsection{Forex Trading}
 
@@ -21,7 +21,7 @@ In this example, we demonstrate how to use the framework to experiment Forex tra
 \noindent
 \includegraphics[width=\textwidth]{img/examples/forex-live}
 
-In the component graph above, the fetcher gets live quotes data from \url{webrates.truefx.com}, and feeds them into the market simulator, trader and broker.
+In the component graph above, the fetcher gets live quotes data from \url{http://webrates.truefx.com}, and feeds them into the market simulator, trader and broker.
 
 The trader makes sell and buy decisions based on the quotes received from the fetcher, and send them to the broker.
 

@@ -13,24 +13,23 @@ In order to set up a basic market simulator we make the following
 simplifications:
 
 \begin{itemize}
-    \item traders can only trade one symbol
-    \item instruments are restricted to spot transactions
-        \footnote{Referring to \url{http://www.newyorkfed.org/fxc/volumesurvey/explanatory_notes.html},
-        instruments
-        are product types available on the forex market, namely spot transactions, outright
-        forwards, foreign exchange swaps and currency options. \textit{Spot transactions are single
-        outright transactions that involve the exchange of two currencies at a rate agreed
-        to on the date of the contract for value or delivery within two business days, including
-        U.S. dollar-Canadian dollar (USD-CAD) transactions delivered within one day).}
+  \item traders can only trade one symbol
+  \item instruments are restricted to spot transactions
+    \footnote{Referring to \url{http://www.newyorkfed.org/fxc/volumesurvey/explanatory_notes.html},
+    instruments
+    are product types available on the forex market, namely spot transactions, outright
+    forwards, foreign exchange swaps and currency options. \textit{Spot transactions are single
+    outright transactions that involve the exchange of two currencies at a rate agreed
+    to on the date of the contract for value or delivery within two business days.}
 
-        All the other instruments involve contracts over a longer period of time and are
-        currently not available.}
+    All the other instruments involve contracts over a longer period of time and are
+    currently not available.}
 
 
-    \item two counterparties are involved: nonfinancial customers and market makers
-        \footnote{\url{http://www.forextraders.com/market-maker-forex-brokers.html}}
-        (representing all financial customers)
-    \item one market maker per symbol
+  \item two counterparties are involved: nonfinancial customers and market makers
+    \footnote{\url{http://www.forextraders.com/market-maker-forex-brokers.html}}
+    (representing all financial customers)
+  \item one market maker per symbol
 \end{itemize}
 
 \subsection{Initial Parameters}
@@ -56,26 +55,19 @@ symbol as sketched in Algorithm~\ref{alg:initfunds}.
 \caption{Distribution of initial funds.}
 \label{alg:initfunds}
 \begin{algorithmic}[1]
-    \Statex Given: distribution of annual income for a specific country
-    \footnote{example distribution: \url{http://www.bfs.admin.ch/bfs/portal/en/index/themen/03/04/blank/key/lohnstruktur/lohnverteilung.html}}
-    \Statex
-    \ForAll{$s \in symbols$}
-        \State  $n \gets$ defined number of nonfinancial $traders$
-        \ForAll{$t \in traders(s)$}
-            \State $income \gets$ sample of income distribution
-            \State $funds(t) \gets income$
-        \EndFor
-        \State $funds(marketmaker(s)) \gets c \cdot \sum_{i=1}^n funds(traders(i))$
+  \Statex Given: distribution of annual income for a specific country
+  \footnote{example distribution: \url{http://www.bfs.admin.ch/bfs/portal/en/index/themen/03/04/blank/key/lohnstruktur/lohnverteilung.html}}
+  \Statex
+  \ForAll{$s \in symbols$}
+    \State  $n \gets$ defined number of nonfinancial $traders$
+    \ForAll{$t \in traders(s)$}
+      \State $income \gets$ sample of income distribution
+      \State $funds(t) \gets constant \times income$
     \EndFor
+    \State $funds(marketmaker(s)) \gets c \cdot \sum_{i=1}^n funds(traders(i))$
+  \EndFor
 \end{algorithmic}
 \end{algorithm}
-
-%1. define number of non-financial traders
-%
-%2. for each trader: assign initial funds as 1-year income according to a local income distribution (e.g. Switzerland: http://www.bfs.admin.ch/bfs/portal/en/index/themen/03/04/blank/key/lohnstruktur/lohnverteilung.html)
-%
-%3. compute market makers initial funds as sum(funds(all traders)) * scale
-%
 
 \subsection{Price Definition during Simulation}
 
@@ -93,29 +85,26 @@ It might occur that there are no limit orders and traders still want to trade at
 current market price. In order to provide a price definition in such extreme scenarios
 a market maker is introduced. Consider the following scenarios.
 
-%I might also have found a solution to "how is the price defined when there is nobody on the other side (offering when I want to buy or asking when I want to sell)?".
-%here http://www.forextraders.com/market-maker-forex-brokers.html I read that each market maker defines its own spread, which I understand the following way:
-%
 If there are only sellers and no buyers:
 \begin{itemize}
-    \item the \textit{ask} price is well defined as the lowest ask offer but the bid price is not
-    \item the market maker defines the \textit{bid} price by applying its own spread to the lowest ask price
-    \item selling at market price means selling to the market maker for the lowest \textit{ask price MINUS the spread}
+  \item the \textit{ask} price is well defined as the lowest ask offer but the bid price is not
+  \item the market maker defines the \textit{bid} price by applying its own spread to the lowest ask price
+  \item selling at market price means selling to the market maker for the lowest \textit{ask price MINUS the spread}
 \end{itemize}
 
 If there are only buyers and no sellers:
 \begin{itemize}
-    \item the \textit{bid} price is well defined as the highest bid offer but the ask price is not
-    \item the market maker defines the \textit{ask} price by applying its own spread to the highest bid price
-    \item buying at market price means buying from the market maker at the highest \textit{bid price PLUS the spread}
+  \item the \textit{bid} price is well defined as the highest bid offer but the ask price is not
+  \item the market maker defines the \textit{ask} price by applying its own spread to the highest bid price
+  \item buying at market price means buying from the market maker at the highest \textit{bid price + the spread}
 \end{itemize}
 
 If there are no limit orders at all:
 \begin{itemize}
-    \item ask and bid price stay constant
-    \item random traders hopefully prevent the simulation from freezing
-    \item optional: market maker could reduce spread, i.e. offer a higher bid price
-    or a lower ask price
+  \item ask and bid price stay constant
+  \item random traders hopefully prevent the simulation from freezing
+  \item optional: market maker could reduce spread, i.e. offer a higher bid price
+  or a lower ask price
 \end{itemize}
 
 In any case where the prices are defined, but there is not enough capacity to buy the
