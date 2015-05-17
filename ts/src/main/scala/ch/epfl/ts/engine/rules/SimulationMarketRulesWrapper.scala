@@ -57,4 +57,5 @@ class SimulationMarketRulesWrapper(val rules: MarketRules = new MarketRules()) e
         tradingPrices((marketAsk.withC, marketAsk.whatC)) = (currentPrice._1, newAskPrice)
     }
   }
+  override def initQuotes(q: Quote) = rules.initQuotes(q)
 }
