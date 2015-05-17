@@ -3,15 +3,6 @@
 
   var app = angular.module('myApp');
 
-  // app.factory('Trader', function() {
-  // function Trader(id, name) {
-  // this.id = id;
-  // this.name = name
-  // }
-  //
-  // return Trader;
-  // });
-
   angular.module('myApp').factory('traderList', function() {
     var service = {};
     var traders = {};

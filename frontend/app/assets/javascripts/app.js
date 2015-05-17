@@ -2,6 +2,6 @@
   'use strict';
 
   var app = angular.module('myApp', [ 'ngRoute', 'ui.bootstrap',
-      'highcharts-ng', 'ngTable' ]);
+      'highcharts-ng', 'ngTable', 'ngAnimate' ]);
 
 })();
