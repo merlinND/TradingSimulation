@@ -3,7 +3,7 @@
 @main("Welcome to Play") {
 
 
-<div data-ng-controller="OhlcGraphController">
+<div data-ng-controller="OhlcGraphController" class="container-fluid">
   <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="alert.close()">
     {{ alert.msg }}
   </alert>
