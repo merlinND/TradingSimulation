@@ -14,6 +14,9 @@ import scala.reflect.ClassTag
 import net.liftweb.json._
 import net.liftweb.json.Serialization.write
 import com.typesafe.config.ConfigFactory
+import utils.TradingSimulationActorSelection
+import utils.MapSerializer
+import utils.DoubleSerializer
 
 /**
  * Receives Messages of a given Class Tag from the Trading Simulation backend (ts)
@@ -22,15 +25,11 @@ import com.typesafe.config.ConfigFactory
  * Note: we are using lift-json since there is no easy way to use Play's json
  * library with generic type parameters.
  */
-class MessageToJson[T <: AnyRef: ClassTag](out: ActorRef) extends Actor {
+class MessageToJson[T <: AnyRef: ClassTag](out: ActorRef, actorSelection: String) extends Actor {
   val clazz = implicitly[ClassTag[T]].runtimeClass
-  implicit val formats = DefaultFormats
+  implicit val formats = DefaultFormats + MapSerializer + DoubleSerializer
 
-  val config = ConfigFactory.load()
-  val name = config.getString("akka.backend.systemName")
-  val hostname = config.getString("akka.backend.hostname")
-  val port = config.getString("akka.backend.port")
-  val actors = context.actorSelection("akka.tcp://" + name + "@" + hostname + ":" + port + "/user/*")
+  val actors = new TradingSimulationActorSelection(context, actorSelection).get
 
   actors ! ComponentRegistration(self, clazz, "frontend" + clazz)
 

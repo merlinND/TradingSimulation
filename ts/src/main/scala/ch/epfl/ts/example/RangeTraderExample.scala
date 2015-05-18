@@ -15,9 +15,9 @@ import ch.epfl.ts.traders.TraderCompanion
 object RangeTraderExample extends AbstractTraderShowcaseExample {
 
   val useLiveData = false
-  val replaySpeed = 4000.0
+  val replaySpeed = 86400.0
   val startDate = "201304"
-  val endDate = "201304"
+  val endDate = "201404"
   
   val symbol = (Currency.EUR, Currency.CHF)
 
@@ -26,7 +26,7 @@ object RangeTraderExample extends AbstractTraderShowcaseExample {
     val initialFunds: Wallet.Type = Map(Currency.CHF -> 10000000.0)
     new StrategyParameters(
       RangeTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
-      RangeTrader.SYMBOL -> CurrencyPairParameter(Currency.USD, Currency.CHF),
+      RangeTrader.SYMBOL -> CurrencyPairParameter(symbol),
       RangeTrader.VOLUME -> RealNumberParameter(10.0),
       RangeTrader.ORDER_WINDOW -> CoefficientParameter(0.20)
     )

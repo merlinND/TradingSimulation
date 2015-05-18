@@ -18,26 +18,24 @@ import ch.epfl.ts.traders.Trader
 import ch.epfl.ts.engine.TraderMessage
 import ch.epfl.ts.engine.GetTraderParameters
 import ch.epfl.ts.engine.TraderIdentity
+import utils.TradingSimulationActorSelection
 
 class TraderParameters(out: ActorRef) extends Actor {
   implicit val formats = DefaultFormats
 
-  val config = ConfigFactory.load()
-  val name = config.getString("akka.backend.systemName")
-  val hostname = config.getString("akka.backend.hostname")
-  val port = config.getString("akka.backend.port")
-  val actors = context.actorSelection("akka.tcp://" + name + "@" + hostname + ":" + port + "/user/*")
+  val traders = new TradingSimulationActorSelection(context,
+    ConfigFactory.load().getString("akka.backend.tradersActorSelection")).get
 
-  actors ! ComponentRegistration(self, classOf[Trader], "frontend" + classOf[Trader])
-  actors ! ComponentRegistration(self, classOf[TraderIdentity], "frontend" + classOf[TraderIdentity])
+  traders ! ComponentRegistration(self, classOf[Trader], "frontend" + classOf[Trader])
+  traders ! ComponentRegistration(self, classOf[TraderIdentity], "frontend" + classOf[TraderIdentity])
 
   def receive() = {
     case "getAllTraderParameters" =>
-      actors ! GetTraderParameters
-    
+      traders ! GetTraderParameters
+
     case t: TraderIdentity =>
       out ! write(new SimpleTraderIdentity(t))
-    
+
     case _ =>
   }
 
@@ -45,6 +43,6 @@ class TraderParameters(out: ActorRef) extends Actor {
 
 case class SimpleTraderIdentity(name: String, id: Long, strategy: String, parameters: List[String]) {
   def this(t: TraderIdentity) = {
-    this(t.name, t.uid, t.strategy.toString(), t.parameters.parameters.map{ case (k,v) => k + ": " + v }.toList)
+    this(t.name, t.uid, t.strategy.toString(), t.parameters.parameters.map { case (k, v) => k + ": " + v.value() }.toList)
   }
 }
