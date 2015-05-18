@@ -127,65 +127,56 @@ maker to provide the respective bid price and eventually spend all its funds at 
 overpriced offers.
 
 \subsection{Example and Proof of Concept}
-The example \texttt{FullMarketSimulationWithCustomSetup} implements and illustrates the 
+The example \texttt{FullMarketSimulationWithCustomSetup} implements and illustrates the
 use of what was described above. It allows to choose a local fund distribution with user-
 defined scaling factors to scale the samples drawn from this distribution. A map of trading
-strategies and number of instances serves as the user-defined trader distribution. 
-Per strategy, there are always two ``symmetric'' instances created, one with funds in 
+strategies and number of instances serves as the user-defined trader distribution.
+Per strategy, there are always two ``symmetric'' instances created, one with funds in
 currency 1 but no funds in currency 2 and the other way round.
 The market maker is the only trader that is initialized with funds in both currencies
 (as the total amount of money on the market of each currency).
 
 Before the simulation is started, a short period of historical data is streamed to allow
 all agents to initialize their strategies and also to initialize the trading prices.
-When we switch to full simulation, the prices of the last quote are used to guarantee a
-smooth transition.
+When we switch from initial seeding (using historical data) to ``full'' simulation,
+the price of the last quote is used to guarantee a smooth transition.
 
-In an experimental scenario, we tested the impact of the market maker. 
+In an experimental scenario, we tested the impact of the market maker.
 Figure~\ref{fig:mm-sells} shows the price development in a market where all agents are
 only allowed to place bid orders and the market maker is to cover all the demand.
 As expected, the price monotonically increases.
 
 \begin{figure}[h]
-\center
-\includegraphics[width=0.9\textwidth]{img/examples/simulation-mad-buys-mm-sells.png} 
-\label{fig:mm-sells}
-\caption{Rising ask price due to market maker's spread in a buyers-only market.}
+  \center
+  \includegraphics[width=0.9\textwidth]{img/examples/simulation-mad-buys-mm-sells.png}
+  \caption{Rising ask price due to market maker's spread in a buyers-only market.}
+  \label{fig:mm-sells}
 \end{figure}
 
 Figure~\ref{fig:mm-buys} illustrates the counter-experiment. It shows price development
-in a market where all agents are only allowed to place ask orders and the market maker 
+in a market where all agents are only allowed to place ask orders and the market maker
 is to buy all the offers. Consequently, the price monotonically decreases.
 
 \begin{figure}[h]
-\center
-\includegraphics[width=0.9\textwidth]{img/examples/simulation-mad-sells-mm-buys.png} 
-\label{fig:mm-buys}
-\caption{Falling bid price due to market maker's spread in a sellers-only market.}
+  \center
+  \includegraphics[width=0.9\textwidth]{img/examples/simulation-mad-sells-mm-buys.png}
+  \caption{Falling bid price due to market maker's spread in a sellers-only market.}
+  \label{fig:mm-buys}
 \end{figure}
 
 In a market where agents are allowed to place any type of order, the price may oscillate
-and is defined by demand and offer within the system (see Figure~\ref{fig:both}). 
+and is defined by demand and offer within the system (see Figure~\ref{fig:both}).
 Still, there might occur situations where the market maker has impact due to a lack of
 bid or ask orders as can be seen in the left and right part of the figure.
 
 \begin{figure}[h]
-\center
-\includegraphics[width=0.9\textwidth]{img/examples/simulation-sell-and-buy.png} 
-\label{fig:both}
-\caption{Oscillating ask price in a full market simulation.}
+  \center
+  \includegraphics[width=0.9\textwidth]{img/examples/simulation-sell-and-buy.png}
+  \caption{Oscillating ask price in a full market simulation.}
+  \label{fig:both}
 \end{figure}
 
-\subsection{Outline}
-The software developed in this project is designed in a modular way. Hence, it is open
-to adding new strategies and components. Extending the latter is particularly 
-promising since the complexity of a real market is by far not fully covered yet. The next
-important components are central banks. Since they fix interest rates on currencies 
-they function as important indicators for strategies. Continuously implementing more
-real actors will make the simulation more realistic and bring it closer to the goal 
-of reflecting the actual market.
-
-\subsection{Outline}
+\subsection{Future work}
 The software developed in this project is designed in a modular way. Hence, it is open
 to adding new strategies and components. Extending the latter is particularly
 promising since the complexity of a real market is by far not fully covered yet. The next
@@ -195,10 +186,7 @@ real actors will make the simulation more realistic and bring it closer to the g
 of reflecting the actual market.
 
 
-%
-%\subsection{Brain Storm}
-%
-%Market Simulation Research
+%Market Simulation Research sources
 %
 %[1] http://www.tpc.org/tpc_documents_current_versions/pdf/tpce-v1.14.0.pdf
 %[2] www.swissquote.com
@@ -229,16 +217,8 @@ of reflecting the actual market.
 %
 %[13] explanation of market makers
 %http://www.forextraders.com/market-maker-forex-brokers.html
-%
 %p.47
 %- Entity Relationships
 %- Trade Types
 %- run historical data for 300 business days before simulation starts
-%
-%Wanted:
-%- trader initial funds -> half of annual income according to [12]?
-%- broker initial funds (for leverage trades)
-%- market maker funds
-%- number of traders per currency pair
-%- one market maker per currency pair?
 
