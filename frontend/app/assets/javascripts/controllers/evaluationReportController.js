@@ -35,8 +35,12 @@
               counts : [], // hide page size
               total : evaluationReports.length,
               getData : function($defer, params) {
-                var orderedData = params.sorting() ? $filter('orderBy')(evaluationReports,
-                    params.orderBy()) : evaluationReports;
+                var data = [];
+                for ( var report in evaluationReports) {
+                  data.push(evaluationReports[report]);
+                }
+                var orderedData = params.sorting() ? $filter('orderBy')(data,
+                    params.orderBy()) : data;
                 $defer.resolve(orderedData);
               }
             });

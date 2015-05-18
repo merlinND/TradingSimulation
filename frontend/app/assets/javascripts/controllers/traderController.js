@@ -48,8 +48,12 @@
               counts : [], // hide page size
               total : traders.length,
               getData : function($defer, params) {
+                var data = [];
+                for ( var report in traders) {
+                  data.push(traders[report]);
+                }
                 var orderedData = params.sorting() ? $filter('orderBy')(
-                    traders, params.orderBy()) : traders;
+                    data, params.orderBy()) : data;
                 $defer.resolve(orderedData);
               }
             });
