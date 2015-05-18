@@ -29,7 +29,7 @@ object DemoExample extends AbstractOptimizationExample {
   val useLiveData = false
   val replaySpeed = 86400.0
   val startDate = "201304"
-  val endDate = "201404"
+  val endDate = "201305"
   
   // Evaluation
   override val evaluationPeriod = (10 seconds)

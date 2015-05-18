@@ -12,7 +12,7 @@ import ch.epfl.ts.traders.TraderCompanion
  * Provides helper methods for paralllel strategy optimization.
  */
 object StrategyOptimizer {
-	private type GridPoint = Map[String, Parameter]
+  private type GridPoint = Map[String, Parameter]
 
   /**
    *
@@ -35,14 +35,16 @@ object StrategyOptimizer {
     val dimensions = parametersToOptimize.size
     val maxPerAxis = Math.pow(maxInstances.toDouble, 1.0 / dimensions.toDouble).ceil.toInt
 
-    if(maxInstances < dimensions) {
+    if (maxInstances < dimensions) {
       throw new IllegalArgumentException("Given " + maxInstances + " instances, we cannot optimize for " + parametersToOptimize.size + " parameters")
     }
 
-
     val grid = generateGrid(strategyToOptimize, parametersToOptimize, maxPerAxis)
     val parameterizations = generateParametersWith(grid, otherParameterValues)
-    parameterizations.foreach(p => strategyToOptimize.verifyParameters(p))
+    parameterizations.foreach(p => {
+      strategyToOptimize.verifyParameters(p)
+      println(p)
+    })
 
     parameterizations
   }
@@ -62,12 +64,11 @@ object StrategyOptimizer {
   }
 
   /** Generate all points of our `dimensions`-dimensional grid */
-  private def subgrid(l: List[(String, Set[Parameter])]): List[GridPoint]= {
-    if(l.isEmpty) List()
-    else if(l.length == 1) {
+  private def subgrid(l: List[(String, Set[Parameter])]): List[GridPoint] = {
+    if (l.isEmpty) List()
+    else if (l.length == 1) {
       l.head._2.toList.map(v => Map(l.head._1 -> v))
-    }
-    else {
+    } else {
       // Enumerate all subgrids from one axis
       val key = l.head._1
       val values = l.head._2
@@ -86,6 +87,6 @@ object StrategyOptimizer {
   private def generateParametersWith(grid: List[GridPoint], otherParameterValues: Map[String, Parameter]): List[StrategyParameters] = {
     val merged = grid.map(m => m ++ otherParameterValues)
 
-    merged.map(m => { new StrategyParameters(m.toList : _*) })
+    merged.map(m => { new StrategyParameters(m.toList: _*) })
   }
 }

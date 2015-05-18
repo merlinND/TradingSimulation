@@ -24,42 +24,6 @@
              */
             $scope.showTransactionsOnGraphFor = function(trader) {
               ohlcGraphTransactionFlags.watchTrader(trader);
-//              var flagsData = [];
-//              transactions.map(function(t) {
-//                if (t.buyerId == trader.id || t.sellerId == trader.id) {
-//                  var title = (t.buyerId == trader.id) ? 'B' : 'S';
-//                  flagsData.push({
-//                    x : t.timestamp,
-//                    title : title
-//                  });
-//                }
-//              });
-//
-//              var flagSeriesId = "activeTraderFlags";
-//              var flagSeries = chartSeries.filter(function(series) {
-//                return series.id == flagSeriesId;
-//              })[0];
-//
-//              if (!flagSeries) {
-//                flagSeries = {
-//                  type : 'flags',
-//                  id : flagSeriesId,
-//                  name: "Transactions of " + trader.name,
-//                  shape : 'circlepin',
-//                  color : '#df691a',
-//                  fillColor : '#df691a',
-//                  onSeries : chartSeries[0].id, // TODO: handle multiple series
-//                  style : {
-//                    color : 'white'
-//                  },
-//                  width: 16,
-//                  data : []
-//                };
-//                chartSeries.push(flagSeries);
-//              }
-//
-//              flagSeries.data = flagsData;
-
             };
 
             /**
