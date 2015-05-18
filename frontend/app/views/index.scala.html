@@ -13,53 +13,54 @@
 
 <tabset >
   	<tab heading="Transactions" data-ng-controller="TransactionController">
-	    <table datatable="" class="table table-striped">
-		    <thead>
-		    <tr>
-		        <th>Time</th>
-		        <th>What Currency</th>
-		        <th>With Currency</th>
-		        <th>Price</th>
-		        <th>Volume</th>
-		        <th>Buyer</th>
-		        <th>Seller</th>
-		    </tr>
-		    </thead>
-		    <tbody>
-	        <tr data-ng-repeat="t in transactions">
-	            <td>{{ t.timestamp | date:'MM.dd.yyyy HH:mm:ss' }}</td>
-	            <td>{{ t.whatC.name | uppercase }}</td>
-	            <td>{{ t.withC.name | uppercase }}</td>
-	            <td>{{ t.price }}</td>
-	            <td>{{ t.volume }}</td>
-	            <td>{{ t.buyerId }}</td>
-	            <td>{{ t.sellerId }}</td>
+	    <table ng-table="tableParams" class="table table-striped">
+	        <tr data-ng-repeat="t in $data" class="animate--fade-in">
+	            <td data-title="'Time'" sortable="'timestamp'">{{ t.timestamp | date:'MM.dd.yyyy HH:mm:ss' }}</td>
+	            <td data-title="'Symbol'" sortable="['whatC.s', 'withC.s']">{{ t.whatC.s | uppercase }} / {{ t.withC.s | uppercase }}</td>
+	            <td data-title="'Price'" sortable="'price'">{{ t.price }}</td>
+	            <td data-title="'Volume'" sortable="'volume'">{{ t.volume }}</td>
+	            <td data-title="'Buyer'" sortable="'buyerId'">{{ t.buyerId }}</td>
+	            <td data-title="'Seller'" sortable="'sellerId'">{{ t.sellerId }}</td>
 	        </tr>
-		    </tbody>
 	  	</table>
   	</tab>
+  	
+  	<tab heading="Statistics" data-ng-controller="EvaluationReportController">
+  		<small>All currencies converted to {{ referenceCurrency }}</small>
+	    <table ng-table="tableParams" class="table table-striped">
+	        <tr data-ng-repeat="report in $data track by report.traderId" class="animate--fade-in">
+	            <td data-title="'ID'" sortable="'traderId'">{{ report.traderId }}</td>
+	            <td data-title="'Name'" sortable="'traderName'">{{ report.traderName }}</td>
+	            <td data-title="'Initial funds'" sortable="'initial'">{{ report.initial | number: 2 }}</td>
+	            <td data-title="'Current funds'" sortable="'current'">{{ report.current | number: 2 }}</td>
+	            <td data-title="'Total returns'" sortable="'totalReturns'">{{ report.totalReturns | number: 4 }}</td>
+	            <td data-title="'Volatility'" sortable="'volatility'">{{ report.volatility | number: 2 }}</td>
+	            <td data-title="'Drawdown'" sortable="'drawdown'">{{ report.drawdown | number: 2 }}</td>
+	            <td data-title="'Sharpe ratio'" sortable="'sharpeRatio'">{{ report.sharpeRatio | number: 2 }}</td>
+	            <td data-title="'Wallet contents'">
+	            	<ul>
+	            		<li data-ng-repeat="(currency, value) in report.wallet">{{ currency }} : {{ value | number: 2 }}</li>
+	            	</ul>
+	            </td>
+	        </tr>
+	  	</table>
+  	</tab>
+  	
   	<tab heading="Traders" data-ng-controller="TraderController">
-	    <table datatable="" class="table table-striped">
-		    <thead>
-		    <tr>
-		        <th>ID</th>
-		        <th>Name</th>
-		        <th>Strategy</th>
-		        <th>Parameters</th>
-		    </tr>
-		    </thead>
-		    <tbody>
-	        <tr data-ng-repeat="trader in traders track by trader.id">
-	            <td>{{ trader.id }}</td>
-	            <td>{{ trader.name }}</td>
-	            <td>{{ trader.strategy }}</td>
-	            <td>
+	    <table ng-table="tableParams" class="table table-striped">
+	        <tr data-ng-repeat="trader in $data track by trader.id" class="animate--fade-in">
+	            <td data-title="'ID'" sortable="'id'">{{ trader.id }}</td>
+	            <td data-title="'Name'" sortable="'name'">{{ trader.name }}</td>
+	            <td data-title="'Strategy'" sortable="'strategy'">{{ trader.strategy }}</td>
+	            <td data-title="'Parameters'">
 	            	<ul>
 	            		<li data-ng-repeat="param in trader.parameters">{{ param }}</li>
 	            	</ul>
 	            </td>
+	            <td data-title="'Actions'">
+	            	<a href="" class="btn btn-primary btn-xs" ng-click="showTransactionsOnGraphFor(trader)">Show transactions on graph</a>
+	            </td>
 	        </tr>
-		    </tbody>
 	  	</table>
   	</tab>
 </tabset>

@@ -115,6 +115,8 @@ trait TraderCompanion extends Serializable {
    */
   protected implicit def concreteTraderTag: ClassTag[ConcreteTrader]
   
+  override def toString = concreteTraderTag.runtimeClass.getSimpleName
+  
   /**
    * Check that the given parameters are valid with respect to what is declared by this strategy,
    * and create a new parameterized Trader if it is the case.

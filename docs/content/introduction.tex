@@ -1,0 +1,71 @@
+%!TEX root = ../guide.tex
+
+\section{Introduction}
+\label{sec:1}
+
+This section introduces the functionalities, use cases and architecture of the TradingSimuation framework.
+
+\subsection{What's TradingSimulation}
+
+TradingSimulation is an open source\footnote{\url{https://github.com/merlinND/TradingSimulation}} algorithmic trading framework based on Scala\footnote{\url{http://scala-lang.org}}. The framework provides a lot of standardized components, which can be easily composed by the programmers with a few lines of Scala code to do various experiments related to algorithmic trading.
+
+Following are a list of use cases of TradingSimulation:
+
+\begin{itemize}
+\item Simulation of multiple traders in a virtual market
+\item Evaluation of a trading algorithm against live Forex data
+\item Evaluation of a trading algorithm against live Bitcoin data
+\item Evaluation of a trading algorithm based on historical market data
+\end{itemize}
+
+\subsection{The Architecture of TradingSimulation}
+
+The design of TradingSimulation is based on the \emph{Pipes and Filters}\footnote{\url{http://www.cs.olemiss.edu/~hcc/csci581oo/notes/pipes.html}} architectural pattern, which results in a very high level of modularity, extensibility and reusability of the framework.
+
+In the terminology of \emph{Pipes and Filters}, the standard components provided by the TradingSimulation framework are called \emph{filters}. The programmers can select appropriate filters and connect them properly according to the specific experiment purpose. Each configuration of filters is called a \emph{filter graph}.
+
+Figure~\ref{fig-filter-graph} is an example filter graph of TradingSimulation. In the filter graph, there are six inter-connected filters.
+
+
+\begin{figure}
+  \centering
+  \begin{tikzpicture}[every node/.style={rectangle, draw, font=\small, text centered, rounded corners, node distance=3cm, minimum height=1cm, minimum width=2cm}]
+    \node (Replay) {Replay};
+    \node [right of=Replay] (Market) {Market};
+    \node [right of=Market] (BackLoop) {BackLoop};
+    \node [right of=BackLoop] (OHLC) {OHLC};
+    \node [below of=BackLoop] (SobiTrader) {SobiTrader};
+    \node [below of=Market] (Display) {Display};
+
+    \graph [grow right=3cm] {
+      (Replay) -> (Market) -> { (BackLoop) -> { (OHLC) -> (SobiTrader), (SobiTrader) }, (Display) };
+      { (SobiTrader) } -> (Market);
+    };
+  \end{tikzpicture}
+  \centering
+  \caption{A Filter Graph in TradingSimulation}
+  \label{fig-filter-graph}
+\end{figure}
+
+The functions of the filters in Figure~\ref{fig-filter-graph} are explained as follows:
+
+\begin{itemize}
+\item{Replay}: Read historical market order data from file system and send them one by one at a constant rate to connected filters. Replay is also called \emph{source filter}, as it doesn't have any input from other filters.
+\item{Market}: Receive market orders, create transactions from matching bid and ask orders according to the configured market rules, and send transaction data to connected filters.
+\item {BackLoop}: It's a utility filter, which sends everything it receives from input to output.
+\item {OHLC}: It receives transaction data and send the prices of Opening, Highest, Lowest and Closing once a time in a configured interval.
+\item {Display}: As its name suggests, this filter shows the data it receives in the terminal. It's also called \emph{sink filter}, as it doesn't send any data to other filters.
+\item {SobiTrader}: This filter is a trader who employs the \emph{Static Order Book Imbalance}(SOBI) trading strategy. It receives market data such as orders, transactions and OHLC, and sends bid or ask orders to the \emph{Market}.
+\end{itemize}
+
+\subsection{A Simple Example}
+
+Following code snippet is intended to give you some feel on how to create and run a filter graph in TradingSimulation.
+
+\lstinputlisting[language=Scala]{code/simple.scala}
+
+As you see in the code, it first creates a component builder, then uses the builder to create various  components, connects the components, and finally starts the graph.
+
+All usages of TradingSimulation have the same form of code as shown in the code snippet, the difference lies in what components are created, what parameters are configured for components, and how components are connected.
+
+For more and complete examples, please check our code repository here\footnote{\url{https://github.com/merlinND/TradingSimulation/tree/master/ts/src/main/scala/ch/epfl/ts/example}}.

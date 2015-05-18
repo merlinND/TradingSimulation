@@ -3,42 +3,47 @@
 
   var app = angular.module('myApp');
 
-  // app.factory('Trader', function() {
-  // function Trader(id, name) {
-  // this.id = id;
-  // this.name = name
-  // }
-  //
-  // return Trader;
-  // });
+  /**
+   * Service to build a collection of known traders and their parameters
+   */
+  angular.module('myApp').factory('traderList',
+      [ '$rootScope', function($rootScope) {
+        var service = {};
+        var traders = {};
 
-  angular.module('myApp').factory('traderList', function() {
-    var service = {};
-    var traders = {};
-
-    var ws = new WebSocket('ws://localhost:9000/trader/parameters');
-
-    ws.onmessage = function(event) {
-      var traderParameters = JSON.parse(event.data);
-      console.log(traderParameters);
-      traders[traderParameters.id] = traderParameters;
-    };
-
-    service.get = function() {
-      return traders;
-    };
-
-    service.add = function(traderId) {
-      if (!traders[traderId]) {
-        traders[traderId] = {
-          id : traderId
+        /**
+         * Listens to traderParameter messages and updates the trader in the
+         * collection of known traders with the parameter
+         */
+        var ws = new WebSocket('ws://localhost:9000/trader/parameters');
+        ws.onmessage = function(message) {
+          var traderParameters = JSON.parse(message.data);
+          traders[traderParameters.id] = traderParameters;
+          $rootScope.$broadcast('traders:updated', traderParameters);
         };
-        ws.send('getAllTraderParameters');
-      }
-      return traders;
-    };
 
-    return service;
-  });
+        /**
+         * Returns the collection of known traders
+         */
+        service.get = function() {
+          return traders;
+        };
+
+        /**
+         * Adds a new trader to the collection of known traders If the trader is
+         * not already known, it asks for its parameters
+         */
+        service.add = function(traderId) {
+          if (!traders[traderId]) {
+            traders[traderId] = {
+              id : traderId
+            };
+            ws.send('getAllTraderParameters');
+          }
+          return traders;
+        };
+
+        return service;
+      } ]);
 
 })();

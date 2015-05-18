@@ -19,9 +19,9 @@ import ch.epfl.ts.traders.TraderCompanion
 object MovingAverageTraderExample extends AbstractTraderShowcaseExample {
 
   val useLiveData = false
-  val replaySpeed = 4000.0
+  val replaySpeed = 86400.0
   val startDate = "201304"
-  val endDate = "201304"
+  val endDate = "201504"
   
   val symbol = (Currency.EUR, Currency.CHF)
 
