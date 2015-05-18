@@ -43,6 +43,6 @@ class TraderParameters(out: ActorRef) extends Actor {
 
 case class SimpleTraderIdentity(name: String, id: Long, strategy: String, parameters: List[String]) {
   def this(t: TraderIdentity) = {
-    this(t.name, t.uid, t.strategy.toString(), t.parameters.parameters.map { case (k, v) => k + ": " + v }.toList)
+    this(t.name, t.uid, t.strategy.toString(), t.parameters.parameters.map { case (k, v) => k + ": " + v.value() }.toList)
   }
 }
