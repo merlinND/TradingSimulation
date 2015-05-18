@@ -58,7 +58,7 @@
                   },
                   buttons : [ {
                     type : 'day',
-                    count : 777,
+                    count : 7,
                     text : '1 week'
                   }, {
                     type : 'month',
@@ -108,7 +108,7 @@
               var ohlcSeries = getChartSeriesById(id);
 
               if (!ohlcSeries) {
-                initOhlcSeries(id, name)
+                ohlcSeries = initOhlcSeries(id, name);
               }
 
               $rootScope.$apply(function() {
@@ -136,7 +136,7 @@
              * series is set to visible
              */
             function initOhlcSeries(id, name) {
-              ohlcSeries = {
+              var ohlcSeries = {
                 type : 'candlestick',
                 name : name,
                 id : id,
@@ -149,6 +149,8 @@
               }
 
               chartSeries.push(ohlcSeries);
+              
+              return ohlcSeries;
             }
 
             /**
