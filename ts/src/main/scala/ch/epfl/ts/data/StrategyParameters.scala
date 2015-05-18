@@ -199,12 +199,15 @@ object CoefficientParameter extends ParameterTrait {
    */
   def isValid(v: Double): Boolean = (v >= 0.0) && (v <= 1.0)
 
+  /** Iterative grid refinement */
+  val nLevels = 4
   def validValues: Iterable[Double] = {
-	  // TODO: handle user-selected resolution for these values
-    val resolution = 0.1
-    for {
-      n <- 0 to (1 / resolution).toInt
-    } yield (n * resolution)
+    def atResolution(resolution: Double): Stream[Double] =
+      Stream.range(0, (1.0 / resolution).toInt + 1).map(x => x * resolution)
+
+    (1 to nLevels).foldRight(Stream.empty[Double])((k, acc) => {
+      atResolution(Math.pow(10.0, -k.toDouble)) #::: acc
+    })
   }
 
   def defaultValue = 1.0
