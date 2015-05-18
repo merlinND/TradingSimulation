@@ -202,9 +202,14 @@ object CoefficientParameter extends ParameterTrait {
   /** Iterative grid refinement */
   val nLevels = 4
   def validValues: Iterable[Double] = {
-    def atResolution(resolution: Double): Stream[Double] =
-      Stream.range(0, (1.0 / resolution).toInt + 1).map(x => x * resolution)
-
+    def atResolution(resolution: Double): Stream[Double] = {
+      val stream = Stream.range(0, (1.0 / resolution).toInt + 1)
+      // Filter redundant values that were included at the previous resolution
+      // TODO: double-check the logic
+      stream.filter(x => {
+        (resolution == 0.1) || (x % 10) != 0
+      }).map(x => x * resolution)
+    }
     (1 to nLevels).foldRight(Stream.empty[Double])((k, acc) => {
       atResolution(Math.pow(10.0, -k.toDouble)) #::: acc
     })
