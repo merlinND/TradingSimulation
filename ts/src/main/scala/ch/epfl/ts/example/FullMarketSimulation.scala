@@ -26,7 +26,6 @@ import java.util.Timer
 import ch.epfl.ts.engine.rules.{SimulationMarketRulesWrapper, FxMarketRulesWrapper}
 import ch.epfl.ts.traders.MarketMakerTrader
 import ch.epfl.ts.component.utils.Printer
-import ch.epfl.ts.traders.MMwithWallet
 
 /**
  * Market simulation with first reading historical data and then running simulation on its own.
@@ -70,15 +69,10 @@ object FullMarketSimulation {
       MarketMakerTrader.ORDER_VOLUME -> NaturalNumberParameter(10),
       MarketMakerTrader.CURRENCY_PAIR -> new CurrencyPairParameter(Currency.EUR, Currency.CHF))
     
-    val parameters3 = new StrategyParameters(
-        MMwithWallet.INITIAL_FUNDS -> WalletParameter(Map(Currency.CHF -> 10000.0, Currency.EUR -> 10000.0)),
-        MMwithWallet.SYMBOL -> new CurrencyPairParameter(Currency.EUR, Currency.CHF),
-        MMwithWallet.SPREAD -> new RealNumberParameter(0.1))
-
     val tId2 = 100L
 
 //    val marketMaker = MarketMakerTrader.getInstance(tId2, List(marketId), parameters2, "OneMarketMakerTrader")
-    val marketMaker = MMwithWallet.getInstance(tId2, List(marketId), parameters3, "WalletMarketMakerTrader")
+    val marketMaker = MarketMakerTrader.getInstance(tId2, List(marketId), parameters2, "MarketMakerTrader")
     addConsument(classOf[Quote], marketMaker)
     addConsument(classOf[TheTimeIs], marketMaker)
 

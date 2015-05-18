@@ -46,37 +46,41 @@ import ch.epfl.ts.engine.MarketEmpty
 import ch.epfl.ts.engine.MarketMakerNotification
 
 /**
- * MMwithWallet companion object
+ * MarketMaker companion object
  */
-object MMwithWallet extends TraderCompanion {
-  type ConcreteTrader = MMwithWallet
-  override protected val concreteTraderTag = scala.reflect.classTag[MMwithWallet]
+object MarketMaker extends TraderCompanion {
+  type ConcreteTrader = MarketMaker
+  override protected val concreteTraderTag = scala.reflect.classTag[MarketMaker]
 
   /** Currency pair to trade */
   val SYMBOL = "Symbol"
   /** Market maker specific spread */
   val SPREAD = "spread"
+  /** Market maker is wallet aware */
+  val WALLET = "wallet"
 
   override def strategyRequiredParameters = Map(
     SYMBOL -> CurrencyPairParameter)
 
   override def optionalParameters = Map(
-    SPREAD -> RealNumberParameter)
+    SPREAD -> RealNumberParameter,
+    WALLET -> BooleanParameter)
 }
 
 /**
  * "Simply add your spread" strategy.
  */
-class MMwithWallet(uid: Long, marketIds: List[Long], parameters: StrategyParameters)
+class MarketMaker(uid: Long, marketIds: List[Long], parameters: StrategyParameters)
   extends Trader(uid, marketIds, parameters) with ActorLogging {
 
   import context.dispatcher
 
-  override def companion = MMwithWallet
+  override def companion = MarketMaker
 
-  val symbol = parameters.get[(Currency, Currency)](MMwithWallet.SYMBOL)
+  val symbol = parameters.get[(Currency, Currency)](MarketMaker.SYMBOL)
   val (whatC, withC) = symbol
-  val spread = parameters.getOrElse[Double](MMwithWallet.SPREAD, 0.0) // spread = 0 means that the market maker has no interest
+  val spread = parameters.getOrElse[Double](MarketMaker.SPREAD, 0.0) // spread = 0 means that the market maker has no interest
+  val wallet = parameters.getOrElse[Boolean](MarketMaker.WALLET, false)
   /**
    * Indicators needed by the Moving Average Trader
    */
@@ -117,7 +121,7 @@ class MMwithWallet(uid: Long, marketIds: List[Long], parameters: StrategyParamet
     case ConfirmRegistration => {
       broker = sender()
       registered = true
-      log.debug("MMwithWallet: Broker confirmed")
+      log.debug("MarketMaker: Broker confirmed")
     }
 
     case msg: MarketEmpty => if (registered){
@@ -140,8 +144,8 @@ class MMwithWallet(uid: Long, marketIds: List[Long], parameters: StrategyParamet
     case eb: ExecutedBidOrder    => if (eb.uid == uid) log.debug("executed bid volume: " + eb.volume) else println("eb WRONG uid")
     case ea: ExecutedAskOrder    => if (ea.uid == uid) log.debug("executed ask volume: " + ea.volume) else println("ea WRONG uid")
 
-    case whatever if !registered => println("MMwithWallet: received while not registered [check that you have a Broker]: " + whatever)
-    case whatever                => println("MMwithWallet: received unknown : " + whatever)
+    case whatever if !registered => println("MarketMaker: received while not registered [check that you have a Broker]: " + whatever)
+    case whatever                => println("MarketMaker: received unknown : " + whatever)
   }
   def decideOrder(action: Int, whatC: Currency, withC: Currency, volume: Double, price: Double) = {
     implicit val timeout = new Timeout(askTimeout)
@@ -158,23 +162,23 @@ class MMwithWallet(uid: Long, marketIds: List[Long], parameters: StrategyParamet
 //        val (bidPrice, askPrice) = tradingPrices(whatC, withC)
         
         if(action == NEED_TO_BUY) {
-          if (cashWith >= (volume * price)) {
+          if (cashWith >= (volume * price) || !wallet) {
             placeOrder(LimitBidOrder(oid, uid, currentTimeMillis, whatC, withC, volume, price * (1 - spread)))
           } else {
-            println("MMwithWallet: NOT ENOUGH CASH TO BUY!!!")
+            println("MarketMaker: NOT ENOUGH CASH TO BUY!!!")
           }
         } else if (action == NEED_TO_SELL) {
-          if (holdings >= volume) {
+          if (holdings >= volume || !wallet) {
             placeOrder(LimitAskOrder(oid, uid, currentTimeMillis, whatC, withC, volume, price * (1 + spread)))
           } else {
-            println("MMwithWallet: NOT ENOUGH HOLDINGS TO SELL!!!")
+            println("MarketMaker: NOT ENOUGH HOLDINGS TO SELL!!!")
           }
         }
       }
     }
     future onFailure {
       case p => {
-        log.debug("MMwithWallet: Getting funds failed : " + p)
+        log.debug("MarketMaker: Getting funds failed : " + p)
         stop
       }
     }
@@ -190,10 +194,10 @@ class MMwithWallet(uid: Long, marketIds: List[Long], parameters: StrategyParamet
       // Transaction has been accepted by the broker (but may not be executed : e.g. limit orders) = OPEN Positions
       case ao: AcceptedOrder => log.debug("Accepted order costCurrency: " + order.costCurrency() + " volume: " + ao.volume)
       case _: RejectedOrder => {
-        log.debug("MMwithWallet: order failed")
+        log.debug("MarketMaker: order failed")
       }
       case _ => {
-        log.debug("MMwithWallet: unknown order response")
+        log.debug("MarketMaker: unknown order response")
       }
     }
     future onFailure {
@@ -204,7 +208,7 @@ class MMwithWallet(uid: Long, marketIds: List[Long], parameters: StrategyParamet
   }
 
   override def init = {
-    log.debug("MMwithWallet received startSignal")
+    log.debug("MarketMaker received startSignal")
   }
 
 }

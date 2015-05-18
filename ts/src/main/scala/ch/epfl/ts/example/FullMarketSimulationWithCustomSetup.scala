@@ -26,7 +26,7 @@ import java.util.Timer
 import ch.epfl.ts.engine.rules.{ SimulationMarketRulesWrapper, FxMarketRulesWrapper }
 import ch.epfl.ts.traders.MarketMakerTrader
 import ch.epfl.ts.component.utils.Printer
-import ch.epfl.ts.traders.MMwithWallet
+import ch.epfl.ts.traders.MarketMaker
 import ch.epfl.ts.traders.TraderCompanion
 import ch.epfl.ts.config._
 import ch.epfl.ts.traders.TraderCompanion
@@ -92,7 +92,7 @@ object FullMarketSimulationWithCustomSetup {
 
     // market maker
     val uid_marketMaker = 0L
-    marketMaker = MMwithWallet.getInstance(uid_marketMaker, marketIds, getStrategyParameters(MMwithWallet, marketMakerFunds), "WalletMarketMakerTrader")
+    marketMaker = MarketMaker.getInstance(uid_marketMaker, marketIds, getStrategyParameters(MarketMaker, marketMakerFunds), "WalletMarketMakerTrader")
     addConsument(classOf[Quote], marketMaker)
     addConsument(classOf[TheTimeIs], marketMaker)
 
@@ -260,10 +260,12 @@ object FullMarketSimulationWithCustomSetup {
         RsiTrader.WITH_SMA_CONFIRMATION -> BooleanParameter(true),
         RsiTrader.LONG_SMA_PERIOD -> new NaturalNumberParameter(20))
 
-      case MMwithWallet => new StrategyParameters(
-        MMwithWallet.INITIAL_FUNDS -> WalletParameter(Map(symbol._1 -> funds._1, symbol._2 -> funds._2)),
-        MMwithWallet.SYMBOL -> new CurrencyPairParameter(symbol),
-        MMwithWallet.SPREAD -> new RealNumberParameter(0.001))
+      // wallet aware market maker
+      case MarketMaker => new StrategyParameters(
+        MarketMaker.INITIAL_FUNDS -> WalletParameter(Map(symbol._1 -> funds._1, symbol._2 -> funds._2)),
+        MarketMaker.SYMBOL -> new CurrencyPairParameter(symbol),
+        MarketMaker.SPREAD -> new RealNumberParameter(0.001),
+        MarketMaker.WALLET -> new BooleanParameter(true))
 
       case _ => {
         println("getStrategyParameters failed")
