@@ -302,7 +302,7 @@ object TimeParameter extends ParameterTrait {
 
   // TODO: user-selected resolution
   def validValues: Iterable[FiniteDuration] =
-    Stream.from(1) map { n => (500L * n) milliseconds }
+    Stream.from(1) map { n => n seconds }
 
   def defaultValue = (0L milliseconds)
 }

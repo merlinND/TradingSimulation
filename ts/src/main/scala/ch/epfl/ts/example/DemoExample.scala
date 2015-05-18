@@ -15,6 +15,7 @@ import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.component.StartSignal
+import ch.epfl.ts.traders.MadTrader
 
 /**
  * Class used for a live demo of the project
@@ -43,14 +44,16 @@ object DemoExample extends AbstractOptimizationExample {
   
   // Trading strategy
   val maxInstances = traderNames.size
-  val strategy = RangeTrader
+  val strategy = MadTrader
   val parametersToOptimize = Set(
-    RangeTrader.ORDER_WINDOW
+    MadTrader.ORDER_VOLUME,
+    MadTrader.ORDER_VOLUME_VARIATION
   )
   val otherParameterValues = {
     val initialWallet: Wallet.Type = Map(symbol._1 -> 5000.0, symbol._2 -> 5000.0)
-    Map(RangeTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
-        RangeTrader.SYMBOL -> CurrencyPairParameter(symbol))
+    Map(MadTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
+        MadTrader.CURRENCY_PAIR -> CurrencyPairParameter(symbol),
+        MadTrader.INTERVAL -> new TimeParameter(5 second))
   }
   
   
