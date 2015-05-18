@@ -18,6 +18,7 @@
             var service = {};
             var transactions = transactionList.get();
             var chartSeries = ohlcGraph.getChartSeries();
+            var chartConfig = ohlcGraph.getChartConfig();
             var flagsSeriesId = "selectedTraderFlags";
             var selectedTrader = {};
             var flagsSeries = {};
@@ -28,9 +29,7 @@
             service.watchTrader = function(trader) {
               selectedTrader = trader;
               initFlagsSeries(trader);
-              var flagsData = getFlagsData();
-              flagsSeries.data = flagsData;
-
+              flagsSeries.data = getFlagsData();
             };
 
             /**
@@ -38,10 +37,11 @@
              * as an array highcharts flags series data
              */
             function getFlagsData() {
-              return transactions.map(function(t) {
-                if (isTransactionForSelectedTrader(t)) {
-                  return formatFlagsData(t);
-                }
+              var filtered = transactions.filter(function(t) {
+                return isTransactionForSelectedTrader(t);
+              });
+              return filtered.map(function(t) {
+                return formatFlagsData(t);
               });
             }
 
