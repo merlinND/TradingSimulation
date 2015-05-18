@@ -17,7 +17,7 @@ akka.actor.provider = "akka.remote.RemoteActorRefProvider"
 akka.remote.enabled-transports = ["akka.remote.netty.tcp"]
 akka.remote.netty.tcp.bind-hostname = "0.0.0.0"
 akka.remote.netty.tcp.port = 3333
-""").withFallback(ConfigFactory.load());
+""").withFallback(ConfigFactory.load())
 
     implicit val system = ActorSystem("remote", remotingConfig)
   }

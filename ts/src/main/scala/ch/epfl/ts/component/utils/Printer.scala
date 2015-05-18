@@ -4,6 +4,9 @@ import ch.epfl.ts.component.Component
 import ch.epfl.ts.data.{ DelOrder, LimitAskOrder, LimitBidOrder, LimitOrder, OHLC, Transaction, Tweet, Quote }
 import ch.epfl.ts.evaluation.EvaluationReport
 import ch.epfl.ts.data.EndOfFetching
+import ch.epfl.ts.engine.MarketMakerNotification
+
+
 /**
  * Simple printer component. Prints what it receives
  * @param name The name of the printer.

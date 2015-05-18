@@ -86,7 +86,7 @@ class StrategyParametersTests extends FunSuite {
       "tradedCurrencies (type CurrencyPair) = " + legalCurrencies1 + "\n" +
       "someCoefficient (type Coefficient) = " + legalCoefficient
 
-    assert(myParameters.toString().equals(expected), "\n" + myParameters + "\n Should equal:\n" + expected);
+    assert(myParameters.toString().equals(expected), "\n" + myParameters + "\n Should equal:\n" + expected)
   }
 
   test("Should fail at instantiation with illegal parameters") {
@@ -173,7 +173,7 @@ class StrategyParametersTests extends FunSuite {
       List(validWallet1, validWallet2, validWallet3),
       List(invalidWallet1)
     )
-    
+
   testConcreteParameter(
       MarketRulesParameter,
       List(new ForexMarketRules),

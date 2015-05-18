@@ -18,9 +18,9 @@ import ch.epfl.ts.component.fetch.MarketNames._
  * HistDataCSVFetcher class reads data from csv source and converts it to Quotes.
  * For every Quote it has read from disk, it calls the function callback(q: Quote),
  * simulating the past by waiting for a certain time t after each call. By default
- * it is the original (historical) time difference between the quote that was last sent 
+ * it is the original (historical) time difference between the quote that was last sent
  * and the next quote to be sent.
- * 
+ *
  * @param dataDir       A directory path containing data files the fetcher can read. Which files are
  *                      actually read is determined by the start and end arguments (see below).
  *                      The directory should contain substructures of the form <currency pair>/<filename>.csv, e.g.:
@@ -42,7 +42,7 @@ import ch.epfl.ts.component.fetch.MarketNames._
  *                      the fetcher will still read and send all data in June 2013, as if end was set to 2013-06-30 24:00.
  *                      Note this end date includes the whole corresponding month. To fetch a sigle month, pass the same
  *                      date as both start and end.
- * 
+ *
  * @param speed         The speed at which the fetcher will fetch quotes. Defaults to 1 (which means quotes are replayed
  *                      as they were recorded). Can be set e.g. to 2 (time runs twice as fast) or 60 (one hour of historical
  *                      quotes is sent in one minute), etc. Time steps are dT = int(1/speed * dT_historical), in milliseconds.
@@ -52,16 +52,16 @@ import ch.epfl.ts.component.fetch.MarketNames._
  *                      you read at the same time, but in practice would probably mess up things.
  */
 
-class HistDataCSVFetcher(dataDir: String, currencyPair: String, 
+class HistDataCSVFetcher(dataDir: String, currencyPair: String,
                          start: Date, end: Date,
                          speed: Double = 1.0)  extends PushFetchComponent[Quote] {
-  
-  val workingDir = dataDir + "/" + currencyPair.toUpperCase() + "/";
-  val (whatC, withC) = Currency.pairFromString(currencyPair);
-  
+
+  val workingDir = dataDir + "/" + currencyPair.toUpperCase() + "/"
+  val (whatC, withC) = Currency.pairFromString(currencyPair)
+
   val bidPref = "DAT_NT_" + currencyPair.toUpperCase() + "_T_BID_"
   val askPref = "DAT_NT_" + currencyPair.toUpperCase() + "_T_ASK_"
-  
+
   /**
    * Initial delay before starting to send quotes in order to let the system
    * get each component started.
@@ -71,44 +71,44 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
   /**
    * The centerpiece of this class, where we actually load the data.
    * It contains all quotes this fetcher reads from disk, ready to be fetch()ed.
-   * 
+   *
    * However, since allQuotes is an Iterator, it acts lazily. That means it only
    * actually reads from disc when it needs to. The data is not prematurely loaded
    * into memory.
    */
   var allQuotes = Iterator[Quote]()
   loadData()
-  
+
   def loadData() = {
     allQuotes = Iterator[Quote]()
-    monthsBetweenStartAndEnd.foreach { 
-      m => allQuotes ++= parse(bidPref + m + ".csv", askPref + m + ".csv") 
+    monthsBetweenStartAndEnd.foreach {
+      m => allQuotes ++= parse(bidPref + m + ".csv", askPref + m + ".csv")
     }
   }
-  
+
   /**
    * Current and next quotes to be sent, updated whenever a quote was sent.
    */
   var currentQuote = allQuotes.next()
   var nextQuote = allQuotes.next()
-  
+
   /**
    * Using java.util.Timer to simulate the timing of the quotes when they were generated originally.
    * Schedules a new version of itself t milliseconds after it has send the current quote,
-   * 
+   *
    * t = (time when next quote was recorded) - (time when current quote was recorded)
    */
   val timer = new Timer()
   timer.schedule(new SendQuotes, initialDelay.toMillis)
   class SendQuotes extends java.util.TimerTask {
-    
+
     def run() {
       // Get the currentQuote and send it
       send(currentQuote)
-      
+
       // Schedule sending the nextQuote
       timer.schedule(new SendQuotes(), (1 / speed * (nextQuote.timestamp - currentQuote.timestamp)).toInt)
-  
+
       if (allQuotes.hasNext) {
         // If there are more quotes to send, move forward
         currentQuote = nextQuote
@@ -122,14 +122,14 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
         currentQuote = nextQuote
       }
     }
-    
+
   }
-  
+
   /**
    * Saves the quotes this fetcher has fetched (i.e. quotes that are stored in val allQuotes)
    * in an sqlite database of a given name. The fetcher does nothing else during this time.
    * The data is reloaded (rewinded all the way to the start) at the end of the function.
-   * 
+   *
    * @param   filename    Name of the DB file the quotes will be saved to, the final file
    *                      will be called <filename>.db
    */
@@ -149,38 +149,38 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
     // Reload the data because Iterator.next() is destroyed it in the process
     loadData()
   }
-  
+
   /**
-   * Finds the months this HistDataCSVFetcher object should fetch, given the class 
+   * Finds the months this HistDataCSVFetcher object should fetch, given the class
    * constructor arguments (start: Date) and (end: Date)
-   * 
+   *
    * @return  A list of months of the form List("201411", "201412", "201501", ...)
    */
   def monthsBetweenStartAndEnd: List[String] = {
     val cal = Calendar.getInstance()
-    
+
     cal.setTime(start)
     val startYear = cal.get(Calendar.YEAR)
     val startMonth = cal.get(Calendar.MONTH) + 1
-    
+
     cal.setTime(end)
     val endYear = cal.get(Calendar.YEAR)
     val endMonth = cal.get(Calendar.MONTH) + 1
-    
+
     List.range(startYear, endYear + 1)
       // For each of these years, extract the valid months
       .map(year => {
         def isMonthInsidePeriod(month: Int): Boolean = {
           if (startYear != endYear) {
-            (year > startYear  && year < endYear)      || 
+            (year > startYear  && year < endYear)      ||
             (year == startYear && month >= startMonth) ||
-            (year == endYear   && month <= endMonth) 
+            (year == endYear   && month <= endMonth)
           }
           else {
             (month >= startMonth) && (month <= endMonth)
           }
         }
-        
+
         val validMonths = List.range(1, 12 + 1).filter(isMonthInsidePeriod)
         (year, validMonths)
       })
@@ -191,7 +191,7 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
   /**
    * Given the parent class variable (workingDir: String), reads
    * two files from that directory containing bid and ask data.
-   * 
+   *
    * @param   bidCSVFilename    Name of the bidCSV file, e.g. "DAT_NT_EURCHF_T_BID_201304.csv"
    * @param   askCSVFilename    Name of the askCSV file, e.g. "DAT_NT_EURCHF_T_ASK_201304.csv"
    * @return                    An iterator of Quotes contained in those two files
@@ -218,11 +218,11 @@ class HistDataCSVFetcher(dataDir: String, currencyPair: String,
  * Parser object used by HistDataCSVFetcher.parse() to convert the CSV to Quotes.
  */
 object CSVParser extends RegexParsers with java.io.Serializable {
-  
+
   /**
    * The csvcombo format reads a line of text that has been stitched together from a bid
    * csv line and a corresponding ask csv line, and converts it to a Quote:
-   * 
+   *
    * For example:
    * 20130331 235953;1.216450;0 20130331 235953;1.216570;0
    * <-bid------csv------part-> <-ask------csv------part->
@@ -231,16 +231,16 @@ object CSVParser extends RegexParsers with java.io.Serializable {
     datestamp~timestamp~";"~floatingpoint~";0"~datestamp~timestamp~";"~floatingpoint~";0" ^^ {
       case d~t~_~bid~_~d2~t2~_~ask~_ => Quote(MarketNames.FOREX_ID, toTime(d, t),
                                               Currency.DEF, Currency.DEF,
-                                              bid.toDouble, ask.toDouble) 
+                                              bid.toDouble, ask.toDouble)
     }
   }
-  
+
   val datestamp: Parser[String] = """[0-9]{8}""".r
   val timestamp: Parser[String] = """[0-9]{6}""".r
   val floatingpoint: Parser[String] = """[0-9]*\.?[0-9]*""".r
-  
-  val stampFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss")    
-  def toTime(datestamp: String, timestamp: String): Long = { 
+
+  val stampFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss")
+  def toTime(datestamp: String, timestamp: String): Long = {
     stampFormat.parse(datestamp + timestamp).getTime
   }
 }

@@ -82,7 +82,7 @@ class RangeTrader(uid : Long, marketIds : List[Long], parameters: StrategyParame
   var recomputeRange : Boolean = true
   var resistance : Double = Double.MaxValue
   var support : Double = Double.MinValue
-  var oid: Long = 0;
+  var oid: Long = 0
   var currentPrice: Double = 0.0
   var volume : Double = 0
 

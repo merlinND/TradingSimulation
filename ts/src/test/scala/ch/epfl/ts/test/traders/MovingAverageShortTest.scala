@@ -66,7 +66,7 @@ class MovingAverageShortTest
   market.ar ! testQuote
   broker.ar ! testQuote
 
-  val initWallet = initialFunds;
+  val initWallet = initialFunds
   var cash = initialFunds(Currency.CHF)
   var shortings = 0.0
   var holdings = 0.0

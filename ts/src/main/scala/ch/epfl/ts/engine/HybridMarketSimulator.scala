@@ -1,13 +1,18 @@
 package ch.epfl.ts.engine
 
-import scala.language.postfixOps
 import scala.concurrent.duration.DurationInt
-import ch.epfl.ts.data._
-import ch.epfl.ts.engine.rules.{FxMarketRulesWrapper, MarketRulesWrapper}
+import scala.language.postfixOps
+
 import akka.actor.ActorLogging
-import ch.epfl.ts.component.utils.Timekeeper
 import akka.actor.Props
+import ch.epfl.ts.component.utils.Timekeeper
+import ch.epfl.ts.data.Currency
+import ch.epfl.ts.data.Order
+import ch.epfl.ts.data.Quote
+import ch.epfl.ts.data.Streamable
 import ch.epfl.ts.data.TheTimeIs
+import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
+import ch.epfl.ts.engine.rules.MarketRulesWrapper
 
 /**
  * Market simulator, where first the data is being received from fetcher and market behaves in a way that traders' orders
@@ -74,18 +79,21 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
    * This helps keeping the simulation running, mostly by adding
    * liquidity to the system.
    */
+  // TODO JAKOB this has been changed back for some unknown reason...
   def playMarketMaker() = {
     val asksEmpty = if (book.asks.isEmpty) 1 else 0
     val bidsEmpty = if (book.bids.isEmpty) 1 else 0
-    if (asksEmpty + bidsEmpty == 1){
-      val order = if (asksEmpty == 1){
+    if (asksEmpty + bidsEmpty >= 1){
+      val msg = if (asksEmpty == 1){
         val topBid = book.bids.head
-        LimitAskOrder(1, -1, topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price * (1 + spread))
-      } else {
+        MarketAsksEmpty(topBid.timestamp, topBid.whatC, topBid.withC, topBid.volume, topBid.price)
+      } else if (bidsEmpty == 1) {
         val topAsk = book.asks.head
-        LimitBidOrder(1, -1, topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price * (1 - spread))
+        MarketBidsEmpty(topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price)
+      } else {
+        MarketEmpty()
       }
-      receiver(order)
+      send(msg)
     }
   }
 

@@ -43,6 +43,27 @@ object ExecutedAskOrder {
 }
 
 /* *****************************
+ * Market maker notifications
+ */
+abstract class MarketMakerNotification extends Streamable {
+}
+
+case class MarketAsksEmpty(val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+  extends MarketMakerNotification{
+  override def toString() = "empt asks: " + whatC.toString().toUpperCase() + " with " + withC.toString().toUpperCase() + "; vol: " + volume + "; price " + price
+}
+
+case class MarketBidsEmpty(val timestamp: Long, val whatC: Currency, val withC: Currency, val volume: Double, val price: Double)
+  extends MarketMakerNotification{
+  override def toString() = "empt bids: " + whatC.toString().toUpperCase() + " with " + withC.toString().toUpperCase() + "; vol: " + volume + "; price " + price
+}
+
+case class MarketEmpty()
+  extends MarketMakerNotification {
+  override def toString() = "no orders at all"
+}
+
+/* *****************************
  * Traders
  */
 abstract class TraderMessage extends Streamable

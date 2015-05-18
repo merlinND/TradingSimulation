@@ -37,10 +37,10 @@ class TransactionVwapTrader(uid: Long, marketIds: List[Long], parameters: Strate
   val volumeToTrade = parameters.get[Int](TransactionVwapTrader.VOLUME)
 
   var transactions: List[Transaction] = Nil
-  var cumulativeTPV: Double = 0.0;
-  var cumulativeVolume: Double = 0.0;
-  var vwap: Double = 0.0;
-  var tradingPrice: Double = 0.0;
+  var cumulativeTPV: Double = 0.0
+  var cumulativeVolume: Double = 0.0
+  var vwap: Double = 0.0
+  var tradingPrice: Double = 0.0
 
   var oid = uid
 

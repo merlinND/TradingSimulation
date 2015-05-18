@@ -98,7 +98,7 @@ class BtceAPI(from: Currency, to: Currency) {
       val json = Request.Get(path).execute().returnContent().asString()
       t = parse(json).extract[List[BTCeTransaction]]
     } catch {
-      case _: Throwable => t = List[BTCeTransaction]();
+      case _: Throwable => t = List[BTCeTransaction]()
     }
 
     if (t.length != 0) {

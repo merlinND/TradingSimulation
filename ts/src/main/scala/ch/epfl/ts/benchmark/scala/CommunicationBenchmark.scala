@@ -103,7 +103,7 @@ object CommunicationBenchmark {
     server.start()
     client.connect(server.server.getLocalSocketAddress)
     val stream = new ObjectOutputStream(new BufferedOutputStream(client.getOutputStream))
-    server.startTime = System.currentTimeMillis();
+    server.startTime = System.currentTimeMillis()
     elemsList.map(a => { stream.writeObject(a) })
     stream.close()
   }
@@ -123,7 +123,7 @@ object CommunicationBenchmark {
         //      println("Java server: received: " + newObject)
       }
       println("javaTime: " + (System.currentTimeMillis() - startTime) + "ms")
-      
+
       // TODO: could we replace this deprecated method by a simple `return`?
       this.stop()
     }
@@ -150,7 +150,7 @@ object CommunicationBenchmark {
     def receive = {
       case StartTuples2(tuples) => {
         startTime = System.currentTimeMillis()
-        tuples.map(x => receiver ! x);
+        tuples.map(x => receiver ! x)
         receiver ! "Stop"
       }
 
@@ -260,7 +260,7 @@ object CommunicationBenchmark {
         //      println("Java server: received: " + newObject)
       }
       println("javaTime: " + (System.currentTimeMillis() - startTime) + "ms")
-      
+
       // TODO: could we replace this deprecated method by a simple `return`?
       this.stop()
     }
@@ -299,7 +299,7 @@ object CommunicationBenchmark {
     def receive = {
       case StartTuples3(tuples) => {
         startTime = System.currentTimeMillis()
-        tuples.map(x => receiver ! x);
+        tuples.map(x => receiver ! x)
         receiver ! "Stop"
       }
 
