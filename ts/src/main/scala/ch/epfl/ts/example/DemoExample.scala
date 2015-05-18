@@ -45,8 +45,7 @@ object DemoExample extends AbstractOptimizationExample {
   val maxInstances = traderNames.size
   val strategy = RangeTrader
   val parametersToOptimize = Set(
-    RangeTrader.ORDER_WINDOW,
-    RangeTrader.VOLUME
+    RangeTrader.ORDER_WINDOW
   )
   val otherParameterValues = {
     val initialWallet: Wallet.Type = Map(symbol._1 -> 0, symbol._2 -> 5000.0)

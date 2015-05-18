@@ -27,7 +27,6 @@ object RangeTraderExample extends AbstractTraderShowcaseExample {
     new StrategyParameters(
       RangeTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
       RangeTrader.SYMBOL -> CurrencyPairParameter(Currency.USD, Currency.CHF),
-      RangeTrader.VOLUME -> RealNumberParameter(10.0),
       RangeTrader.ORDER_WINDOW -> CoefficientParameter(0.20)
     )
   })

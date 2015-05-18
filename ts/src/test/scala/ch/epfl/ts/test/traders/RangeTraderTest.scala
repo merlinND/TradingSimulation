@@ -50,7 +50,6 @@ class RangeTraderTest
   val parameters = new StrategyParameters(
     RangeTrader.INITIAL_FUNDS -> WalletParameter(initialFunds),
     RangeTrader.SYMBOL -> CurrencyPairParameter(Currency.USD, Currency.CHF),
-    RangeTrader.VOLUME -> RealNumberParameter(1000.0),
     RangeTrader.ORDER_WINDOW -> CoefficientParameter(0.15)
   )
   
