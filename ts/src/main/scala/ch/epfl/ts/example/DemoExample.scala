@@ -27,7 +27,7 @@ object DemoExample extends AbstractOptimizationExample {
   
   // Historical data
   val useLiveData = false
-  val replaySpeed = 4000.0
+  val replaySpeed = 10000.0
   val startDate = "201304"
   val endDate = "201304"
   
@@ -48,7 +48,7 @@ object DemoExample extends AbstractOptimizationExample {
     RangeTrader.ORDER_WINDOW
   )
   val otherParameterValues = {
-    val initialWallet: Wallet.Type = Map(symbol._1 -> 0, symbol._2 -> 5000.0)
+    val initialWallet: Wallet.Type = Map(symbol._1 -> 5000.0, symbol._2 -> 5000.0)
     Map(RangeTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
         RangeTrader.SYMBOL -> CurrencyPairParameter(symbol))
   }
