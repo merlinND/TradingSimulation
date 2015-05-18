@@ -21,14 +21,14 @@ abstract class AnyHost(val namingPrefix: String = "") {
     case _  => namingPrefix + '-' + name
   }
   
-  def actorFor(props: Props, name: String)(implicit builder: ComponentBuilder): ComponentRef
+  def actorOf(props: Props, name: String)(implicit builder: ComponentBuilder): ComponentRef
 }
 
 /**
  * Typical local actor system (not using remote deployment)
  */
 class HostActorSystem(namingPrefix: String = "") extends AnyHost(namingPrefix) {
-  def actorFor(props: Props, name: String)(implicit builder: ComponentBuilder): ComponentRef =
+  override def actorOf(props: Props, name: String)(implicit builder: ComponentBuilder): ComponentRef =
     builder.createRef(props, actualName(name))
 }
 
@@ -42,7 +42,7 @@ class RemoteHost(val hostname: String, val port: Int,
   val address = Address("akka.tcp", systemName, hostname, port)
   val deploy = Deploy(scope = RemoteScope(address))
   
-  override def actorFor(props: Props, name: String)(implicit builder: ComponentBuilder): ComponentRef = {
+  override def actorOf(props: Props, name: String)(implicit builder: ComponentBuilder): ComponentRef = {
     // TODO: use `log.debug`
     println("Creating remotely component " + actualName(name) + " at host " + hostname)
     builder.createRef(props.withDeploy(deploy), actualName(name))

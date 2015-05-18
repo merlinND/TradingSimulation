@@ -52,6 +52,7 @@ class StandardBroker extends Broker with ActorLogging {
         return dummyReturn
       }
       mapping = mapping + (id -> sender())
+      // TODO: why not simply keep an ActorRef? Lookup would cost less
       context.actorOf(Props[Wallet], "wallet" + id)
       sender() ! ConfirmRegistration
     }
