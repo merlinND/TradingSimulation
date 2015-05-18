@@ -58,16 +58,16 @@
                   },
                   buttons : [ {
                     type : 'day',
+                    count : 1,
+                    text : '1 day'
+                  }, {
+                    type : 'day',
                     count : 7,
                     text : '1 week'
                   }, {
                     type : 'month',
                     count : 1,
                     text : '1 month'
-                  }, {
-                    type : 'month',
-                    count : 3,
-                    text : '2 months'
                   }, {
                     type : 'month',
                     count : 6,

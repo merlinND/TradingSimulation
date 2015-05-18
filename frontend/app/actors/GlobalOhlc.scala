@@ -36,7 +36,7 @@ class GlobalOhlc(out: ActorRef) extends Actor {
 
   type Symbol = (Currency, Currency)
   var workers = HashMap[Symbol, ActorRef]()
-  val ohlcPeriod = 1 day
+  val ohlcPeriod = 1 hour
 
   val fetchers = new TradingSimulationActorSelection(context,
     ConfigFactory.load().getString("akka.backend.fetchersActorSelection")).get
