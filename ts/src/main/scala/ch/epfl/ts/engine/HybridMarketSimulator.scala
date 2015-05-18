@@ -1,14 +1,18 @@
 package ch.epfl.ts.engine
 
-import scala.language.postfixOps
 import scala.concurrent.duration.DurationInt
-import ch.epfl.ts.data._
-import ch.epfl.ts.engine.rules.{FxMarketRulesWrapper, MarketRulesWrapper}
+import scala.language.postfixOps
+
 import akka.actor.ActorLogging
-import ch.epfl.ts.component.utils.Timekeeper
 import akka.actor.Props
+import ch.epfl.ts.component.utils.Timekeeper
+import ch.epfl.ts.data.Currency
+import ch.epfl.ts.data.Order
+import ch.epfl.ts.data.Quote
+import ch.epfl.ts.data.Streamable
 import ch.epfl.ts.data.TheTimeIs
-import scala.slick.direct.order
+import ch.epfl.ts.engine.rules.FxMarketRulesWrapper
+import ch.epfl.ts.engine.rules.MarketRulesWrapper
 
 /**
  * Market simulator, where first the data is being received from fetcher and market behaves in a way that traders' orders
@@ -87,8 +91,9 @@ class HybridMarketSimulator(marketId: Long, rules1: FxMarketRulesWrapper, rules2
         val topAsk = book.asks.head
         MarketBidsEmpty(topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price)
       } else {
-        log.info("No orders at all")
+        MarketEmpty()
       }
+      send(msg)
     }
   }
 

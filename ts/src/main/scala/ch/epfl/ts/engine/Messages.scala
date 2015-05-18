@@ -60,7 +60,7 @@ case class MarketBidsEmpty(val timestamp: Long, val whatC: Currency, val withC: 
 
 case class MarketEmpty()
   extends MarketMakerNotification {
-  override def toString() = "nothing at all"
+  override def toString() = "no orders at all"
 }
 
 /* *****************************

@@ -131,7 +131,7 @@ class MMwithWallet(uid: Long, marketIds: List[Long], parameters: StrategyParamet
     }
     case topAsk: MarketBidsEmpty => if (registered) {
 //      currentTimeMillis = topAsk.timestamp
-      log.debug("MarketMaker is asked to buy " + topAsk.volume + " " + topAsk.whatC.toString() + " for a price of " + topAsk.price + " " + topAsk.withC.toString() )
+      println("MarketMaker is asked to buy " + topAsk.volume + " " + topAsk.whatC.toString() + " for a price of " + topAsk.price + " " + topAsk.withC.toString() )
 //      val order = LimitBidOrder(oid, uid, topAsk.timestamp, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price * (1 - spread))
       decideOrder(NEED_TO_BUY, topAsk.whatC, topAsk.withC, topAsk.volume, topAsk.price)
     }
