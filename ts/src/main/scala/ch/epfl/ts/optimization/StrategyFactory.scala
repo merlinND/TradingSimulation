@@ -141,12 +141,13 @@ trait StrategyFactory {
                       (implicit builder: ComponentBuilder): SystemDeployment = {
 
     // ----- Common props (need one instance per host, used by all the traders)
-	  val broker = host.actorFor(commonProps.broker, "Broker")
-	  val market = host.actorFor(commonProps.market, "Market")
-    val fetcher = host.actorFor(commonProps.fetcher, "Fetcher")
-    val printer = commonProps.printer.map(p => host.actorFor(p, "Printer"))
+    val broker = host.actorOf(commonProps.broker, "Broker")
+	  val market = host.actorOf(commonProps.market, "Market")
+    val fetcher = host.actorOf(commonProps.fetcher, "Fetcher")
+    val printer = commonProps.printer.map(p => host.actorOf(p, "Printer"))
 
     // ----- Traders (possibly many) to be run in parallel on this host
+
     val sanitized = names.map(n => sanitizeActorName(n)).toList
     val evaluators = createTraders(host, strategyToOptimize, parameterizations, sanitized)
 
@@ -177,11 +178,11 @@ trait StrategyFactory {
       // Trader
       val traderId = i.toLong
       val traderProps = strategyToOptimize.getProps(traderId, commonProps.marketIds, parameterization)
-      val trader = host.actorFor(traderProps, name)
+      val trader = host.actorOf(traderProps, name)
 
       // Evaluator monitoring the performance of this trader
       val evaluatorProps = Props(classOf[Evaluator], trader.ar, traderId, trader.name, referenceCurrency, evaluationPeriod)
-      val evaluator = host.actorFor(evaluatorProps, name + "-Evaluator")
+      val evaluator = host.actorOf(evaluatorProps, name + "-Evaluator")
 
       evaluator
     }

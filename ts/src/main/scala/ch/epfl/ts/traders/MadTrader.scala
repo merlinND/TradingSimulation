@@ -3,7 +3,6 @@ package ch.epfl.ts.traders
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
 import scala.language.postfixOps
-
 import ch.epfl.ts.data._
 import ch.epfl.ts.data.CoefficientParameter
 import ch.epfl.ts.data.Currency
@@ -15,6 +14,11 @@ import ch.epfl.ts.data.StrategyParameters
 import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.data.Quote
 import akka.actor.ActorLogging
+import ch.epfl.ts.engine.ExecutedAskOrder
+import ch.epfl.ts.engine.AcceptedOrder
+import ch.epfl.ts.engine.WalletConfirm
+import ch.epfl.ts.engine.ExecutedBidOrder
+import ch.epfl.ts.engine.WalletFunds
 
 /**
  * Required and optional parameters used by this strategy
@@ -92,7 +96,14 @@ class MadTrader(uid: Long, marketIds : List[Long], parameters: StrategyParameter
       orderId = orderId + 1
     }
 
-    case t => println("MadTrader: received unknown " + t)
+    case ConfirmRegistration =>
+    case _: WalletConfirm =>
+    case _: WalletFunds =>
+    case _: ExecutedBidOrder =>
+    case _: ExecutedAskOrder =>
+    case _: AcceptedOrder =>
+    
+    case t => log.warning("MadTrader: received unknown " + t)
   }
 
   /**

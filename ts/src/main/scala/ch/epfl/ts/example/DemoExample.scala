@@ -52,8 +52,7 @@ object DemoExample extends AbstractOptimizationExample {
   val otherParameterValues = {
     val initialWallet: Wallet.Type = Map(symbol._1 -> 0, symbol._2 -> 5000.0)
     Map(RangeTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
-      RangeTrader.SYMBOL -> CurrencyPairParameter(symbol),
-      RangeTrader.VOLUME -> RealNumberParameter(0.0))
+      RangeTrader.SYMBOL -> CurrencyPairParameter(symbol))
   }
 
   override def main(args: Array[String]): Unit = {

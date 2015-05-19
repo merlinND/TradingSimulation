@@ -53,14 +53,11 @@ object RangeTrader extends TraderCompanion {
 
   /** Currencies to trade */
   val SYMBOL = "Symbol"
-  /** Volume to trade */
-  val VOLUME = "Volume"
   /** Size of the window during which we will send order, expressed in percent of the range total size */
   val ORDER_WINDOW = "OrderWindow"
 
   override def strategyRequiredParameters = Map(
     SYMBOL -> CurrencyPairParameter,
-    VOLUME -> RealNumberParameter,
     ORDER_WINDOW -> CoefficientParameter
   )
 }
