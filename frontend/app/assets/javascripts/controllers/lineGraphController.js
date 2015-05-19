@@ -10,7 +10,7 @@
         ws.onmessage = function(event) {
           var quote = JSON.parse(event.data);
           $scope.$apply(function() {
-            var name = quote.whatC.name + " to " + quote.withC.name;
+            var name = quote.whatC.s + " to " + quote.withC.s;
 
             var quoteSeries = $scope.chartSeries.filter(function(series) {
               return series.name == name;

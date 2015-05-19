@@ -23,7 +23,7 @@ class StrategyParameters(params: (String, Parameter)*) extends Serializable {
     case that: StrategyParameters => that.parameters.equals(this.parameters)
     case _ => false
   }
-  
+
   /**
    * @return True only if the key is available in `parameters`
    */
