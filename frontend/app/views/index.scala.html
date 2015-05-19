@@ -28,7 +28,7 @@
   	<tab heading="Statistics" data-ng-controller="EvaluationReportController">
   		<small>All currencies converted to {{ referenceCurrency }}</small>
 	    <table ng-table="tableParams" class="table table-striped">
-	        <tr data-ng-repeat="report in $data" class="animate--fade-in">
+	        <tr data-ng-repeat="report in $data" class="animate--fade-in"  ng-click="showTransactionsOnGraphFor(report.traderId)">
 	            <td data-title="'ID'" sortable="'traderId'">{{ report.traderId }}</td>
 	            <td data-title="'Name'" sortable="'traderName'">{{ report.traderName }}</td>
 	            <td data-title="'Initial funds'" sortable="'initial'">{{ report.initial | number: 2 }}</td>
@@ -47,7 +47,7 @@
   	
   	<tab heading="Traders" data-ng-controller="TraderController">
 	    <table ng-table="tableParams" class="table table-striped">
-	        <tr data-ng-repeat="trader in $data" class="animate--fade-in">
+	        <tr data-ng-repeat="trader in $data" class="animate--fade-in"  ng-click="showTransactionsOnGraphFor(trader)">
 	            <td data-title="'ID'" sortable="'id'">{{ trader.id }}</td>
 	            <td data-title="'Name'" sortable="'name'">{{ trader.name }}</td>
 	            <td data-title="'Strategy'" sortable="'strategy'">{{ trader.strategy }}</td>

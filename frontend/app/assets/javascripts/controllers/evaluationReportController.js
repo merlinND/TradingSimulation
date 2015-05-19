@@ -8,9 +8,18 @@
           '$filter',
           'traderList',
           'ngTableParams',
-          function($scope, $filter, traderList, ngTableParams) {
-            $scope.traders = traderList.get();
+          'ohlcGraphTransactionFlags',
+          function($scope, $filter, traderList, ngTableParams, ohlcGraphTransactionFlags) {
+            var traders = traderList.get();
             var evaluationReports = {};
+
+            /**
+             * Gets all the transactions for the selected trader ID and attaches
+             * them as buy/sell flags to the global OHLC graph
+             */
+            $scope.showTransactionsOnGraphFor = function(traderId) {
+              ohlcGraphTransactionFlags.watchTrader(traders[traderId]);
+            };
 
             var ws = new WebSocket(
                 'ws://localhost:9000/trader/evaluation-report');
