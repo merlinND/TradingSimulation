@@ -3,7 +3,7 @@
 @main("Welcome to Play") {
 
 
-<div data-ng-controller="OhlcGraphController">
+<div data-ng-controller="OhlcGraphController" class="container-fluid">
   <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="alert.close()">
     {{ alert.msg }}
   </alert>
@@ -28,15 +28,14 @@
   	<tab heading="Statistics" data-ng-controller="EvaluationReportController">
   		<small>All currencies converted to {{ referenceCurrency }}</small>
 	    <table ng-table="tableParams" class="table table-striped">
-	        <tr data-ng-repeat="report in $data track by report.traderId" class="animate--fade-in">
+	        <tr data-ng-repeat="report in $data" class="animate--fade-in"  ng-click="showTransactionsOnGraphFor(report.traderId)">
 	            <td data-title="'ID'" sortable="'traderId'">{{ report.traderId }}</td>
 	            <td data-title="'Name'" sortable="'traderName'">{{ report.traderName }}</td>
 	            <td data-title="'Initial funds'" sortable="'initial'">{{ report.initial | number: 2 }}</td>
 	            <td data-title="'Current funds'" sortable="'current'">{{ report.current | number: 2 }}</td>
-	            <td data-title="'Total returns'" sortable="'totalReturns'">{{ report.totalReturns | number: 4 }}</td>
+	            <td data-title="'Total returns'" sortable="'totalReturns'">{{ report.totalReturns | percentage: 2 }}</td>
 	            <td data-title="'Volatility'" sortable="'volatility'">{{ report.volatility | number: 2 }}</td>
-	            <td data-title="'Drawdown'" sortable="'drawdown'">{{ report.drawdown | number: 2 }}</td>
-	            <td data-title="'Sharpe ratio'" sortable="'sharpeRatio'">{{ report.sharpeRatio | number: 2 }}</td>
+	            <td data-title="'Drawdown'" sortable="'drawdown'">{{ report.drawdown | percentage: 2 }}</td>
 	            <td data-title="'Wallet contents'">
 	            	<ul>
 	            		<li data-ng-repeat="(currency, value) in report.wallet">{{ currency }} : {{ value | number: 2 }}</li>
@@ -48,7 +47,7 @@
   	
   	<tab heading="Traders" data-ng-controller="TraderController">
 	    <table ng-table="tableParams" class="table table-striped">
-	        <tr data-ng-repeat="trader in $data track by trader.id" class="animate--fade-in">
+	        <tr data-ng-repeat="trader in $data" class="animate--fade-in"  ng-click="showTransactionsOnGraphFor(trader)">
 	            <td data-title="'ID'" sortable="'id'">{{ trader.id }}</td>
 	            <td data-title="'Name'" sortable="'name'">{{ trader.name }}</td>
 	            <td data-title="'Strategy'" sortable="'strategy'">{{ trader.strategy }}</td>

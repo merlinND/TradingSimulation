@@ -84,7 +84,10 @@
               },
               series : chartSeries,
               title : {
-                text : 'Market price'
+                text : '',
+                style : {
+                  display : 'none'
+                }
               },
               credits : {
                 enabled : false
@@ -149,7 +152,7 @@
               }
 
               chartSeries.push(ohlcSeries);
-              
+
               return ohlcSeries;
             }
 

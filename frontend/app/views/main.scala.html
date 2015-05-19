@@ -22,6 +22,7 @@
 		<script type="text/javascript" src="https://cdn.rawgit.com/gdi2290/angular-websocket/v1.0.9/angular-websocket.min.js" ></script>
     	<script type="text/javascript" src="@routes.Assets.versioned("javascripts/highstockTheme.js")"></script>
     	<script type="text/javascript" src="@routes.Assets.versioned("javascripts/app.js")"></script>
+    	<script type="text/javascript" src="@routes.Assets.versioned("javascripts/filters/percentageFilter.js")"></script>
     	<script type="text/javascript" src="@routes.Assets.versioned("javascripts/services/alertService.js")"></script>
     	<script type="text/javascript" src="@routes.Assets.versioned("javascripts/services/traderService.js")"></script>
     	<script type="text/javascript" src="@routes.Assets.versioned("javascripts/services/transactionService.js")"></script>
@@ -33,7 +34,13 @@
     	<script type="text/javascript" src="@routes.Assets.versioned("javascripts/controllers/evaluationReportController.js")"></script>
     </head>
     <body>
-		
+		<div class="navbar navbar-default">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<span class="navbar-brand">Algorithmic Trading Simulation Dashboard</span>
+        		</div>
+			</div>
+		</div>
         @content
         
     </body>

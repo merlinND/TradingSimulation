@@ -8,10 +8,23 @@
           '$filter',
           'traderList',
           'ngTableParams',
-          function($scope, $filter, traderList, ngTableParams) {
-            $scope.traders = traderList.get();
+          'ohlcGraphTransactionFlags',
+          function($scope, $filter, traderList, ngTableParams, ohlcGraphTransactionFlags) {
+            var traders = traderList.get();
             var evaluationReports = {};
 
+            /**
+             * Gets all the transactions for the selected trader ID and attaches
+             * them as buy/sell flags to the global OHLC graph
+             */
+            $scope.showTransactionsOnGraphFor = function(traderId) {
+              ohlcGraphTransactionFlags.watchTrader(traders[traderId]);
+            };
+
+            
+            /**
+             * Listens to EvaluationReport messages
+             */
             var ws = new WebSocket(
                 'ws://localhost:9000/trader/evaluation-report');
 
@@ -25,6 +38,12 @@
               $scope.tableParams.reload();
             };
 
+
+            /**
+             * ngTable configuration We tell jshint to ignore this part since
+             * ngTableParams starts with a lowercase letter, which leads to a
+             * jshint error
+             */
             /* jshint ignore:start */
             $scope.tableParams = new ngTableParams({
               count : evaluationReports.length, // no pager
@@ -35,8 +54,12 @@
               counts : [], // hide page size
               total : evaluationReports.length,
               getData : function($defer, params) {
-                var orderedData = params.sorting() ? $filter('orderBy')(evaluationReports,
-                    params.orderBy()) : evaluationReports;
+                var data = [];
+                for ( var report in evaluationReports) {
+                  data.push(evaluationReports[report]);
+                }
+                var orderedData = params.sorting() ? $filter('orderBy')(data,
+                    params.orderBy()) : data;
                 $defer.resolve(orderedData);
               }
             });
