@@ -21,6 +21,10 @@
               ohlcGraphTransactionFlags.watchTrader(traders[traderId]);
             };
 
+            
+            /**
+             * Listens to EvaluationReport messages
+             */
             var ws = new WebSocket(
                 'ws://localhost:9000/trader/evaluation-report');
 
@@ -34,6 +38,12 @@
               $scope.tableParams.reload();
             };
 
+
+            /**
+             * ngTable configuration We tell jshint to ignore this part since
+             * ngTableParams starts with a lowercase letter, which leads to a
+             * jshint error
+             */
             /* jshint ignore:start */
             $scope.tableParams = new ngTableParams({
               count : evaluationReports.length, // no pager

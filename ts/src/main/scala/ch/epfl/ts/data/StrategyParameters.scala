@@ -201,7 +201,7 @@ object CoefficientParameter extends ParameterTrait {
 
   def validValues: Iterable[Double] = {
 	  // TODO: handle user-selected resolution for these values
-    val resolution = 0.1
+    val resolution = 0.04
     for {
       n <- 0 to (1 / resolution).toInt
     } yield (n * resolution)

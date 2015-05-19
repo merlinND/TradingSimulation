@@ -15,49 +15,50 @@ import ch.epfl.ts.data.RealNumberParameter
 import ch.epfl.ts.data.WalletParameter
 import ch.epfl.ts.data.TimeParameter
 import ch.epfl.ts.component.StartSignal
+import ch.epfl.ts.data.NaturalNumberParameter
+import ch.epfl.ts.data.BooleanParameter
+import ch.epfl.ts.data.CoefficientParameter
 
 /**
  * Class used for a live demo of the project
  */
 object DemoExample extends AbstractOptimizationExample {
-  
+
   override val maximumRunDuration: Option[FiniteDuration] = None
-  
+
   val symbol = (Currency.EUR, Currency.CHF)
-  
+
   // Historical data
   val useLiveData = false
   val replaySpeed = 3600.0
-  val startDate = "201301"
-  val endDate = "201306"
-  
+  val startDate = "201304"
+  val endDate = "201505"
+
   // Evaluation
   override val evaluationPeriod = (10 seconds)
-  
+
   /** Names for our trader instances */
   override lazy val traderNames = {
     val urlToNames = getClass.getResource("/names-shuffled.txt")
     val names = Source.fromFile(urlToNames.toURI()).getLines()
     names.toSet
   }
-  
+
   // Trading strategy
   val maxInstances = traderNames.size
   val strategy = RangeTrader
   val parametersToOptimize = Set(
-    RangeTrader.ORDER_WINDOW,
-    RangeTrader.VOLUME
-  )
+    RangeTrader.ORDER_WINDOW)
   val otherParameterValues = {
     val initialWallet: Wallet.Type = Map(symbol._1 -> 0, symbol._2 -> 5000.0)
     Map(RangeTrader.INITIAL_FUNDS -> WalletParameter(initialWallet),
-        RangeTrader.SYMBOL -> CurrencyPairParameter(symbol))
+      RangeTrader.SYMBOL -> CurrencyPairParameter(symbol),
+      RangeTrader.VOLUME -> RealNumberParameter(0.0))
   }
-  
-  
+
   override def main(args: Array[String]): Unit = {
     println("Going to create " + parameterizations.size + " traders on localhost")
-    
+
     // ----- Create instances
     val d = factory.createDeployment(localHost, strategy, parameterizations, traderNames)
 
@@ -73,14 +74,14 @@ object DemoExample extends AbstractOptimizationExample {
 
     // ----- Registration to the supervisor
     // Register each new trader to the master
-    for(e <- d.evaluators) {
+    for (e <- d.evaluators) {
       supervisorActor.get.ar ! e.ar
     }
 
     // ----- Controlled duration (optional)
     maximumRunDuration match {
       case Some(duration) => terminateOptimizationAfter(duration, supervisorActor.get.ar)
-      case None =>
+      case None           =>
     }
   }
 }
