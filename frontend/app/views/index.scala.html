@@ -35,8 +35,7 @@
 	            <td data-title="'Current funds'" sortable="'current'">{{ report.current | number: 2 }}</td>
 	            <td data-title="'Total returns'" sortable="'totalReturns'">{{ report.totalReturns | percentage: 2 }}</td>
 	            <td data-title="'Volatility'" sortable="'volatility'">{{ report.volatility | number: 2 }}</td>
-	            <td data-title="'Drawdown'" sortable="'drawdown'">{{ report.drawdown | number: 2 }}</td>
-	            <td data-title="'Sharpe ratio'" sortable="'sharpeRatio'">{{ report.sharpeRatio | number: 2 }}</td>
+	            <td data-title="'Drawdown'" sortable="'drawdown'">{{ report.drawdown | percentage: 2 }}</td>
 	            <td data-title="'Wallet contents'">
 	            	<ul>
 	            		<li data-ng-repeat="(currency, value) in report.wallet">{{ currency }} : {{ value | number: 2 }}</li>
